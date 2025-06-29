@@ -2,6 +2,8 @@
 
 FundingPro is a SaaS platform that helps organizations discover grants, draft applications with AI assistance, and track submissions. The project ships with a FastAPI backend secured with JWT, a Next.js frontend styled with Tailwind CSS, and a PostgreSQL database. Billing via Stripe and AI drafting via OpenAI are supported.
 
+Recent updates added email verification, password resets, user roles and Stripe webhook handling. Users can manage their profile and draft applications with GPT‑4.
+
 ## Structure
 - `backend/` – FastAPI application with a PostgreSQL database.
 - `frontend/` – Next.js application styled with Tailwind CSS.
@@ -23,6 +25,7 @@ docker-compose up --build
 The backend will be available at `http://localhost:8000` and the frontend at `http://localhost:3000`.
 
 Copy `.env.example` to `.env` and fill in the values. Set `OPENAI_API_KEY` for AI drafting and `STRIPE_SECRET_KEY`/`STRIPE_PRICE_ID` for billing.
+Add `STRIPE_WEBHOOK_SECRET` if you want subscriptions to update automatically.
 
 ### Running manually (development)
 #### Backend

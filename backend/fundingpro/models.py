@@ -1,12 +1,25 @@
 from datetime import datetime
 from typing import Optional
+from enum import Enum
 from sqlmodel import SQLModel, Field, Relationship
+
+class Role(str, Enum):
+    admin = "admin"
+    owner = "owner"
+    editor = "editor"
+    viewer = "viewer"
+
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(index=True, unique=True)
     hashed_password: str
-    is_admin: bool = False
+    role: Role = Field(default=Role.viewer)
+    is_verified: bool = False
+    verification_token: Optional[str] = None
+    reset_token: Optional[str] = None
+    stripe_customer_id: Optional[str] = None
+    subscription_status: str = "inactive"
     applications: list["Application"] = Relationship(back_populates="user")
 
 class Grant(SQLModel, table=True):

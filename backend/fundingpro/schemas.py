@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr
+from enum import Enum
 
 class Token(BaseModel):
     access_token: str
@@ -13,10 +14,27 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
+
+class Role(str, Enum):
+    admin = "admin"
+    owner = "owner"
+    editor = "editor"
+    viewer = "viewer"
+
 class UserRead(BaseModel):
     id: int
     email: EmailStr
-    is_admin: bool
+    role: Role
+    is_verified: bool
+    subscription_status: str
+
+    class Config:
+        orm_mode = True
+
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
 
 class GrantRead(BaseModel):
     id: int
@@ -25,6 +43,9 @@ class GrantRead(BaseModel):
     amount: int
     deadline: datetime
     eligibility: str
+
+    class Config:
+        orm_mode = True
 
 class GrantCreate(BaseModel):
     title: str
@@ -41,6 +62,9 @@ class ApplicationRead(BaseModel):
     grant: GrantRead
     status: str
     created_at: datetime
+
+    class Config:
+        orm_mode = True
 
 
 class AuditLogRead(BaseModel):

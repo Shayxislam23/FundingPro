@@ -1,6 +1,6 @@
 # FundingPro
 
-FundingPro is a SaaS platform that helps organizations discover grants, draft applications with AI assistance, and track submissions.
+FundingPro is a SaaS platform that helps organizations discover grants, draft applications with AI assistance, and track submissions. The project ships with a FastAPI backend secured with JWT, a Next.js frontend styled with Tailwind CSS, and a PostgreSQL database. Billing via Stripe and AI drafting via OpenAI are supported.
 
 ## Structure
 - `backend/` – FastAPI application with a PostgreSQL database.
@@ -22,7 +22,9 @@ docker-compose up --build
 ```
 The backend will be available at `http://localhost:8000` and the frontend at `http://localhost:3000`.
 
-### Running manually
+Copy `.env.example` to `.env` and fill in the values. Set `OPENAI_API_KEY` for AI drafting and `STRIPE_SECRET_KEY`/`STRIPE_PRICE_ID` for billing.
+
+### Running manually (development)
 #### Backend
 ```bash
 cd backend
@@ -34,6 +36,7 @@ uvicorn fundingpro.main:app --reload
 cd frontend
 npm install
 npm run dev
+```
 
 ### Seeding Sample Data
 ```bash
@@ -45,7 +48,7 @@ python seed.py
 #### Backend
 ```bash
 cd backend
-pytest
+PYTHONPATH=. pytest -q
 ```
 #### Frontend
 ```bash
@@ -53,9 +56,17 @@ cd frontend
 npm test
 ```
 
-This codebase is a starting point and does not include all production-ready features but demonstrates the main architecture.
-
-### Building production images
+### Production build
+Build the Docker images for deployment:
 ```bash
 docker-compose build
 ```
+Run the containers in detached mode with your production `.env`:
+```bash
+docker-compose up -d
+```
+
+### API Docs
+Once running, visit `http://localhost:8000/docs` for interactive API documentation.
+
+Demo credentials can be created with `python backend/seed.py`.

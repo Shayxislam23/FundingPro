@@ -7,6 +7,11 @@ from fundingpro.database import init_db
 
 
 def setup_function():
+    import os
+    from fundingpro.database import engine
+    if os.path.exists('/tmp/test.db'):
+        os.remove('/tmp/test.db')
+    engine.dispose()
     init_db()
 
 client = TestClient(app)

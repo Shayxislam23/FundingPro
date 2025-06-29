@@ -26,3 +26,11 @@ class Application(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     user: Optional[User] = Relationship(back_populates="applications")
     grant: Optional[Grant] = Relationship(back_populates="applications")
+
+
+class AuditLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    action: str
+    details: str = ""
+    timestamp: datetime = Field(default_factory=datetime.utcnow)

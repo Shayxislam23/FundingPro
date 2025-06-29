@@ -41,3 +41,11 @@ class ApplicationRead(BaseModel):
     grant: GrantRead
     status: str
     created_at: datetime
+
+
+class AuditLogRead(BaseModel):
+    id: int
+    user_id: int
+    action: str
+    details: str
+    timestamp: datetime

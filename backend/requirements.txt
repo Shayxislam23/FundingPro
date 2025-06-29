@@ -1,3 +1,14 @@
 fastapi
 uvicorn
-pydantic
+sqlmodel
+psycopg2-binary
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+pytest
+pytest-cov
+
+httpx
+email-validator
+python-multipart
+openai

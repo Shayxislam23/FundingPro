@@ -1,26 +1,61 @@
-# FundingPro (Skeleton)
+# FundingPro
 
-This repository provides a minimal skeleton for the **FundingPro** SaaS platform. The platform aims to help organizations discover grants, draft applications with AI assistance, and track submissions.
+FundingPro is a SaaS platform that helps organizations discover grants, draft applications with AI assistance, and track submissions.
 
 ## Structure
-
-- `backend/` – FastAPI application exposing a simple `/grants` endpoint with sample data.
-- `frontend/` – Next.js application with a basic landing page.
+- `backend/` – FastAPI application with a PostgreSQL database.
+- `frontend/` – Next.js application styled with Tailwind CSS.
+- `docker-compose.yml` – development environment with Postgres, backend, and frontend.
+- `.env.example` – sample environment variables.
 
 ## Getting Started
 
-### Backend
+### Prerequisites
+- Python 3.11
+- Node.js 18+
+- Docker (optional but recommended)
+
+### Running with Docker Compose
+```bash
+cp .env.example .env
+docker-compose up --build
 ```
+The backend will be available at `http://localhost:8000` and the frontend at `http://localhost:3000`.
+
+### Running manually
+#### Backend
+```bash
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn fundingpro.main:app --reload
 ```
-
-### Frontend
-```
+#### Frontend
+```bash
 cd frontend
 npm install
 npm run dev
+
+### Seeding Sample Data
+```bash
+cd backend
+python seed.py
 ```
 
-This code is only a starting point and does not include the full functionality described in the project scope.
+### Tests
+#### Backend
+```bash
+cd backend
+pytest
+```
+#### Frontend
+```bash
+cd frontend
+npm test
+```
+
+This codebase is a starting point and does not include all production-ready features but demonstrates the main architecture.
+
+### Building production images
+```bash
+docker-compose build
+```

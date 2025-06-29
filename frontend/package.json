@@ -1,0 +1,29 @@
+{
+  "name": "fundingpro-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "jest"
+  },
+  "dependencies": {
+    "axios": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "latest",
+    "@types/jest": "latest",
+    "autoprefixer": "latest",
+    "jest": "latest",
+    "jest-environment-jsdom": "^30.0.2",
+    "postcss": "latest",
+    "tailwindcss": "latest",
+    "ts-jest": "latest",
+    "typescript": "latest"
+  }
+}

@@ -1,0 +1,44 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fundingpro
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fundingpro
+      SECRET_KEY: test
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install backend dependencies
+        run: pip install -r backend/requirements.txt
+      - name: Run backend tests
+        run: |
+          cd backend
+          PYTHONPATH=. pytest -q
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          npm test --silent
+      - name: Build Docker images
+        run: docker-compose build

@@ -85,11 +85,10 @@ export default function SubscriptionPage() {
         <div className="flex gap-3 mb-3">
           <ShieldCheck className="w-5 h-5 text-funding-green flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-sm text-funding-black mb-1">Безопасная оплата через ZOOMRAD</p>
+            <p className="font-bold text-sm text-funding-black mb-1">Безопасная оплата</p>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Платёж обрабатывается через платёжную инфраструктуру ZOOMRAD. FundingPro не хранит данные карт
-              и не является платёжной организацией. Подписка активируется автоматически после подтверждения
-              платежа ZOOMRAD.
+              FundingPro не хранит данные карт и не является платёжной организацией.
+              Подписка активируется автоматически после подтверждения платежа.
             </p>
           </div>
         </div>

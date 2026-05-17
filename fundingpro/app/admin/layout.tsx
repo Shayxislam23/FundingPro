@@ -25,7 +25,7 @@ const adminNav = [
   { label: "Пользователи", href: "/admin/users", icon: Users },
   { label: "Гранты", href: "/admin/grants", icon: BookOpen },
   { label: "Платежи", href: "/admin/payments", icon: CreditCard },
-  { label: "Выручка ZOOMRAD", href: "/admin/payments", icon: BarChart3 },
+  { label: "Аналитика выручки", href: "/admin/payments", icon: BarChart3 },
   { label: "AI-запросы", href: "/admin/ai-logs", icon: Bot },
   { label: "Поддержка", href: "/admin/support", icon: HelpCircle },
   { label: "Настройки", href: "/admin/settings", icon: Settings },

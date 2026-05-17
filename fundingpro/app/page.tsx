@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
-import { ZoomradBadge } from "@/components/design/ZoomradBadge";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { MetricCard } from "@/components/design/MetricCard";
 import { PricingCard } from "@/components/design/PricingCard";
@@ -58,15 +57,12 @@ export default function LandingPage() {
         {/* Top nav */}
         <nav className="flex items-center justify-between px-6 md:px-12 py-6 border-b border-white/5">
           <FundingProLogo variant="dark" size="md" />
-          <div className="flex items-center gap-4">
-            <ZoomradBadge variant="outline" />
-            <Link
-              href="/dashboard"
-              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-funding-green text-white text-sm font-semibold hover:bg-funding-accent transition-colors"
-            >
-              Войти <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-funding-green text-white text-sm font-semibold hover:bg-funding-accent transition-colors"
+          >
+            Войти <ArrowRight className="w-3 h-3" />
+          </Link>
         </nav>
 
         {/* Hero content */}
@@ -87,7 +83,7 @@ export default function LandingPage() {
                 className="w-1.5 h-1.5 rounded-full animate-pulse"
                 style={{ background: "#12B94F" }}
               />
-              FundingPro Mini App — ZOOMRAD
+              AI-платформа для грантов
             </div>
 
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[0.95] mb-6">
@@ -102,22 +98,13 @@ export default function LandingPage() {
               и подготовки профессиональных предложений на русском и узбекском языках.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                href="/zoomrad/welcome"
-                className="flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-sm transition-colors"
-                style={{ background: "#008A2E", color: "#fff" }}
-              >
-                Открыть в ZOOMRAD <ChevronRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-2 px-6 py-3.5 rounded-xl border font-semibold text-sm hover:border-funding-green hover:text-funding-accent transition-colors"
-                style={{ borderColor: "rgba(255,255,255,0.2)", color: "#fff" }}
-              >
-                Веб-дашборд
-              </Link>
-            </div>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-sm transition-colors"
+              style={{ background: "#008A2E", color: "#fff" }}
+            >
+              Начать работу <ChevronRight className="w-4 h-4" />
+            </Link>
 
             <p className="text-xs mt-8 max-w-lg mx-auto" style={{ color: "rgba(167,184,170,0.6)" }}>
               FundingPro не гарантирует получение гранта. Платформа помогает найти возможности,
@@ -226,7 +213,7 @@ export default function LandingPage() {
               Выберите план
             </h2>
             <p className="max-w-lg mx-auto text-sm" style={{ color: "#6b7280" }}>
-              Для НКО, частных лиц и бизнеса. Оплата через ZOOMRAD.
+              Для НКО, частных лиц и бизнеса.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -280,29 +267,19 @@ export default function LandingPage() {
         style={{ background: "#020703", borderColor: "rgba(255,255,255,0.05)" }}
       >
         <div className="max-w-3xl mx-auto text-center">
-          <ZoomradBadge variant="outline" className="mb-6 mx-auto" />
           <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
             Готовы начать?
           </h2>
           <p className="mb-10 max-w-xl mx-auto" style={{ color: "#A7B8AA" }}>
-            Откройте FundingPro прямо в приложении ZOOMRAD или используйте полный веб-дашборд.
+            Используйте полный веб-дашборд для поиска грантов и подготовки заявок.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/zoomrad/welcome"
-              className="px-6 py-3.5 rounded-xl font-semibold text-sm transition-colors"
-              style={{ background: "#008A2E", color: "#fff" }}
-            >
-              Открыть Mini App
-            </Link>
-            <Link
-              href="/dashboard"
-              className="px-6 py-3.5 rounded-xl border font-semibold text-sm transition-colors"
-              style={{ borderColor: "rgba(255,255,255,0.2)", color: "#fff" }}
-            >
-              Войти в дашборд
-            </Link>
-          </div>
+          <Link
+            href="/dashboard"
+            className="inline-block px-6 py-3.5 rounded-xl font-semibold text-sm transition-colors"
+            style={{ background: "#008A2E", color: "#fff" }}
+          >
+            Войти в дашборд
+          </Link>
           <p className="text-xs mt-8" style={{ color: "rgba(167,184,170,0.4)" }}>
             Beta Version Solutions ООО, DGU No. 61712
           </p>

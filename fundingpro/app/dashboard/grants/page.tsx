@@ -9,14 +9,13 @@ import { Search, Loader2 } from "lucide-react";
 type Grant = {
   id: string;
   title: string;
+  title_ru: string | null;
   deadline: string | null;
-  amountMin: string | null;
-  amountMax: string | null;
-  currency: string;
-  sector: string[];
-  country: string[];
-  isFeatured: boolean;
-  donor: { shortName: string | null };
+  amount_min: number | null;
+  amount_max: number | null;
+  sectors: string[];
+  country_scope: string[];
+  donor: { name: string | null; name_ru: string | null };
 };
 
 const sectors = ["Все", "Экология", "Образование", "Здравоохранение", "Климат", "Права человека", "Гражданское общество", "Экономика"];
@@ -25,11 +24,11 @@ const sortOptions = [
   { value: "deadline", label: "По дедлайну" },
 ];
 
-function formatAmount(min: string | null, max: string | null, currency: string) {
+function formatAmount(min: number | null, max: number | null) {
   if (!min && !max) return "—";
-  if (min && max) return `${currency} ${Number(min).toLocaleString()} – ${Number(max).toLocaleString()}`;
-  if (max) return `до ${currency} ${Number(max).toLocaleString()}`;
-  return `от ${currency} ${Number(min).toLocaleString()}`;
+  if (min && max) return `$${min.toLocaleString()} – $${max.toLocaleString()}`;
+  if (max) return `до $${max.toLocaleString()}`;
+  return `от $${min!.toLocaleString()}`;
 }
 
 function formatDeadline(d: string | null) {
@@ -155,12 +154,12 @@ export default function DashboardGrantsPage() {
                 <Link key={g.id} href={`/dashboard/grants/${g.id}`}>
                   <GrantCard
                     id={g.id}
-                    title={g.title}
-                    donor={g.donor.shortName ?? "—"}
-                    amount={formatAmount(g.amountMin, g.amountMax, g.currency)}
+                    title={g.title_ru ?? g.title}
+                    donor={g.donor.name_ru ?? g.donor.name ?? "—"}
+                    amount={formatAmount(g.amount_min, g.amount_max)}
                     deadline={formatDeadline(g.deadline)}
-                    country={g.country.join(", ")}
-                    sector={g.sector[0] ?? "—"}
+                    country={g.country_scope.join(", ")}
+                    sector={g.sectors[0] ?? "—"}
                     isSaved={saved.includes(g.id)}
                     onSave={toggleSave}
                     variant="light"

@@ -29,19 +29,14 @@ export async function GET(req: NextRequest) {
         country_scope,
         amount_min,
         amount_max,
-        currency,
         deadline,
-        is_featured,
-        is_active,
         donor:donors ( id, name, name_ru )
       `, { count: "exact" })
-      .eq("is_active", true)
-      .order("is_featured", { ascending: false })
       .order("deadline", { ascending: true, nullsFirst: false })
       .range(from, to);
 
     if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,title_ru.ilike.%${search}%`);
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
     }
     if (sector) {
       query = query.contains("sectors", [sector]);
@@ -51,9 +46,6 @@ export async function GET(req: NextRequest) {
     }
     if (donorId) {
       query = query.eq("donor_id", donorId);
-    }
-    if (featured) {
-      query = query.eq("is_featured", true);
     }
 
     const { data: grants, count, error } = await query;

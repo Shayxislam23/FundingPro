@@ -21,8 +21,8 @@ export function getAuthUser(req: NextRequest): { userId: string } | null {
   return { userId: "placeholder-user-id" };
 }
 
-// Placeholder: verify ZOOMRAD webhook signature
-export function verifyZoomradWebhook(
+// Placeholder: verify payment webhook signature
+export function verifyPaymentWebhook(
   payload: string,
   signature: string,
   secret: string

@@ -15,13 +15,12 @@ export async function GET(req: NextRequest) {
     totalGrants: 0,
     paymentsThisMonth: 0,
     aiRequestsThisMonth: 0,
-    zoomradRevenue: {
+    revenueShare: {
       grossUsd: 0,
-      zoomradShareUsd: 0,
+      partnerShareUsd: 0,
       platformShareUsd: 0,
       transactionCount: 0,
       currentBucket: "0–500",
-      rateZoomrad: 30,
       ratePlatform: 70,
     },
   });

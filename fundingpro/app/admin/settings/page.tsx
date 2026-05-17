@@ -95,7 +95,7 @@ export default function AdminSettingsPage() {
           </div>
           <div className="space-y-3">
             {[
-              { label: "Провайдер", value: "ZOOMRAD (адаптер)" },
+              { label: "Провайдер", value: "Платёжный адаптер" },
               { label: "Хранение карт", value: "Нет (запрещено)" },
               { label: "Активация подписки", value: "Только webhook" },
               { label: "Idempotency keys", value: "Включены" },

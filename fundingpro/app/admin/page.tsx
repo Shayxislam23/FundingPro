@@ -11,15 +11,6 @@ const recentPayments = [
   { user: "Ферганский образовательный центр", plan: "Basic", amount: "$30", date: "15.05.2025", status: "pending" },
 ];
 
-const zoomradRevenue = {
-  totalTransactions: 847,
-  gross: "$42,350",
-  zoomradShare: "$11,046 (26.1%)",
-  fundingproShare: "$31,304 (73.9%)",
-  bucket: "500–1,500 транзакций",
-  rate: "ZOOMRAD 28% / FundingPro 72%",
-};
-
 export default function AdminDashboard() {
   return (
     <div>
@@ -37,42 +28,6 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* ZOOMRAD Revenue Share */}
-        <div>
-          <h2 className="font-bold text-funding-black mb-3">ZOOMRAD Revenue Share — май 2025</h2>
-          <div
-            className="rounded-2xl p-6 border"
-            style={{ background: "#020703", borderColor: "rgba(0,138,46,0.3)" }}
-          >
-            <div
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold mb-4"
-              style={{ background: "rgba(0,138,46,0.2)", color: "#12B94F" }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#12B94F" }} />
-              {zoomradRevenue.bucket}
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: "Транзакций", value: zoomradRevenue.totalTransactions.toString() },
-                { label: "Валовая выручка", value: zoomradRevenue.gross },
-                { label: "Доля ZOOMRAD", value: zoomradRevenue.zoomradShare },
-                { label: "Доля FundingPro", value: zoomradRevenue.fundingproShare },
-              ].map(({ label, value }) => (
-                <div key={label}>
-                  <p className="text-xs" style={{ color: "#A7B8AA" }}>{label}</p>
-                  <p className="font-bold text-white text-sm mt-0.5">{value}</p>
-                </div>
-              ))}
-            </div>
-            <div
-              className="mt-4 pt-4 border-t text-xs"
-              style={{ borderColor: "rgba(255,255,255,0.05)", color: "#A7B8AA" }}
-            >
-              Текущая ставка: <strong className="text-funding-accent">{zoomradRevenue.rate}</strong>
-            </div>
-          </div>
-        </div>
-
         {/* Recent payments */}
         <div>
           <h2 className="font-bold text-funding-black mb-3">Последние платежи</h2>

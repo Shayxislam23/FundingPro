@@ -15,7 +15,7 @@ export default function AuthPage() {
   const [mode, setMode] = useState<Mode>("choose");
   const [step, setStep] = useState<Step>("input");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -24,7 +24,7 @@ export default function AuthPage() {
     const next = [...otp];
     next[i] = v.slice(-1);
     setOtp(next);
-    if (v && i < 5) {
+    if (v && i < 7) {
       document.getElementById(`otp-${i + 1}`)?.focus();
     }
   }
@@ -56,7 +56,7 @@ export default function AuthPage() {
 
   async function handleVerifyOtp() {
     const token = otp.join("");
-    if (token.length < 6) { setError("Введите 6-значный код"); return; }
+    if (token.length < 8) { setError("Введите 8-значный код"); return; }
 
     setLoading(true);
     const { error: err } = await supabase.auth.verifyOtp({
@@ -219,7 +219,7 @@ export default function AuthPage() {
                   </div>
 
                   <label className="block text-xs font-medium mb-3" style={{ color: "#A7B8AA" }}>
-                    Введите 6-значный код
+                    Введите 8-значный код
                   </label>
 
                   <div className="flex gap-2 mb-4">
@@ -249,7 +249,7 @@ export default function AuthPage() {
 
                   <button
                     onClick={handleVerifyOtp}
-                    disabled={loading || otp.join("").length < 6}
+                    disabled={loading || otp.join("").length < 8}
                     className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 mb-4"
                     style={{ background: "#008A2E", color: "#fff" }}
                   >

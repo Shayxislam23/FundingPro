@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createSupabaseAdmin } from "@/lib/supabase-server";
 
 export async function GET() {
   let dbStatus = "ok";
   let dbError: string | null = null;
 
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    const supabase = createSupabaseAdmin();
+    const { error } = await supabase.from("grants").select("id").limit(1);
+    if (error) throw new Error(error.message);
   } catch (err) {
     dbStatus = "error";
     dbError = err instanceof Error ? err.message : "unknown";

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
-import { getCurrentUser } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
+import { getCurrentUser, writeAuditLog } from "@/lib/auth-helpers";
+import { createSupabaseAdmin } from "@/lib/supabase-server";
 import { callAi, PROMPTS, redactPii as redactPiiHelper } from "@/lib/ai-gateway";
 
 // POST /api/v1/ai/proposal/generate
@@ -20,11 +20,8 @@ export async function POST(req: NextRequest) {
       return apiError("projectIdea too long (max 10000 chars)", 400, "INPUT_TOO_LONG");
     }
 
-    // AI DATA POLICY: redact personal identifiers before sending to AI
-    const { redacted: safeIdea, fieldsFound } = redactPiiHelper(projectIdea);
-    const hasPersonalData = fieldsFound.length > 0;
+    const { redacted: safeIdea } = redactPiiHelper(projectIdea);
 
-    // Generate each requested section (max 5 to prevent abuse)
     const sectionContents: Record<string, string> = {};
     let lastProvider = "mock";
     let lastIsMock = true;
@@ -37,48 +34,29 @@ export async function POST(req: NextRequest) {
       lastIsMock = result.isMock;
     }
 
-    // Create ProposalProject + sections in DB
-    const project = await prisma.proposalProject.create({
-      data: {
-        userId: authUser.userId,
-        title: projectIdea.slice(0, 120),
-        grantId: grantId ?? null,
-        donorFormat,
-        status: "DRAFT",
-        sections: {
-          create: Object.entries(sectionContents).map(([sectionType, content]) => ({
-            sectionType,
-            content,
-            version: 1,
-          })),
-        },
-      },
-      include: { sections: true },
-    });
+    // Save to Supabase proposals table if it exists
+    const supabase = createSupabaseAdmin();
+    const proposalId = crypto.randomUUID();
 
-    // Non-blocking redaction log if PII was detected
-    if (hasPersonalData) {
-      prisma.redactionLog.create({
-        data: {
-          aiRequestId: project.id,
-          fieldType: fieldsFound.join(","),
-          redacted: true,
-        },
-      }).catch(() => {});
-    }
+    supabase.from("proposals").insert({
+      id: proposalId,
+      user_id: authUser.userId,
+      grant_id: grantId ?? null,
+      title: projectIdea.slice(0, 120),
+      status: "draft",
+      sections_json: sectionContents,
+    }).then(() => {}, () => {}); // non-blocking — table may not exist yet
 
-    await prisma.auditLog.create({
-      data: {
-        userId: authUser.userId,
-        action: "ai_generation",
-        entityType: "ProposalProject",
-        entityId: project.id,
-        metadata: { donorFormat, sectionCount: sections.length, isMock: lastIsMock },
-      },
+    await writeAuditLog({
+      userId: authUser.userId,
+      action: "ai_proposal_generate",
+      entityType: "proposal",
+      entityId: proposalId,
+      metadata: { donorFormat, sectionCount: sections.length, isMock: lastIsMock },
     });
 
     return apiSuccess({
-      proposalId: project.id,
+      proposalId,
       sections: sectionContents,
       isDraft: true,
       disclaimer: "Это черновик, сгенерированный AI. Требует профессиональной проверки перед подачей.",

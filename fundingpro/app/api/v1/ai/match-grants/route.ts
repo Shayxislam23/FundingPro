@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
+import { createSupabaseAdmin } from "@/lib/supabase-server";
 import { callAi, PROMPTS } from "@/lib/ai-gateway";
 
 // POST /api/v1/ai/match-grants
@@ -17,21 +17,18 @@ export async function POST(req: NextRequest) {
       return apiError("organizationProfile required", 400, "MISSING_FIELDS");
     }
 
-    // AI DATA POLICY: strip personal identifiers before sending to AI
+    // AI DATA POLICY: strip personal identifiers
     const safeProfile = sanitizeProfile(organizationProfile);
     const profileJson = JSON.stringify(safeProfile);
 
     const prompt = PROMPTS["match-grants"](profileJson);
     const aiResult = await callAi(prompt, { module: "match-grants", userId: authUser.userId });
 
-    // Parse AI response to extract matched grant IDs + scores
     let matches: { grantId: string; score: number; reason: string }[] = [];
     try {
       const parsed = JSON.parse(aiResult.content);
       if (Array.isArray(parsed)) matches = parsed;
-    } catch {
-      // AI returned non-JSON — return raw narrative instead
-    }
+    } catch { /* non-JSON response — return raw */ }
 
     return apiSuccess({
       matches,

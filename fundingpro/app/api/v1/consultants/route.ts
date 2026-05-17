@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
+import { createSupabaseAdmin } from "@/lib/supabase-server";
 
 // GET /api/v1/consultants
 export async function GET(req: NextRequest) {
@@ -13,29 +13,28 @@ export async function GET(req: NextRequest) {
   const country = searchParams.get("country") ?? "";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
-  const skip = (page - 1) * limit;
+  const from = (page - 1) * limit;
 
-  const where = {
-    isVerified: true,
-    isActive: true,
-    ...(specialty && { specialties: { has: specialty } }),
-    ...(country && { country }),
-  };
+  const supabase = createSupabaseAdmin();
 
-  const [consultants, total] = await Promise.all([
-    prisma.consultantProfile.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-      include: {
-        organization: {
-          select: { id: true, name: true, country: true, sector: true, website: true },
-        },
-      },
-    }),
-    prisma.consultantProfile.count({ where }),
-  ]);
+  let query = supabase
+    .from("consultant_profiles")
+    .select("*", { count: "exact" })
+    .eq("is_verified", true)
+    .eq("is_active", true)
+    .order("rating", { ascending: false })
+    .range(from, from + limit - 1);
 
-  return apiSuccess({ consultants, total, page, limit, pages: Math.ceil(total / limit) });
+  if (country) query = query.eq("country", country);
+  if (specialty) query = query.contains("specialties", [specialty]);
+
+  const { data: consultants, count, error } = await query;
+
+  // If table doesn't exist yet, return empty list gracefully
+  if (error && error.code === "42P01") {
+    return apiSuccess({ consultants: [], total: 0, page, limit });
+  }
+  if (error) return apiError("Internal error", 500, "INTERNAL_ERROR");
+
+  return apiSuccess({ consultants: consultants ?? [], total: count ?? 0, page, limit, pages: Math.ceil((count ?? 0) / limit) });
 }

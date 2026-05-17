@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
-import { getCurrentUser } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
+import { getCurrentUser, writeAuditLog } from "@/lib/auth-helpers";
+import { createSupabaseAdmin } from "@/lib/supabase-server";
 
 // GET /api/v1/applications
 export async function GET(req: NextRequest) {
@@ -12,37 +12,33 @@ export async function GET(req: NextRequest) {
   const status = searchParams.get("status") ?? "";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 100);
-  const skip = (page - 1) * limit;
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
 
-  const where = {
-    userId: authUser.userId,
-    ...(status && { status: status as never }),
-  };
+  const supabase = createSupabaseAdmin();
 
-  const [applications, total] = await Promise.all([
-    prisma.application.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { updatedAt: "desc" },
-      include: {
-        grant: {
-          select: {
-            id: true,
-            title: true,
-            deadline: true,
-            amountMin: true,
-            amountMax: true,
-            currency: true,
-            donor: { select: { shortName: true } },
-          },
-        },
-      },
-    }),
-    prisma.application.count({ where }),
-  ]);
+  let query = supabase
+    .from("applications")
+    .select(`
+      id,
+      status,
+      stage,
+      notes,
+      created_at,
+      updated_at,
+      grant:grants ( id, title, deadline, amount_min, amount_max, currency, donor:donors ( name, name_ru ) )
+    `, { count: "exact" })
+    .eq("user_id", authUser.userId)
+    .order("updated_at", { ascending: false })
+    .range(from, to);
 
-  return apiSuccess({ applications, total, page, limit, pages: Math.ceil(total / limit) });
+  if (status) query = query.eq("status", status);
+
+  const { data: applications, count, error } = await query;
+  if (error) return apiError("Internal error", 500, "INTERNAL_ERROR");
+
+  const total = count ?? 0;
+  return apiSuccess({ applications: applications ?? [], total, page, limit, pages: Math.ceil(total / limit) });
 }
 
 // POST /api/v1/applications
@@ -53,39 +49,35 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { grantId, notes } = body;
-
     if (!grantId) return apiError("grantId required", 400, "MISSING_FIELDS");
 
+    const supabase = createSupabaseAdmin();
+
     // Verify grant exists
-    const grant = await prisma.grant.findUnique({ where: { id: grantId, isActive: true } });
+    const { data: grant } = await supabase.from("grants").select("id").eq("id", grantId).eq("is_active", true).single();
     if (!grant) return apiError("Grant not found", 404, "GRANT_NOT_FOUND");
 
-    // Prevent duplicate applications
-    const existing = await prisma.application.findFirst({
-      where: { userId: authUser.userId, grantId },
-    });
+    // Prevent duplicate
+    const { data: existing } = await supabase
+      .from("applications")
+      .select("id, status")
+      .eq("user_id", authUser.userId)
+      .eq("grant_id", grantId)
+      .maybeSingle();
+
     if (existing) {
       return apiSuccess({ applicationId: existing.id, status: existing.status, alreadyExists: true });
     }
 
-    const application = await prisma.application.create({
-      data: {
-        userId: authUser.userId,
-        grantId,
-        status: "SAVED",
-        notes: notes ?? null,
-      },
-    });
+    const { data: application, error } = await supabase
+      .from("applications")
+      .insert({ user_id: authUser.userId, grant_id: grantId, status: "saved", notes: notes ?? null })
+      .select("id, status")
+      .single();
 
-    await prisma.auditLog.create({
-      data: {
-        userId: authUser.userId,
-        action: "application_create",
-        entityType: "Application",
-        entityId: application.id,
-        metadata: { grantId, status: "SAVED" },
-      },
-    });
+    if (error) throw new Error(error.message);
+
+    await writeAuditLog({ userId: authUser.userId, action: "application_create", entityType: "application", entityId: application.id, metadata: { grantId } });
 
     return apiSuccess({ applicationId: application.id, status: application.status }, 201);
   } catch (err) {

@@ -1,0 +1,670 @@
+// FundingPro — Prisma Schema
+// Company: Beta Version Solutions ООО, DGU No. 61712
+// IMPORTANT: No lending/credit/loan/borrower/wallet/deposit/microfinance terminology anywhere.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USERS & AUTH ─────────────────────────────────────────────────────────────
+
+model User {
+  id               String   @id @default(uuid())
+  phone            String?  @unique
+  email            String?  @unique
+  emailVerified    Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  isBanned         Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
+
+  identities       UserIdentity[]
+  zoomradAccount   ZoomradAccount?
+  organizationMemberships OrganizationMember[]
+  subscriptions    Subscription[]
+  payments         Payment[]
+  savedGrants      SavedGrant[]
+  eligibilityChecks EligibilityCheck[]
+  proposalProjects ProposalProject[]
+  documents        Document[]
+  applications     Application[]
+  consultantOrders ConsultantOrder[]
+  supportTickets   SupportTicket[]
+  aiRequests       AIRequest[]
+  auditLogs        AuditLog[]
+  notifications    Notification[]
+
+  @@index([phone])
+  @@index([email])
+  @@index([isActive])
+}
+
+model UserIdentity {
+  id         String   @id @default(uuid())
+  userId     String
+  provider   String   // "otp_phone", "otp_email", "zoomrad"
+  providerId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@index([userId])
+}
+
+model ZoomradAccount {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  zoomradUserId String   @unique
+  accessToken   String?  // encrypted
+  refreshToken  String?  // encrypted
+  tokenExpiry   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([zoomradUserId])
+}
+
+// ─── ORGANIZATIONS ────────────────────────────────────────────────────────────
+
+model Organization {
+  id              String   @id @default(uuid())
+  name            String
+  legalName       String?
+  type            OrgType  @default(NGO)
+  country         String?
+  city            String?
+  sector          String?
+  description     String?
+  website         String?
+  registrationNo  String?
+  taxId           String?  // stored encrypted
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  members         OrganizationMember[]
+  applications    Application[]
+  consultantProfile ConsultantProfile?
+
+  @@index([type])
+  @@index([country])
+  @@index([isVerified])
+}
+
+model OrganizationMember {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  role           MemberRole @default(MEMBER)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+// ─── GRANTS ───────────────────────────────────────────────────────────────────
+
+model Grant {
+  id              String    @id @default(uuid())
+  title           String
+  titleUz         String?
+  donorId         String
+  description     String?
+  sector          String[]
+  country         String[]
+  amountMin       Decimal?
+  amountMax       Decimal?
+  currency        String    @default("USD")
+  deadline        DateTime?
+  openDate        DateTime?
+  eligibleTypes   String[]  // ["NGO", "Individual", "Business"]
+  sourceUrl       String?
+  isActive        Boolean   @default(true)
+  isFeatured      Boolean   @default(false)
+  lastUpdatedAt   DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  donor           Donor     @relation(fields: [donorId], references: [id])
+  requirements    GrantRequirement[]
+  savedByUsers    SavedGrant[]
+  applications    Application[]
+  eligibilityChecks EligibilityCheck[]
+
+  @@index([donorId])
+  @@index([isActive])
+  @@index([deadline])
+  @@index([sector])
+  @@index([country])
+}
+
+model Donor {
+  id          String   @id @default(uuid())
+  name        String
+  shortName   String?
+  country     String?
+  website     String?
+  description String?
+  logoUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  grants      Grant[]
+
+  @@index([isActive])
+}
+
+model GrantRequirement {
+  id          String   @id @default(uuid())
+  grantId     String
+  category    String   // "documents", "org_type", "experience", "budget"
+  description String
+  isRequired  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  grant       Grant    @relation(fields: [grantId], references: [id], onDelete: Cascade)
+
+  @@index([grantId])
+}
+
+model SavedGrant {
+  id        String   @id @default(uuid())
+  userId    String
+  grantId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grant     Grant    @relation(fields: [grantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, grantId])
+  @@index([userId])
+  @@index([grantId])
+}
+
+// ─── ELIGIBILITY ──────────────────────────────────────────────────────────────
+
+model EligibilityCheck {
+  id          String              @id @default(uuid())
+  userId      String
+  grantId     String?
+  answers     Json
+  score       Int                 // 0–100
+  status      EligibilityStatus   @default(PENDING)
+  strengths   String[]
+  gaps        String[]
+  nextSteps   String[]
+  aiRequestId String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grant       Grant?              @relation(fields: [grantId], references: [id])
+
+  @@index([userId])
+  @@index([grantId])
+  @@index([status])
+}
+
+// ─── PROPOSALS ────────────────────────────────────────────────────────────────
+
+model ProposalProject {
+  id           String          @id @default(uuid())
+  userId       String
+  title        String
+  grantId      String?
+  donorFormat  String?         // "UNDP", "EU", "GIZ", "World Bank"
+  status       ProposalStatus  @default(DRAFT)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections     ProposalSection[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model ProposalSection {
+  id          String   @id @default(uuid())
+  projectId   String
+  sectionType String   // "summary", "problem", "goal", "activities", "results", "budget", "logframe", "risks"
+  content     String   @db.Text
+  version     Int      @default(1)
+  aiRequestId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     ProposalProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+// ─── APPLICATIONS / TRACKER ───────────────────────────────────────────────────
+
+model Application {
+  id             String            @id @default(uuid())
+  userId         String
+  organizationId String?
+  grantId        String
+  status         ApplicationStatus @default(SAVED)
+  notes          String?           @db.Text
+  submittedAt    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization?     @relation(fields: [organizationId], references: [id])
+  grant          Grant             @relation(fields: [grantId], references: [id])
+
+  @@index([userId])
+  @@index([grantId])
+  @@index([status])
+}
+
+// ─── DOCUMENTS ────────────────────────────────────────────────────────────────
+
+model Document {
+  id           String       @id @default(uuid())
+  userId       String
+  fileName     String
+  fileType     String
+  fileSize     Int
+  storagePath  String       // private, no public URL
+  docType      DocType      @default(OTHER)
+  isActive     Boolean      @default(true)
+  uploadedAt   DateTime     @default(now())
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([docType])
+  @@index([isActive])
+}
+
+// ─── PLANS & SUBSCRIPTIONS ────────────────────────────────────────────────────
+
+model Plan {
+  id            String   @id @default(uuid())
+  name          String
+  nameRu        String?
+  targetType    PlanTarget // "NGO", "INDIVIDUAL", "BUSINESS"
+  priceUsd      Decimal
+  billingPeriod String   @default("monthly")
+  features      Json
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([targetType])
+  @@index([isActive])
+}
+
+model Subscription {
+  id         String             @id @default(uuid())
+  userId     String
+  planId     String
+  status     SubscriptionStatus @default(PENDING)
+  startDate  DateTime?
+  endDate    DateTime?
+  cancelledAt DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan       Plan               @relation(fields: [planId], references: [id])
+  payments   Payment[]
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+}
+
+// ─── PAYMENTS ─────────────────────────────────────────────────────────────────
+
+model Payment {
+  id               String        @id @default(uuid())
+  userId           String
+  subscriptionId   String?
+  amountUsd        Decimal
+  currency         String        @default("USD")
+  status           PaymentStatus @default(PENDING)
+  provider         String        @default("zoomrad")
+  providerRefId    String?       // ZOOMRAD transaction ID
+  idempotencyKey   String        @unique
+  serviceType      String        // "subscription", "success_fee", "consultant_order", "ai_service", "grant_pack"
+  metadata         Json?
+  activatedAt      DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription     Subscription? @relation(fields: [subscriptionId], references: [id])
+  events           PaymentEvent[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([providerRefId])
+  @@index([idempotencyKey])
+  @@index([serviceType])
+}
+
+model PaymentEvent {
+  id        String   @id @default(uuid())
+  paymentId String
+  eventType String   // "created", "pending", "success", "failed", "refunded"
+  payload   Json
+  source    String   @default("webhook") // "webhook", "manual", "system"
+  createdAt DateTime @default(now())
+
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([eventType])
+}
+
+// ─── REVENUE SHARE ────────────────────────────────────────────────────────────
+
+model PartnerCommissionRule {
+  id                  String   @id @default(uuid())
+  partner             String   @default("zoomrad")
+  minTransactions     Int
+  maxTransactions     Int?
+  partnerSharePct     Decimal  // e.g. 28.00
+  platformSharePct    Decimal  // e.g. 72.00
+  isActive            Boolean  @default(true)
+  effectiveFrom       DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([partner])
+  @@index([isActive])
+}
+
+model RevenueShareEvent {
+  id              String   @id @default(uuid())
+  paymentId       String
+  period          String   // "2025-05"
+  totalTransactions Int
+  grossAmountUsd  Decimal
+  partnerShareUsd Decimal
+  platformShareUsd Decimal
+  ruleId          String
+  createdAt       DateTime @default(now())
+
+  @@index([paymentId])
+  @@index([period])
+}
+
+// ─── AI SYSTEM ────────────────────────────────────────────────────────────────
+
+model AIRequest {
+  id              String   @id @default(uuid())
+  userId          String
+  requestType     String   // "match-grants", "proposal/generate", "eligibility/check", etc.
+  model           String
+  promptVersion   String?
+  inputTokens     Int      @default(0)
+  outputTokens    Int      @default(0)
+  hasPersonalData Boolean  @default(false)
+  redactionApplied Boolean @default(false)
+  status          String   @default("success") // "success", "failed", "rate_limited"
+  latencyMs       Int?
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  redactionLogs   RedactionLog[]
+
+  @@index([userId])
+  @@index([requestType])
+  @@index([createdAt])
+}
+
+model RedactionLog {
+  id          String   @id @default(uuid())
+  aiRequestId String
+  fieldType   String   // "full_name", "phone", "email", "pinfl", "passport", etc.
+  redacted    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  aiRequest   AIRequest @relation(fields: [aiRequestId], references: [id], onDelete: Cascade)
+
+  @@index([aiRequestId])
+}
+
+// ─── CONSULTANTS ──────────────────────────────────────────────────────────────
+
+model ConsultantProfile {
+  id             String   @id @default(uuid())
+  organizationId String   @unique
+  bio            String?
+  specialties    String[]
+  country        String?
+  rating         Decimal  @default(0)
+  reviewCount    Int      @default(0)
+  isVerified     Boolean  @default(false)
+  verifiedAt     DateTime?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orders         ConsultantOrder[]
+
+  @@index([isVerified])
+  @@index([isActive])
+  @@index([country])
+}
+
+model ConsultantOrder {
+  id           String              @id @default(uuid())
+  clientUserId String
+  consultantId String
+  packageName  String
+  amountUsd    Decimal
+  status       ConsultantOrderStatus @default(PENDING)
+  notes        String?
+  disputeStatus String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  clientUser   User                @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  consultant   ConsultantProfile   @relation(fields: [consultantId], references: [id])
+
+  @@index([clientUserId])
+  @@index([consultantId])
+  @@index([status])
+}
+
+// ─── SUPPORT ──────────────────────────────────────────────────────────────────
+
+model SupportTicket {
+  id        String        @id @default(uuid())
+  userId    String
+  subject   String
+  message   String        @db.Text
+  status    TicketStatus  @default(OPEN)
+  priority  String        @default("normal")
+  resolvedAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  body      String?
+  isRead    Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+// ─── AUDIT LOGS ───────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String   // "login", "payment_create", "document_upload", etc.
+  entityType String?
+  entityId   String?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   @db.Text
+  category  String   @default("general")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum OrgType {
+  NGO
+  INDIVIDUAL
+  BUSINESS
+  GOVERNMENT
+  ACADEMIC
+  OTHER
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum EligibilityStatus {
+  PENDING
+  ELIGIBLE
+  PARTIALLY_ELIGIBLE
+  NOT_ELIGIBLE
+}
+
+enum ProposalStatus {
+  DRAFT
+  IN_REVIEW
+  READY
+  SUBMITTED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  SAVED
+  PREPARING
+  DRAFTING
+  READY
+  SUBMITTED
+  UNDER_REVIEW
+  SHORTLISTED
+  WON
+  LOST
+  REPORTING
+  CLOSED
+}
+
+enum DocType {
+  CHARTER
+  REGISTRATION
+  FINANCIAL_REPORT
+  CV
+  SUPPORT_LETTER
+  AUDIT_REPORT
+  TAX_CERTIFICATE
+  OTHER
+}
+
+enum PlanTarget {
+  NGO
+  INDIVIDUAL
+  BUSINESS
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  SUSPENDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  REFUNDED
+  DISPUTED
+}
+
+enum ConsultantOrderStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}

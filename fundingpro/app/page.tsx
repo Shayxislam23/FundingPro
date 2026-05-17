@@ -58,7 +58,7 @@ export default function LandingPage() {
         <nav className="flex items-center justify-between px-6 md:px-12 py-6 border-b border-white/5">
           <FundingProLogo variant="dark" size="md" />
           <Link
-            href="/dashboard"
+            href="/auth"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-funding-green text-white text-sm font-semibold hover:bg-funding-accent transition-colors"
           >
             Войти <ArrowRight className="w-3 h-3" />
@@ -99,7 +99,7 @@ export default function LandingPage() {
             </p>
 
             <Link
-              href="/dashboard"
+              href="/auth"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-sm transition-colors"
               style={{ background: "#008A2E", color: "#fff" }}
             >
@@ -274,7 +274,7 @@ export default function LandingPage() {
             Используйте полный веб-дашборд для поиска грантов и подготовки заявок.
           </p>
           <Link
-            href="/dashboard"
+            href="/auth"
             className="inline-block px-6 py-3.5 rounded-xl font-semibold text-sm transition-colors"
             style={{ background: "#008A2E", color: "#fff" }}
           >

@@ -1,29 +1,127 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { StatusBadge } from "@/components/design/StatusBadge";
 import { EmptyState } from "@/components/design/EmptyState";
-import { BarChart3, Plus, Calendar, DollarSign, ChevronDown, Filter } from "lucide-react";
+import { BarChart3, Plus, Loader2, ChevronDown } from "lucide-react";
 
 type ApplicationStatus =
-  | "saved" | "preparing" | "drafting" | "ready" | "submitted"
-  | "under_review" | "shortlisted" | "won" | "lost" | "reporting" | "closed";
+  | "SAVED" | "PREPARING" | "DRAFTING" | "READY" | "SUBMITTED"
+  | "UNDER_REVIEW" | "SHORTLISTED" | "WON" | "LOST" | "REPORTING" | "CLOSED";
 
-const mockApplications = [
-  { id: "1", grantTitle: "UNDP Small Grants Programme", donor: "UNDP Узбекистан", amount: "до $50,000", deadline: "30.06.2025", status: "drafting" as ApplicationStatus, updatedAt: "15.05.2025" },
-  { id: "2", grantTitle: "GIZ CCD — Климат", donor: "GIZ / BMZ", amount: "до $100,000", deadline: "01.08.2025", status: "submitted" as ApplicationStatus, updatedAt: "10.05.2025" },
-  { id: "3", grantTitle: "World Bank BETF — Образование", donor: "World Bank", amount: "$20,000 – $80,000", deadline: "20.07.2025", status: "shortlisted" as ApplicationStatus, updatedAt: "01.05.2025" },
-  { id: "4", grantTitle: "EU EIDHR — Права человека", donor: "Европейский Союз", amount: "€30,000 – €150,000", deadline: "15.07.2025", status: "preparing" as ApplicationStatus, updatedAt: "20.05.2025" },
-];
+type Application = {
+  id: string;
+  status: ApplicationStatus;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  grant: {
+    id: string;
+    title: string;
+    deadline: string | null;
+    amountMin: string | null;
+    amountMax: string | null;
+    currency: string;
+    donor: { shortName: string | null };
+  };
+};
 
-const allStatuses: ApplicationStatus[] = ["saved", "preparing", "drafting", "ready", "submitted", "under_review", "shortlisted", "won", "lost", "reporting", "closed"];
+const STATUS_FILTER_LABELS: Partial<Record<ApplicationStatus, string>> = {
+  SAVED: "Сохранено",
+  PREPARING: "Подготовка",
+  DRAFTING: "Черновик",
+  READY: "Готово",
+  SUBMITTED: "Подана",
+  UNDER_REVIEW: "На рассмотрении",
+  SHORTLISTED: "Шортлист",
+  WON: "Получено",
+  LOST: "Отклонено",
+};
+
+const STATUS_DISPLAY: Record<string, string> = {
+  SAVED: "Сохранено",
+  PREPARING: "Подготовка",
+  DRAFTING: "Черновик",
+  READY: "Готово",
+  SUBMITTED: "Подана",
+  UNDER_REVIEW: "На рассмотрении",
+  SHORTLISTED: "Шортлист",
+  WON: "Получено",
+  LOST: "Отклонено",
+  REPORTING: "Отчётность",
+  CLOSED: "Закрыто",
+};
+
+function formatDeadline(d: string | null) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function formatAmount(min: string | null, max: string | null, currency: string) {
+  if (!min && !max) return "—";
+  if (max) return `до ${currency} ${Number(max).toLocaleString()}`;
+  return `${currency} ${Number(min).toLocaleString()}+`;
+}
+
+const NEXT_STATUSES: Partial<Record<ApplicationStatus, ApplicationStatus[]>> = {
+  SAVED: ["PREPARING"],
+  PREPARING: ["DRAFTING"],
+  DRAFTING: ["READY"],
+  READY: ["SUBMITTED"],
+  SUBMITTED: ["UNDER_REVIEW"],
+  UNDER_REVIEW: ["SHORTLISTED", "LOST"],
+  SHORTLISTED: ["WON", "LOST"],
+  WON: ["REPORTING"],
+  REPORTING: ["CLOSED"],
+};
 
 export default function TrackerDashboard() {
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  const filtered = mockApplications.filter((a) => filterStatus === "all" || a.status === filterStatus);
+  const fetchApplications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: "50" });
+      if (filterStatus !== "all") params.set("status", filterStatus);
+      const res = await fetch(`/api/v1/applications?${params}`);
+      const data = await res.json();
+      setApplications(data.data?.applications ?? []);
+    } catch {
+      setApplications([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filterStatus]);
+
+  useEffect(() => { fetchApplications(); }, [fetchApplications]);
+
+  const updateStatus = async (id: string, status: ApplicationStatus) => {
+    setUpdatingId(id);
+    setOpenMenuId(null);
+    try {
+      await fetch(`/api/v1/applications/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      await fetchApplications();
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const stats = {
+    total: applications.length,
+    active: applications.filter((a) => !["WON", "LOST", "CLOSED"].includes(a.status)).length,
+    won: applications.filter((a) => a.status === "WON").length,
+    shortlisted: applications.filter((a) => a.status === "SHORTLISTED").length,
+  };
 
   return (
     <div>
@@ -45,10 +143,10 @@ export default function TrackerDashboard() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Всего", value: mockApplications.length, color: "#050505" },
-          { label: "Активных", value: mockApplications.filter((a) => !["won", "lost", "closed"].includes(a.status)).length, color: "#008A2E" },
-          { label: "Получено", value: mockApplications.filter((a) => a.status === "won").length, color: "#12B94F" },
-          { label: "Шортлист", value: mockApplications.filter((a) => a.status === "shortlisted").length, color: "#d97706" },
+          { label: "Всего", value: stats.total, color: "#050505" },
+          { label: "Активных", value: stats.active, color: "#008A2E" },
+          { label: "Получено", value: stats.won, color: "#12B94F" },
+          { label: "Шортлист", value: stats.shortlisted, color: "#d97706" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white rounded-2xl border border-gray-100 p-4 text-center">
             <div className="text-3xl font-black mb-1" style={{ color }}>{value}</div>
@@ -67,21 +165,24 @@ export default function TrackerDashboard() {
           >
             Все
           </button>
-          {allStatuses.slice(0, 6).map((s) => (
+          {Object.entries(STATUS_FILTER_LABELS).map(([s, label]) => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
               className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
               style={filterStatus === s ? { background: "#008A2E", color: "#fff" } : { background: "#F7FAF7", color: "#4A5A4D", border: "1px solid #e5e7eb" }}
             >
-              <StatusBadge status={s as ApplicationStatus} className="!px-0 !py-0 !bg-transparent !text-inherit" />
+              {label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Table */}
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-funding-green" />
+        </div>
+      ) : applications.length === 0 ? (
         <EmptyState
           icon={BarChart3}
           title="Нет заявок"
@@ -106,26 +207,56 @@ export default function TrackerDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((app, i) => (
+                {applications.map((app, i) => (
                   <tr
                     key={app.id}
-                    style={{ borderBottom: i < filtered.length - 1 ? "1px solid #f9fafb" : "none" }}
+                    style={{ borderBottom: i < applications.length - 1 ? "1px solid #f9fafb" : "none" }}
                     className="hover:bg-funding-light-bg transition-colors"
                   >
                     <td className="px-4 py-3">
-                      <p className="text-sm font-semibold text-funding-black">{app.grantTitle}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{app.donor}</p>
+                      <p className="text-sm font-semibold text-funding-black">{app.grant.title}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{app.grant.donor.shortName ?? "—"}</p>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{app.amount}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{app.deadline}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={app.status} />
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {formatAmount(app.grant.amountMin, app.grant.amountMax, app.grant.currency)}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">{app.updatedAt}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{formatDeadline(app.grant.deadline)}</td>
                     <td className="px-4 py-3">
-                      <button className="text-xs font-semibold" style={{ color: "#008A2E" }}>
-                        Открыть
-                      </button>
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600">
+                        {STATUS_DISPLAY[app.status] ?? app.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-400">
+                      {new Date(app.updatedAt).toLocaleDateString("ru-RU")}
+                    </td>
+                    <td className="px-4 py-3 relative">
+                      {updatingId === app.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-funding-green" />
+                      ) : NEXT_STATUSES[app.status]?.length ? (
+                        <div className="relative inline-block">
+                          <button
+                            onClick={() => setOpenMenuId(openMenuId === app.id ? null : app.id)}
+                            className="flex items-center gap-1 text-xs font-semibold text-funding-green hover:opacity-80"
+                          >
+                            Статус <ChevronDown className="w-3 h-3" />
+                          </button>
+                          {openMenuId === app.id && (
+                            <div className="absolute right-0 top-6 z-10 bg-white border border-gray-200 rounded-xl shadow-lg p-1 min-w-36">
+                              {NEXT_STATUSES[app.status]!.map((s) => (
+                                <button
+                                  key={s}
+                                  onClick={() => updateStatus(app.id, s)}
+                                  className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-funding-light-bg text-gray-700"
+                                >
+                                  → {STATUS_DISPLAY[s]}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}

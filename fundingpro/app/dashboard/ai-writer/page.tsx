@@ -2,56 +2,84 @@
 
 import { useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { Sparkles, FileText, Copy, Download, RefreshCcw, AlertTriangle } from "lucide-react";
+import { Sparkles, Copy, RefreshCcw, AlertTriangle, Loader2, CheckCircle2 } from "lucide-react";
 
-const sections = [
-  "Резюме проекта",
-  "Постановка проблемы",
-  "Цель и задачи",
-  "Деятельность и план",
-  "Ожидаемые результаты и KPI",
-  "Бюджетное обоснование",
-  "Логфрейм",
-  "Управление рисками",
-  "Устойчивость проекта",
-];
+const SECTION_KEYS: Record<string, string> = {
+  summary: "Резюме проекта",
+  problem: "Постановка проблемы",
+  goal: "Цель и задачи",
+  activities: "Деятельность и план",
+  results: "Ожидаемые результаты и KPI",
+  budget: "Бюджетное обоснование",
+  logframe: "Логфрейм",
+  risks: "Управление рисками",
+  sustainability: "Устойчивость проекта",
+};
 
-const mockOutput = `## Резюме проекта
+const sectionKeys = Object.keys(SECTION_KEYS);
+const defaultSelected = sectionKeys.slice(0, 4);
 
-Проект «ЭкоБудущее» направлен на восстановление деградированных пастбищных земель в Сурхандарьинской области Узбекистана. В течение 18 месяцев организация планирует охватить 500 фермерских хозяйств, внедрить устойчивые практики землепользования и создать местную систему мониторинга состояния пастбищ.
+const donorFormats = ["UNDP", "EU", "GIZ", "World Bank", "USAID", "Aga Khan"];
 
-**Постановка проблемы:** По данным Министерства водного хозяйства Узбекистана, более 40% пастбищных угодий в Сурхандарье деградированы, что приводит к снижению доходов фермерских хозяйств на 30–35% и усилению процессов опустынивания.
-
-**Цель:** Сократить деградацию пастбищ в целевых районах на 25% путём внедрения устойчивых практик управления пастбищами среди 500 фермерских хозяйств.
-
-**Задачи:**
-1. Провести обучение 500 фермеров современным методам ротационного выпаса
-2. Заложить 10 демонстрационных участков по устойчивому управлению пастбищами
-3. Создать систему местного мониторинга на базе мобильного приложения
-4. Разработать рекомендации для масштабирования на уровне региона
-
-**Ожидаемые результаты:**
-- 500 фермеров прошли обучение (из них 40% женщины)
-- 1,200 га восстановленных пастбищ
-- 20 местных агентов-мониторинга подготовлены
-- Региональные рекомендации переданы в профильный орган
-
----
-*Данный черновик сгенерирован FundingPro AI. Требуется профессиональная редактура перед подачей.*`;
+type ProposalResult = {
+  proposalId: string;
+  sections: Record<string, string>;
+  isDraft: boolean;
+  disclaimer: string;
+  isMockAi: boolean;
+  aiProvider: string;
+};
 
 export default function AIWriterDashboard() {
   const [step, setStep] = useState<"form" | "generating" | "output">("form");
   const [projectIdea, setProjectIdea] = useState("");
   const [donorFormat, setDonorFormat] = useState("UNDP");
-  const [selectedSections, setSelectedSections] = useState<string[]>(sections.slice(0, 4));
+  const [selectedSections, setSelectedSections] = useState<string[]>(defaultSelected);
+  const [result, setResult] = useState<ProposalResult | null>(null);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("");
 
   const toggleSection = (s: string) =>
-    setSelectedSections((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
+    setSelectedSections((prev) =>
+      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+    );
 
-  const generate = () => {
+  const generate = async () => {
     setStep("generating");
-    setTimeout(() => setStep("output"), 3000);
+    setError("");
+    try {
+      const res = await fetch("/api/v1/ai/proposal/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectIdea,
+          donorFormat,
+          sections: selectedSections,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Ошибка генерации");
+      setResult(data.data);
+      setActiveSection(selectedSections[0] ?? "");
+      setStep("output");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка");
+      setStep("form");
+    }
   };
+
+  const copyAll = async () => {
+    if (!result) return;
+    const text = Object.entries(result.sections)
+      .map(([k, v]) => `## ${SECTION_KEYS[k] ?? k}\n\n${v}`)
+      .join("\n\n---\n\n");
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const currentContent = result?.sections[activeSection] ?? "";
 
   return (
     <div>
@@ -63,29 +91,39 @@ export default function AIWriterDashboard() {
         </p>
       </div>
 
+      {error && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       {step === "generating" && (
         <div className="flex flex-col items-center justify-center py-24">
-          <div className="relative w-16 h-16 mb-6">
-            <div
-              className="w-16 h-16 rounded-full border-2 border-t-transparent animate-spin"
-              style={{ borderColor: "#008A2E", borderTopColor: "transparent" }}
-            />
-            <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-funding-green" />
-          </div>
+          <Loader2 className="w-14 h-14 animate-spin text-funding-green mb-6" />
           <h2 className="text-lg font-bold text-funding-black mb-2">AI создаёт предложение...</h2>
           <p className="text-sm text-gray-400">Формат: {donorFormat} · {selectedSections.length} разделов</p>
           <p className="text-xs text-gray-300 mt-2">Персональные данные не передаются AI-провайдеру</p>
         </div>
       )}
 
-      {step === "output" && (
+      {step === "output" && result && (
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div>
-                  <p className="text-xs font-semibold text-funding-green">Формат: {donorFormat}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Черновик — требует редактирования</p>
+                  <p className="text-xs font-semibold text-funding-green">
+                    Формат: {donorFormat}
+                    {result.isMockAi && (
+                      <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-semibold">
+                        DEMO
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Черновик · ID: <span className="font-mono">{result.proposalId.slice(0, 8)}…</span>
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -95,19 +133,38 @@ export default function AIWriterDashboard() {
                     <RefreshCcw className="w-3 h-3" />
                     Новый
                   </button>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-50 text-gray-600">
-                    <Copy className="w-3 h-3" />
-                    Копировать
-                  </button>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white" style={{ background: "#008A2E" }}>
-                    <Download className="w-3 h-3" />
-                    Скачать
+                  <button
+                    onClick={copyAll}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-200 hover:bg-gray-50 text-gray-600"
+                  >
+                    {copied ? <CheckCircle2 className="w-3 h-3 text-funding-green" /> : <Copy className="w-3 h-3" />}
+                    {copied ? "Скопировано" : "Копировать"}
                   </button>
                 </div>
               </div>
+
+              {/* Section tabs */}
+              <div className="flex gap-1 overflow-x-auto px-5 pt-4 pb-0 border-b border-gray-100">
+                {selectedSections.map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => setActiveSection(k)}
+                    className="flex-shrink-0 px-3 py-2 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-px"
+                    style={
+                      activeSection === k
+                        ? { color: "#008A2E", borderColor: "#008A2E", background: "rgba(0,138,46,0.04)" }
+                        : { color: "#9ca3af", borderColor: "transparent" }
+                    }
+                  >
+                    {SECTION_KEYS[k] ?? k}
+                  </button>
+                ))}
+              </div>
+
+              {/* Content */}
               <div className="p-5">
-                <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed text-sm">
-                  {mockOutput}
+                <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line leading-relaxed text-sm min-h-48">
+                  {currentContent || <span className="text-gray-400 italic">Раздел пуст</span>}
                 </div>
               </div>
             </div>
@@ -120,9 +177,7 @@ export default function AIWriterDashboard() {
                 <p className="text-xs font-bold text-amber-800">Важно</p>
               </div>
               <p className="text-xs text-amber-700 leading-relaxed">
-                Это черновик, сгенерированный AI на основе введённых данных. Перед подачей
-                необходима профессиональная проверка и редактура. FundingPro не гарантирует
-                одобрение заявки донором.
+                {result.disclaimer}
               </p>
             </div>
           </div>
@@ -155,31 +210,32 @@ export default function AIWriterDashboard() {
                 Разделы предложения
               </label>
               <div className="grid sm:grid-cols-2 gap-2">
-                {sections.map((s) => (
+                {sectionKeys.map((k) => (
                   <button
-                    key={s}
-                    onClick={() => toggleSection(s)}
+                    key={k}
+                    onClick={() => toggleSection(k)}
                     className="flex items-center gap-2.5 p-3 rounded-xl border text-left text-sm transition-all"
                     style={{
-                      background: selectedSections.includes(s) ? "rgba(0,138,46,0.06)" : "#F7FAF7",
-                      borderColor: selectedSections.includes(s) ? "#008A2E" : "#e5e7eb",
+                      background: selectedSections.includes(k) ? "rgba(0,138,46,0.06)" : "#F7FAF7",
+                      borderColor: selectedSections.includes(k) ? "#008A2E" : "#e5e7eb",
                     }}
                   >
                     <span
                       className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 text-[10px] font-bold"
                       style={{
-                        background: selectedSections.includes(s) ? "#008A2E" : "#e5e7eb",
-                        color: selectedSections.includes(s) ? "#fff" : "#9ca3af",
+                        background: selectedSections.includes(k) ? "#008A2E" : "#e5e7eb",
+                        color: selectedSections.includes(k) ? "#fff" : "#9ca3af",
                       }}
                     >
-                      {selectedSections.includes(s) ? "✓" : ""}
+                      {selectedSections.includes(k) ? "✓" : ""}
                     </span>
-                    <span className="font-medium" style={{ color: selectedSections.includes(s) ? "#008A2E" : "#4A5A4D" }}>
-                      {s}
+                    <span className="font-medium" style={{ color: selectedSections.includes(k) ? "#008A2E" : "#4A5A4D" }}>
+                      {SECTION_KEYS[k]}
                     </span>
                   </button>
                 ))}
               </div>
+              <p className="text-xs text-gray-400 mt-2">Максимум 5 разделов за раз</p>
             </div>
           </div>
 
@@ -190,7 +246,7 @@ export default function AIWriterDashboard() {
                 Формат донора
               </label>
               <div className="space-y-2">
-                {["UNDP", "EU", "GIZ", "World Bank", "USAID", "Aga Khan"].map((f) => (
+                {donorFormats.map((f) => (
                   <button
                     key={f}
                     onClick={() => setDonorFormat(f)}
@@ -220,8 +276,7 @@ export default function AIWriterDashboard() {
 
             <div className="bg-funding-light-green rounded-2xl p-4 text-xs text-funding-text-muted-light leading-relaxed">
               <p className="font-semibold mb-1 text-funding-green">Политика конфиденциальности AI</p>
-              Персональные данные, ПИНФЛ, паспортные данные, реквизиты организации — не передаются
-              внешним AI-провайдерам. Данные хранятся в Узбекистане.
+              Персональные данные, ПИНФЛ, паспортные данные, реквизиты организации — не передаются внешним AI-провайдерам.
             </div>
           </div>
         </div>

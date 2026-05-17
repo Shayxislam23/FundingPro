@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { GrantCard } from "@/components/design/GrantCard";
 import { Search, Loader2 } from "lucide-react";
+import { translateSector } from "@/lib/sector-labels";
 
 type Grant = {
   id: string;
@@ -18,28 +19,34 @@ type Grant = {
   donor: { name: string | null; name_ru: string | null };
 };
 
-const sectors = ["Все", "Экология", "Образование", "Здравоохранение", "Климат", "Права человека", "Гражданское общество", "Экономика"];
-const sortOptions = [
-  { value: "featured", label: "По рекомендации" },
-  { value: "deadline", label: "По дедлайну" },
-];
+const TODAY = new Date("2026-05-18");
+
+const sectorFilters = ["Все", "Экология", "Образование", "Здравоохранение", "Климат", "Права человека", "Гражданское общество", "Экономика", "Исследования", "Биотехнологии", "Водные ресурсы"];
 
 function formatAmount(min: number | null, max: number | null) {
-  if (!min && !max) return "—";
+  if (!min && !max) return null;
   if (min && max) return `$${min.toLocaleString()} – $${max.toLocaleString()}`;
   if (max) return `до $${max.toLocaleString()}`;
   return `от $${min!.toLocaleString()}`;
 }
 
-function formatDeadline(d: string | null) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+function formatDeadline(d: string | null): { text: string; expired: boolean } {
+  if (!d) return { text: "—", expired: false };
+  const date = new Date(d);
+  const expired = date < TODAY;
+  const text = date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return { text, expired };
+}
+
+function getSector(sectors: string[]): string {
+  if (!sectors?.length) return "—";
+  return translateSector(sectors[0]);
 }
 
 export default function DashboardGrantsPage() {
   const [search, setSearch] = useState("");
   const [activeSector, setActiveSector] = useState("Все");
-  const [sortBy, setSortBy] = useState("featured");
+  const [showExpired, setShowExpired] = useState(false);
   const [saved, setSaved] = useState<string[]>([]);
 
   const [grants, setGrants] = useState<Grant[]>([]);
@@ -54,8 +61,6 @@ export default function DashboardGrantsPage() {
     try {
       const params = new URLSearchParams({ page: String(pg), limit: "12" });
       if (search) params.set("search", search);
-      if (activeSector !== "Все") params.set("sector", activeSector);
-      if (sortBy === "deadline") params.set("sort", "deadline");
       const res = await fetch(`/api/v1/grants?${params}`);
       if (!res.ok) throw new Error("Failed");
       const data = await res.json();
@@ -69,7 +74,7 @@ export default function DashboardGrantsPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [search, activeSector, sortBy]);
+  }, [search]);
 
   useEffect(() => {
     setPage(1);
@@ -84,6 +89,17 @@ export default function DashboardGrantsPage() {
 
   const toggleSave = (id: string) =>
     setSaved((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
+
+  // Client-side sector filter + expired filter
+  const filtered = grants.filter((g) => {
+    const sectorMatch = activeSector === "Все" ||
+      g.sectors.some((s) => translateSector(s) === activeSector);
+    const { expired } = formatDeadline(g.deadline);
+    const expiredMatch = showExpired ? true : !expired;
+    return sectorMatch && expiredMatch;
+  });
+
+  const expiredCount = grants.filter((g) => formatDeadline(g.deadline).expired).length;
 
   return (
     <div>
@@ -107,17 +123,21 @@ export default function DashboardGrantsPage() {
               className="w-full pl-9 pr-4 py-2.5 bg-funding-light-bg rounded-xl text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-funding-green/20"
             />
           </div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2.5 bg-funding-light-bg rounded-xl text-sm text-gray-700 outline-none border-none"
+          <button
+            onClick={() => setShowExpired((v) => !v)}
+            className="flex-shrink-0 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors border"
+            style={
+              showExpired
+                ? { background: "#FEF3C7", color: "#D97706", borderColor: "#FCD34D" }
+                : { background: "#F7FAF7", color: "#6B7280", borderColor: "#e5e7eb" }
+            }
           >
-            {sortOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
+            {showExpired ? "Все дедлайны" : `Скрыть истёкшие (${expiredCount})`}
+          </button>
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {sectors.map((s) => (
+          {sectorFilters.map((s) => (
             <button
               key={s}
               onClick={() => setActiveSector(s)}
@@ -141,31 +161,44 @@ export default function DashboardGrantsPage() {
       ) : (
         <>
           <p className="text-sm text-gray-500 mb-4">
-            Найдено: <strong className="text-funding-black">{total}</strong> грантов
+            Показано: <strong className="text-funding-black">{filtered.length}</strong> из <strong>{total}</strong> грантов
           </p>
 
-          {grants.length === 0 ? (
+          {filtered.length === 0 ? (
             <div className="text-center py-16 text-gray-400 text-sm">
               Грантов не найдено. Попробуйте изменить фильтры.
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
-              {grants.map((g) => (
-                <Link key={g.id} href={`/dashboard/grants/${g.id}`}>
-                  <GrantCard
-                    id={g.id}
-                    title={g.title_ru ?? g.title}
-                    donor={g.donor.name_ru ?? g.donor.name ?? "—"}
-                    amount={formatAmount(g.amount_min, g.amount_max)}
-                    deadline={formatDeadline(g.deadline)}
-                    country={g.country_scope.join(", ")}
-                    sector={g.sectors[0] ?? "—"}
-                    isSaved={saved.includes(g.id)}
-                    onSave={toggleSave}
-                    variant="light"
-                  />
-                </Link>
-              ))}
+              {filtered.map((g) => {
+                const dl = formatDeadline(g.deadline);
+                return (
+                  <Link key={g.id} href={`/dashboard/grants/${g.id}`}>
+                    <div className="relative">
+                      {dl.expired && (
+                        <div className="absolute top-3 right-10 z-10">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-400">
+                            Дедлайн истёк
+                          </span>
+                        </div>
+                      )}
+                      <GrantCard
+                        id={g.id}
+                        title={g.title_ru ?? g.title}
+                        donor={g.donor.name_ru ?? g.donor.name ?? "—"}
+                        amount={formatAmount(g.amount_min, g.amount_max) ?? undefined}
+                        deadline={dl.text}
+                        country={g.country_scope.join(", ")}
+                        sector={getSector(g.sectors)}
+                        isSaved={saved.includes(g.id)}
+                        onSave={toggleSave}
+                        variant="light"
+                        className={dl.expired ? "opacity-60" : ""}
+                      />
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
 

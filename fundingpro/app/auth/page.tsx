@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
+import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Mail, ArrowRight, RotateCcw } from "lucide-react";
 
 type Mode = "choose" | "login" | "register";
@@ -34,21 +35,42 @@ export default function AuthPage() {
     }
   }
 
-  function handleSendOtp() {
+  async function handleSendOtp() {
     setError("");
     if (!email.trim()) { setError("Введите email адрес"); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Неверный формат email"); return; }
+
     setLoading(true);
-    // TODO: POST /api/v1/auth/otp/send { email }
-    setTimeout(() => { setLoading(false); setStep("otp"); }, 800);
+    const { error: err } = await supabase.auth.signInWithOtp({
+      email: email.toLowerCase().trim(),
+      options: { shouldCreateUser: true },
+    });
+    setLoading(false);
+
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    setStep("otp");
   }
 
-  function handleVerifyOtp() {
-    const code = otp.join("");
-    if (code.length < 6) { setError("Введите 6-значный код"); return; }
+  async function handleVerifyOtp() {
+    const token = otp.join("");
+    if (token.length < 6) { setError("Введите 6-значный код"); return; }
+
     setLoading(true);
-    // TODO: POST /api/v1/auth/otp/verify { email, code }
-    setTimeout(() => { setLoading(false); router.push("/dashboard"); }, 900);
+    const { error: err } = await supabase.auth.verifyOtp({
+      email: email.toLowerCase().trim(),
+      token,
+      type: "email",
+    });
+    setLoading(false);
+
+    if (err) {
+      setError("Неверный или устаревший код. Попробуйте ещё раз.");
+      return;
+    }
+    router.push("/dashboard");
   }
 
   function reset() {
@@ -65,7 +87,7 @@ export default function AuthPage() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
         <FundingProLogo variant="dark" size="md" />
-        <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors" style={{ color: "#A7B8AA" }}>
+        <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: "#A7B8AA" }}>
           <ArrowLeft className="w-3.5 h-3.5" />
           На главную
         </Link>
@@ -112,7 +134,7 @@ export default function AuthPage() {
             <>
               <button
                 onClick={() => { setMode("choose"); reset(); }}
-                className="inline-flex items-center gap-1.5 text-xs mb-8 transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs mb-8"
                 style={{ color: "#A7B8AA" }}
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -123,7 +145,9 @@ export default function AuthPage() {
                 {isRegister ? "Регистрация" : "Вход"}
               </h1>
               <p className="text-sm mb-8" style={{ color: "#A7B8AA" }}>
-                {isRegister ? "Создайте аккаунт, чтобы начать работу с грантами" : "Войдите, чтобы продолжить работу"}
+                {isRegister
+                  ? "Создайте аккаунт, чтобы начать работу с грантами"
+                  : "Войдите, чтобы продолжить работу"}
               </p>
 
               {step === "input" && (
@@ -234,7 +258,7 @@ export default function AuthPage() {
 
                   <button
                     onClick={reset}
-                    className="w-full flex items-center justify-center gap-2 py-2 text-xs transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-2 text-xs"
                     style={{ color: "#A7B8AA" }}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />

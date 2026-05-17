@@ -22,11 +22,10 @@ export async function GET(req: NextRequest) {
     .select(`
       id,
       status,
-      stage,
       notes,
       created_at,
       updated_at,
-      grant:grants ( id, title, deadline, amount_min, amount_max, currency, donor:donors ( name, name_ru ) )
+      grant:grants ( id, title, title_ru, deadline, amount_min, amount_max, donor:donors ( name, name_ru ) )
     `, { count: "exact" })
     .eq("user_id", authUser.userId)
     .order("updated_at", { ascending: false })
@@ -54,7 +53,7 @@ export async function POST(req: NextRequest) {
     const supabase = createSupabaseAdmin();
 
     // Verify grant exists
-    const { data: grant } = await supabase.from("grants").select("id").eq("id", grantId).eq("is_active", true).single();
+    const { data: grant } = await supabase.from("grants").select("id").eq("id", grantId).single();
     if (!grant) return apiError("Grant not found", 404, "GRANT_NOT_FOUND");
 
     // Prevent duplicate

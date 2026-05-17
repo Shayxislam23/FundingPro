@@ -3,55 +3,56 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { StatusBadge } from "@/components/design/StatusBadge";
 import { EmptyState } from "@/components/design/EmptyState";
 import { BarChart3, Plus, Loader2, ChevronDown } from "lucide-react";
 
 type ApplicationStatus =
-  | "SAVED" | "PREPARING" | "DRAFTING" | "READY" | "SUBMITTED"
-  | "UNDER_REVIEW" | "SHORTLISTED" | "WON" | "LOST" | "REPORTING" | "CLOSED";
+  | "saved" | "preparing" | "drafting" | "ready" | "submitted"
+  | "under_review" | "shortlisted" | "won" | "lost" | "reporting" | "closed";
 
 type Application = {
   id: string;
   status: ApplicationStatus;
   notes: string | null;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
   grant: {
     id: string;
     title: string;
+    title_ru: string | null;
     deadline: string | null;
-    amountMin: string | null;
-    amountMax: string | null;
-    currency: string;
-    donor: { shortName: string | null };
+    amount_min: number | null;
+    amount_max: number | null;
+    donor: { name: string | null; name_ru: string | null };
   };
 };
 
-const STATUS_FILTER_LABELS: Partial<Record<ApplicationStatus, string>> = {
-  SAVED: "Сохранено",
-  PREPARING: "Подготовка",
-  DRAFTING: "Черновик",
-  READY: "Готово",
-  SUBMITTED: "Подана",
-  UNDER_REVIEW: "На рассмотрении",
-  SHORTLISTED: "Шортлист",
-  WON: "Получено",
-  LOST: "Отклонено",
+const STATUS_LABELS: Record<string, string> = {
+  saved: "Сохранено",
+  preparing: "Подготовка",
+  drafting: "Черновик",
+  ready: "Готово",
+  submitted: "Подана",
+  under_review: "На рассмотрении",
+  shortlisted: "Шортлист",
+  won: "Получено",
+  lost: "Отклонено",
+  reporting: "Отчётность",
+  closed: "Закрыто",
 };
 
-const STATUS_DISPLAY: Record<string, string> = {
-  SAVED: "Сохранено",
-  PREPARING: "Подготовка",
-  DRAFTING: "Черновик",
-  READY: "Готово",
-  SUBMITTED: "Подана",
-  UNDER_REVIEW: "На рассмотрении",
-  SHORTLISTED: "Шортлист",
-  WON: "Получено",
-  LOST: "Отклонено",
-  REPORTING: "Отчётность",
-  CLOSED: "Закрыто",
+const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
+  saved: { bg: "#F3F4F6", color: "#6B7280" },
+  preparing: { bg: "#FEF3C7", color: "#D97706" },
+  drafting: { bg: "#DBEAFE", color: "#2563EB" },
+  ready: { bg: "#D9F7DD", color: "#008A2E" },
+  submitted: { bg: "#D9F7DD", color: "#008A2E" },
+  under_review: { bg: "#FDE68A", color: "#92400E" },
+  shortlisted: { bg: "#FEF3C7", color: "#D97706" },
+  won: { bg: "#D9F7DD", color: "#008A2E" },
+  lost: { bg: "#FEE2E2", color: "#DC2626" },
+  reporting: { bg: "#DBEAFE", color: "#2563EB" },
+  closed: { bg: "#F3F4F6", color: "#6B7280" },
 };
 
 function formatDeadline(d: string | null) {
@@ -59,23 +60,28 @@ function formatDeadline(d: string | null) {
   return new Date(d).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-function formatAmount(min: string | null, max: string | null, currency: string) {
+function formatAmount(min: number | null, max: number | null) {
   if (!min && !max) return "—";
-  if (max) return `до ${currency} ${Number(max).toLocaleString()}`;
-  return `${currency} ${Number(min).toLocaleString()}+`;
+  if (max) return `до $${max.toLocaleString()}`;
+  return `от $${min!.toLocaleString()}`;
 }
 
 const NEXT_STATUSES: Partial<Record<ApplicationStatus, ApplicationStatus[]>> = {
-  SAVED: ["PREPARING"],
-  PREPARING: ["DRAFTING"],
-  DRAFTING: ["READY"],
-  READY: ["SUBMITTED"],
-  SUBMITTED: ["UNDER_REVIEW"],
-  UNDER_REVIEW: ["SHORTLISTED", "LOST"],
-  SHORTLISTED: ["WON", "LOST"],
-  WON: ["REPORTING"],
-  REPORTING: ["CLOSED"],
+  saved: ["preparing"],
+  preparing: ["drafting"],
+  drafting: ["ready"],
+  ready: ["submitted"],
+  submitted: ["under_review"],
+  under_review: ["shortlisted", "lost"],
+  shortlisted: ["won", "lost"],
+  won: ["reporting"],
+  reporting: ["closed"],
 };
+
+const FILTER_STATUSES: ApplicationStatus[] = [
+  "saved", "preparing", "drafting", "ready", "submitted",
+  "under_review", "shortlisted", "won", "lost",
+];
 
 export default function TrackerDashboard() {
   const [filterStatus, setFilterStatus] = useState("all");
@@ -118,9 +124,9 @@ export default function TrackerDashboard() {
 
   const stats = {
     total: applications.length,
-    active: applications.filter((a) => !["WON", "LOST", "CLOSED"].includes(a.status)).length,
-    won: applications.filter((a) => a.status === "WON").length,
-    shortlisted: applications.filter((a) => a.status === "SHORTLISTED").length,
+    active: applications.filter((a) => !["won", "lost", "closed"].includes(a.status)).length,
+    won: applications.filter((a) => a.status === "won").length,
+    shortlisted: applications.filter((a) => a.status === "shortlisted").length,
   };
 
   return (
@@ -165,14 +171,14 @@ export default function TrackerDashboard() {
           >
             Все
           </button>
-          {Object.entries(STATUS_FILTER_LABELS).map(([s, label]) => (
+          {FILTER_STATUSES.map((s) => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
               className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
               style={filterStatus === s ? { background: "#008A2E", color: "#fff" } : { background: "#F7FAF7", color: "#4A5A4D", border: "1px solid #e5e7eb" }}
             >
-              {label}
+              {STATUS_LABELS[s]}
             </button>
           ))}
         </div>
@@ -207,59 +213,67 @@ export default function TrackerDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {applications.map((app, i) => (
-                  <tr
-                    key={app.id}
-                    style={{ borderBottom: i < applications.length - 1 ? "1px solid #f9fafb" : "none" }}
-                    className="hover:bg-funding-light-bg transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <p className="text-sm font-semibold text-funding-black">{app.grant.title}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{app.grant.donor.shortName ?? "—"}</p>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {formatAmount(app.grant.amountMin, app.grant.amountMax, app.grant.currency)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{formatDeadline(app.grant.deadline)}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600">
-                        {STATUS_DISPLAY[app.status] ?? app.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">
-                      {new Date(app.updatedAt).toLocaleDateString("ru-RU")}
-                    </td>
-                    <td className="px-4 py-3 relative">
-                      {updatingId === app.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-funding-green" />
-                      ) : NEXT_STATUSES[app.status]?.length ? (
-                        <div className="relative inline-block">
-                          <button
-                            onClick={() => setOpenMenuId(openMenuId === app.id ? null : app.id)}
-                            className="flex items-center gap-1 text-xs font-semibold text-funding-green hover:opacity-80"
-                          >
-                            Статус <ChevronDown className="w-3 h-3" />
-                          </button>
-                          {openMenuId === app.id && (
-                            <div className="absolute right-0 top-6 z-10 bg-white border border-gray-200 rounded-xl shadow-lg p-1 min-w-36">
-                              {NEXT_STATUSES[app.status]!.map((s) => (
-                                <button
-                                  key={s}
-                                  onClick={() => updateStatus(app.id, s)}
-                                  className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-funding-light-bg text-gray-700"
-                                >
-                                  → {STATUS_DISPLAY[s]}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-300">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {applications.map((app, i) => {
+                  const sc = STATUS_COLORS[app.status] ?? STATUS_COLORS.saved;
+                  const nextStatuses = NEXT_STATUSES[app.status];
+                  return (
+                    <tr
+                      key={app.id}
+                      style={{ borderBottom: i < applications.length - 1 ? "1px solid #f9fafb" : "none" }}
+                      className="hover:bg-funding-light-bg transition-colors"
+                    >
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-semibold text-funding-black">
+                          {app.grant?.title_ru ?? app.grant?.title ?? "—"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {app.grant?.donor?.name_ru ?? app.grant?.donor?.name ?? "—"}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {formatAmount(app.grant?.amount_min ?? null, app.grant?.amount_max ?? null)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{formatDeadline(app.grant?.deadline ?? null)}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={sc}>
+                          {STATUS_LABELS[app.status] ?? app.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400">
+                        {new Date(app.updated_at).toLocaleDateString("ru-RU")}
+                      </td>
+                      <td className="px-4 py-3 relative">
+                        {updatingId === app.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-funding-green" />
+                        ) : nextStatuses?.length ? (
+                          <div className="relative inline-block">
+                            <button
+                              onClick={() => setOpenMenuId(openMenuId === app.id ? null : app.id)}
+                              className="flex items-center gap-1 text-xs font-semibold text-funding-green hover:opacity-80"
+                            >
+                              Статус <ChevronDown className="w-3 h-3" />
+                            </button>
+                            {openMenuId === app.id && (
+                              <div className="absolute right-0 top-6 z-10 bg-white border border-gray-200 rounded-xl shadow-lg p-1 min-w-36">
+                                {nextStatuses.map((s) => (
+                                  <button
+                                    key={s}
+                                    onClick={() => updateStatus(app.id, s)}
+                                    className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-funding-light-bg text-gray-700"
+                                  >
+                                    → {STATUS_LABELS[s]}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-300">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

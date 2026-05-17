@@ -1,25 +1,72 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { MessageSquare, CheckCircle2, Clock } from "lucide-react";
+import { MessageSquare, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-const mockTickets = [
-  { id: "1", subject: "Вопрос по оплате", status: "resolved", date: "12.05.2025", message: "Как изменить план подписки?" },
-  { id: "2", subject: "Проблема с AI-генератором", status: "open", date: "15.05.2025", message: "AI не генерирует раздел логфрейма" },
-];
+type Ticket = {
+  id: string;
+  subject: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  resolved_at: string | null;
+};
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return {};
+  return { Authorization: `Bearer ${session.access_token}` };
+}
 
 export default function SupportDashboard() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchTickets = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/v1/support-tickets", { headers });
+      const data = await res.json();
+      setTickets(data.data?.tickets ?? []);
+    } catch {
+      setTickets([]);
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTickets();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
-    setSubject("");
-    setMessage("");
+    if (!subject || !message.trim()) return;
+    setSubmitting(true);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/v1/support-tickets", {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ subject, message }),
+      });
+      if (res.ok) {
+        setSubmitted(true);
+        setSubject("");
+        setMessage("");
+        await fetchTickets();
+        setTimeout(() => setSubmitted(false), 4000);
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -49,11 +96,11 @@ export default function SupportDashboard() {
                 className="w-full px-4 py-2.5 bg-funding-light-bg rounded-xl text-sm outline-none focus:ring-2 focus:ring-funding-green/20"
               >
                 <option value="" disabled>Выберите тему...</option>
-                <option value="payment">Вопрос по оплате</option>
-                <option value="grant">Вопрос по гранту</option>
-                <option value="ai">Проблема с AI-функцией</option>
-                <option value="account">Проблема с аккаунтом</option>
-                <option value="other">Другое</option>
+                <option value="Вопрос по оплате">Вопрос по оплате</option>
+                <option value="Вопрос по гранту">Вопрос по гранту</option>
+                <option value="Проблема с AI-функцией">Проблема с AI-функцией</option>
+                <option value="Проблема с аккаунтом">Проблема с аккаунтом</option>
+                <option value="Другое">Другое</option>
               </select>
             </div>
             <div>
@@ -69,10 +116,11 @@ export default function SupportDashboard() {
             </div>
             <button
               type="submit"
-              disabled={!subject || !message.trim()}
-              className="w-full py-3 rounded-xl font-semibold text-sm text-white disabled:opacity-40"
+              disabled={!subject || !message.trim() || submitting}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm text-white disabled:opacity-40"
               style={{ background: "#008A2E" }}
             >
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
               Отправить
             </button>
           </form>
@@ -81,27 +129,33 @@ export default function SupportDashboard() {
         {/* Previous tickets */}
         <div>
           <h2 className="font-bold text-funding-black mb-4">Мои обращения</h2>
-          <div className="space-y-3">
-            {mockTickets.map((t) => (
-              <div key={t.id} className="bg-white rounded-2xl border border-gray-100 p-4">
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <h3 className="text-sm font-semibold text-funding-black">{t.subject}</h3>
-                  <span
-                    className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
-                    style={t.status === "resolved" ? { background: "#D9F7DD", color: "#008A2E" } : { background: "#FEF3C7", color: "#D97706" }}
-                  >
-                    {t.status === "resolved" ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                    {t.status === "resolved" ? "Решено" : "Открыто"}
-                  </span>
+          {loadingTickets ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-5 h-5 animate-spin text-funding-green" />
+            </div>
+          ) : tickets.length === 0 ? (
+            <div className="text-center py-8 text-sm text-gray-400">Обращений нет</div>
+          ) : (
+            <div className="space-y-3">
+              {tickets.map((t) => (
+                <div key={t.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <h3 className="text-sm font-semibold text-funding-black">{t.subject}</h3>
+                    <span
+                      className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+                      style={t.status === "resolved" ? { background: "#D9F7DD", color: "#008A2E" } : { background: "#FEF3C7", color: "#D97706" }}
+                    >
+                      {t.status === "resolved" ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                      {t.status === "resolved" ? "Решено" : "Открыто"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-300 mt-1">
+                    {new Date(t.created_at).toLocaleDateString("ru-RU")}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-400">{t.message}</p>
-                <p className="text-xs text-gray-300 mt-2">{t.date}</p>
-              </div>
-            ))}
-            {mockTickets.length === 0 && (
-              <div className="text-center py-8 text-sm text-gray-400">Обращений нет</div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     { count: totalApplications },
     { data: recentUsers },
   ] = await Promise.all([
-    supabase.from("grants").select("*", { count: "exact", head: true }).eq("is_active", true),
+    supabase.from("grants").select("*", { count: "exact", head: true }),
     supabase.from("applications").select("*", { count: "exact", head: true }),
     supabase.auth.admin.listUsers({ page: 1, perPage: 5 }),
   ]);

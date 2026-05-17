@@ -1,9 +1,57 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { Settings, Globe, Shield, Bot, CreditCard } from "lucide-react";
+import { Globe, Shield, Bot, CreditCard, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+
+type Settings = {
+  platform: string;
+  aiProvider: string;
+  aiProviderConfigured: boolean;
+  paymentsEnabled: boolean;
+  hasWebhookSecret: boolean;
+  hasResendKey: boolean;
+  hasServiceKey: boolean;
+  adminEmailsConfigured: boolean;
+  nodeEnv: string;
+};
+
+function StatusCell({ ok, yes, no }: { ok: boolean; yes?: string; no?: string }) {
+  return (
+    <span
+      className="text-xs font-semibold"
+      style={{ color: ok ? "#008A2E" : "#ef4444" }}
+    >
+      {ok ? (yes ?? "Да") : (no ?? "Не настроено")}
+    </span>
+  );
+}
 
 export default function AdminSettingsPage() {
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {};
+        if (session) headers["Authorization"] = `Bearer ${session.access_token}`;
+        const res = await fetch("/api/v1/admin/settings", { headers });
+        const data = await res.json();
+        setSettings(data.data ?? null);
+      } catch {
+        setSettings(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const s = settings;
+
   return (
     <div>
       <div className="mb-6">
@@ -11,109 +59,123 @@ export default function AdminSettingsPage() {
         <h1 className="text-2xl font-black text-funding-black">Настройки</h1>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* General */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Globe className="w-4 h-4 text-funding-green" />
-            <h2 className="font-bold text-sm text-funding-black">Общие</h2>
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: "Платформа", value: "FundingPro v1.0" },
-              { label: "Юридическое лицо", value: "Beta Version Solutions ООО" },
-              { label: "Номер DGU", value: "61712" },
-              { label: "Языки UI", value: "Русский / Узбекский" },
-              { label: "Хранение данных", value: "Узбекистан (Hyper App Cloud)" },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-xs font-medium text-gray-500">{label}</span>
-                <span className="text-xs font-semibold text-funding-black">{value}</span>
-              </div>
-            ))}
-          </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-funding-green" />
         </div>
-
-        {/* AI Config */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Bot className="w-4 h-4 text-funding-green" />
-            <h2 className="font-bold text-sm text-funding-black">AI Gateway</h2>
+      ) : (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* General */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="w-4 h-4 text-funding-green" />
+              <h2 className="font-bold text-sm text-funding-black">Общие</h2>
+            </div>
+            <div className="space-y-3">
+              {[
+                { label: "Платформа", value: s?.platform ?? "FundingPro v1.0", ok: true },
+                { label: "Юридическое лицо", value: "Beta Version Solutions ООО", ok: true },
+                { label: "Номер DGU", value: "61712", ok: true },
+                { label: "Окружение", value: s?.nodeEnv ?? "—", ok: s?.nodeEnv === "production" },
+                { label: "Языки UI", value: "Русский / Узбекский", ok: true },
+                { label: "Хранение данных", value: "Supabase (Узбекистан / EU)", ok: true },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span className="text-xs font-medium text-gray-500">{label}</span>
+                  <span className="text-xs font-semibold text-funding-black">{value}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="space-y-3">
-            {[
-              { label: "Провайдер (основной)", value: "OpenAI (заглушка)" },
-              { label: "Провайдер (резерв)", value: "Anthropic Claude (заглушка)" },
-              { label: "Редакция ПД", value: "Включена" },
-              { label: "Версионирование промптов", value: "Включено" },
-              { label: "Логирование токенов", value: "Включено" },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-xs font-medium text-gray-500">{label}</span>
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: value.includes("заглушка") ? "#d97706" : "#008A2E" }}
-                >
-                  {value}
+
+          {/* AI Config */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Bot className="w-4 h-4 text-funding-green" />
+              <h2 className="font-bold text-sm text-funding-black">AI Gateway</h2>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">Провайдер</span>
+                <span className="text-xs font-semibold" style={{ color: s?.aiProviderConfigured ? "#008A2E" : "#d97706" }}>
+                  {s?.aiProvider ?? "mock"}
+                  {!s?.aiProviderConfigured && " (заглушка)"}
                 </span>
               </div>
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 mt-3">
-            API ключи хранятся в переменных окружения. Не в коде.
-          </p>
-        </div>
-
-        {/* Security */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Shield className="w-4 h-4 text-funding-green" />
-            <h2 className="font-bold text-sm text-funding-black">Безопасность</h2>
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: "Rate limiting", value: "Включён" },
-              { label: "CORS", value: "Настроен" },
-              { label: "Security headers", value: "Включены" },
-              { label: "Request ID middleware", value: "Включён" },
-              { label: "Аудит-лог", value: "Активен" },
-              { label: "Файлы: публичные URL", value: "Отключены" },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-xs font-medium text-gray-500">{label}</span>
-                <span className="text-xs font-semibold" style={{ color: "#008A2E" }}>{value}</span>
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">AI ключ</span>
+                <StatusCell ok={s?.aiProviderConfigured ?? false} yes="Настроен" no="Не настроен" />
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Payments */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <CreditCard className="w-4 h-4 text-funding-green" />
-            <h2 className="font-bold text-sm text-funding-black">Платёжная система</h2>
-          </div>
-          <div className="space-y-3">
-            {[
-              { label: "Провайдер", value: "Платёжный адаптер" },
-              { label: "Хранение карт", value: "Нет (запрещено)" },
-              { label: "Активация подписки", value: "Только webhook" },
-              { label: "Idempotency keys", value: "Включены" },
-              { label: "Webhook подпись", value: "TODO: настроить" },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-xs font-medium text-gray-500">{label}</span>
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: value.includes("TODO") ? "#ef4444" : "#008A2E" }}
-                >
-                  {value}
-                </span>
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">Supabase service key</span>
+                <StatusCell ok={s?.hasServiceKey ?? false} yes="Настроен" />
               </div>
-            ))}
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">Редакция ПД</span>
+                <StatusCell ok={true} yes="Включена" />
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">Email (Resend)</span>
+                <StatusCell ok={s?.hasResendKey ?? false} yes="Настроен" />
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">Admin emails</span>
+                <StatusCell ok={s?.adminEmailsConfigured ?? false} yes="Настроены" />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-3">API ключи хранятся в переменных окружения. Не в коде.</p>
+          </div>
+
+          {/* Security */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="w-4 h-4 text-funding-green" />
+              <h2 className="font-bold text-sm text-funding-black">Безопасность</h2>
+            </div>
+            <div className="space-y-3">
+              {[
+                { label: "Rate limiting", value: "Включён", ok: true },
+                { label: "CORS", value: "Настроен", ok: true },
+                { label: "Security headers", value: "Включены", ok: true },
+                { label: "Request ID middleware", value: "Включён", ok: true },
+                { label: "Аудит-лог", value: "Активен", ok: true },
+                { label: "Файлы: публичные URL", value: "Отключены", ok: true },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span className="text-xs font-medium text-gray-500">{label}</span>
+                  <span className="text-xs font-semibold" style={{ color: "#008A2E" }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Payments */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <CreditCard className="w-4 h-4 text-funding-green" />
+              <h2 className="font-bold text-sm text-funding-black">Платёжная система</h2>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">Онлайн-оплата</span>
+                <StatusCell ok={s?.paymentsEnabled ?? false} yes="Включена" no="Отключена (ручная)" />
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">Хранение карт</span>
+                <span className="text-xs font-semibold" style={{ color: "#008A2E" }}>Нет (запрещено)</span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">Webhook подпись</span>
+                <StatusCell ok={s?.hasWebhookSecret ?? false} yes="Настроена" />
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">Idempotency keys</span>
+                <span className="text-xs font-semibold" style={{ color: "#008A2E" }}>Включены</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

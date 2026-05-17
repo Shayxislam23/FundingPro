@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { ShieldCheck, Clock, CheckCircle2, ChevronRight } from "lucide-react";
+import { ShieldCheck, Clock, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const ngoPlans = [
   {
@@ -62,11 +63,26 @@ const businessPlans = [
 
 export default function SubscriptionPage() {
   const [requested, setRequested] = useState<string | null>(null);
+  const [requesting, setRequesting] = useState<string | null>(null);
 
-  function handleRequest(planId: string, planName: string) {
-    // TODO: POST /api/v1/support-tickets with plan request
-    setRequested(planId);
-    // In production: send request to team and notify via email
+  async function handleRequest(planId: string, planName: string) {
+    setRequesting(planId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session) headers["Authorization"] = `Bearer ${session.access_token}`;
+      await fetch("/api/v1/support-tickets", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          subject: `Запрос тарифа: ${planName}`,
+          message: `Пользователь запрашивает подключение тарифа "${planName}" (${planId}). Пожалуйста, свяжитесь с пользователем для подтверждения оплаты.`,
+        }),
+      });
+    } finally {
+      setRequested(planId);
+      setRequesting(null);
+    }
   }
 
   return (
@@ -101,6 +117,7 @@ export default function SubscriptionPage() {
               key={plan.id}
               plan={plan}
               requested={requested === plan.id}
+              requesting={requesting === plan.id}
               onRequest={() => handleRequest(plan.id, plan.nameRu)}
             />
           ))}
@@ -116,6 +133,7 @@ export default function SubscriptionPage() {
               key={plan.id}
               plan={plan}
               requested={requested === plan.id}
+              requesting={requesting === plan.id}
               onRequest={() => handleRequest(plan.id, plan.nameRu)}
             />
           ))}
@@ -164,7 +182,7 @@ type Plan = {
   features: string[];
 };
 
-function PlanCard({ plan, requested, onRequest }: { plan: Plan; requested: boolean; onRequest: () => void }) {
+function PlanCard({ plan, requested, requesting, onRequest }: { plan: Plan; requested: boolean; requesting: boolean; onRequest: () => void }) {
   return (
     <div
       className="rounded-2xl p-5 border flex flex-col"
@@ -210,15 +228,15 @@ function PlanCard({ plan, requested, onRequest }: { plan: Plan; requested: boole
       ) : (
         <button
           onClick={onRequest}
-          className="w-full py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+          disabled={requesting}
+          className="w-full py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 disabled:opacity-60"
           style={
             plan.highlighted
               ? { background: "#008A2E", color: "#fff" }
               : { background: "#F0FDF4", color: "#008A2E", border: "1px solid #BBF7D0" }
           }
         >
-          Запросить подключение
-          <ChevronRight className="w-3.5 h-3.5" />
+          {requesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>Запросить подключение <ChevronRight className="w-3.5 h-3.5" /></>}
         </button>
       )}
     </div>

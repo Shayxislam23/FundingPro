@@ -4,24 +4,19 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
-import { ArrowLeft, Phone, Mail, ArrowRight, RotateCcw } from "lucide-react";
+import { ArrowLeft, Mail, ArrowRight, RotateCcw } from "lucide-react";
 
 type Mode = "choose" | "login" | "register";
-type Channel = "phone" | "email";
 type Step = "input" | "otp";
 
 export default function AuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("choose");
-  const [channel, setChannel] = useState<Channel>("phone");
   const [step, setStep] = useState<Step>("input");
-  const [value, setValue] = useState("");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // OTP input refs
-  const otpRefs = Array.from({ length: 6 }, () => null) as (HTMLInputElement | null)[];
 
   function handleOtpChange(i: number, v: string) {
     if (!/^\d*$/.test(v)) return;
@@ -29,8 +24,7 @@ export default function AuthPage() {
     next[i] = v.slice(-1);
     setOtp(next);
     if (v && i < 5) {
-      const el = document.getElementById(`otp-${i + 1}`);
-      el?.focus();
+      document.getElementById(`otp-${i + 1}`)?.focus();
     }
   }
 
@@ -42,69 +36,41 @@ export default function AuthPage() {
 
   function handleSendOtp() {
     setError("");
-    if (!value.trim()) {
-      setError(channel === "phone" ? "Введите номер телефона" : "Введите email");
-      return;
-    }
-    if (channel === "phone" && !/^\+?[\d\s\-()]{7,}$/.test(value)) {
-      setError("Неверный формат номера телефона");
-      return;
-    }
-    if (channel === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      setError("Неверный формат email");
-      return;
-    }
+    if (!email.trim()) { setError("Введите email адрес"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Неверный формат email"); return; }
     setLoading(true);
-    // TODO: call POST /api/v1/auth/otp/send
-    setTimeout(() => {
-      setLoading(false);
-      setStep("otp");
-    }, 800);
+    // TODO: POST /api/v1/auth/otp/send { email }
+    setTimeout(() => { setLoading(false); setStep("otp"); }, 800);
   }
 
   function handleVerifyOtp() {
     const code = otp.join("");
-    if (code.length < 6) {
-      setError("Введите 6-значный код");
-      return;
-    }
+    if (code.length < 6) { setError("Введите 6-значный код"); return; }
     setLoading(true);
-    // TODO: call POST /api/v1/auth/otp/verify
-    setTimeout(() => {
-      setLoading(false);
-      router.push("/dashboard");
-    }, 900);
+    // TODO: POST /api/v1/auth/otp/verify { email, code }
+    setTimeout(() => { setLoading(false); router.push("/dashboard"); }, 900);
   }
 
   function reset() {
     setStep("input");
-    setValue("");
+    setEmail("");
     setOtp(["", "", "", "", "", ""]);
     setError("");
   }
 
   const isRegister = mode === "register";
-  const title = isRegister ? "Регистрация" : "Вход";
-  const subtitle = isRegister
-    ? "Создайте аккаунт, чтобы начать работу с грантами"
-    : "Войдите, чтобы продолжить работу";
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#020703" }}>
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
         <FundingProLogo variant="dark" size="md" />
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
-          style={{ color: "#A7B8AA" }}
-        >
+        <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors" style={{ color: "#A7B8AA" }}>
           <ArrowLeft className="w-3.5 h-3.5" />
           На главную
         </Link>
       </nav>
 
-      {/* Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm">
 
@@ -119,9 +85,7 @@ export default function AuthPage() {
                 Вход / Регистрация
               </div>
               <h1 className="text-3xl font-black text-white mb-2">Добро пожаловать</h1>
-              <p className="text-sm mb-10" style={{ color: "#A7B8AA" }}>
-                Войдите или создайте новый аккаунт
-              </p>
+              <p className="text-sm mb-10" style={{ color: "#A7B8AA" }}>Войдите или создайте новый аккаунт</p>
               <div className="space-y-3">
                 <button
                   onClick={() => setMode("login")}
@@ -133,7 +97,7 @@ export default function AuthPage() {
                 </button>
                 <button
                   onClick={() => setMode("register")}
-                  className="w-full flex items-center justify-between px-5 py-4 rounded-2xl font-semibold text-sm border transition-all hover:border-funding-green"
+                  className="w-full flex items-center justify-between px-5 py-4 rounded-2xl font-semibold text-sm border transition-all"
                   style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "#fff" }}
                 >
                   <span>Создать аккаунт</span>
@@ -143,10 +107,9 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* Login / Register form */}
+          {/* Form */}
           {mode !== "choose" && (
             <>
-              {/* Back */}
               <button
                 onClick={() => { setMode("choose"); reset(); }}
                 className="inline-flex items-center gap-1.5 text-xs mb-8 transition-colors"
@@ -156,74 +119,56 @@ export default function AuthPage() {
                 Назад
               </button>
 
-              <h1 className="text-3xl font-black text-white mb-1">{title}</h1>
-              <p className="text-sm mb-8" style={{ color: "#A7B8AA" }}>{subtitle}</p>
+              <h1 className="text-3xl font-black text-white mb-1">
+                {isRegister ? "Регистрация" : "Вход"}
+              </h1>
+              <p className="text-sm mb-8" style={{ color: "#A7B8AA" }}>
+                {isRegister ? "Создайте аккаунт, чтобы начать работу с грантами" : "Войдите, чтобы продолжить работу"}
+              </p>
 
               {step === "input" && (
                 <>
-                  {/* Channel toggle */}
-                  <div
-                    className="flex gap-1 p-1 rounded-xl mb-6"
-                    style={{ background: "rgba(255,255,255,0.06)" }}
-                  >
-                    {(["phone", "email"] as Channel[]).map((ch) => (
-                      <button
-                        key={ch}
-                        onClick={() => { setChannel(ch); setValue(""); setError(""); }}
-                        className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-semibold transition-all"
-                        style={
-                          channel === ch
-                            ? { background: "#008A2E", color: "#fff" }
-                            : { color: "#A7B8AA" }
-                        }
-                      >
-                        {ch === "phone" ? <Phone className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
-                        {ch === "phone" ? "Телефон" : "Email"}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Input */}
                   <div className="mb-4">
                     <label className="block text-xs font-medium mb-2" style={{ color: "#A7B8AA" }}>
-                      {channel === "phone" ? "Номер телефона" : "Email адрес"}
+                      Email адрес
                     </label>
-                    <input
-                      type={channel === "phone" ? "tel" : "email"}
-                      placeholder={channel === "phone" ? "+998 90 000 00 00" : "you@example.com"}
-                      value={value}
-                      onChange={(e) => { setValue(e.target.value); setError(""); }}
-                      onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
-                      className="w-full px-4 py-3.5 rounded-xl text-sm font-medium outline-none transition-all"
-                      style={{
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        color: "#fff",
-                      }}
-                      autoFocus
-                    />
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#A7B8AA" }} />
+                      <input
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                        onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
+                        className="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm font-medium outline-none transition-all"
+                        style={{
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          color: "#fff",
+                        }}
+                        autoFocus
+                      />
+                    </div>
                   </div>
 
-                  {error && (
-                    <p className="text-xs mb-4" style={{ color: "#f87171" }}>{error}</p>
-                  )}
+                  {error && <p className="text-xs mb-4" style={{ color: "#f87171" }}>{error}</p>}
 
                   <button
                     onClick={handleSendOtp}
                     disabled={loading}
-                    className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-60"
+                    className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-60 mb-4"
                     style={{ background: "#008A2E", color: "#fff" }}
                   >
-                    {loading ? "Отправляем..." : "Получить код"}
+                    {loading ? "Отправляем..." : "Получить код на email"}
                   </button>
 
                   {isRegister && (
-                    <p className="text-xs mt-4 text-center leading-relaxed" style={{ color: "rgba(167,184,170,0.6)" }}>
+                    <p className="text-xs mb-4 text-center leading-relaxed" style={{ color: "rgba(167,184,170,0.6)" }}>
                       Регистрируясь, вы соглашаетесь с условиями использования платформы FundingPro.
                     </p>
                   )}
 
-                  <p className="text-xs mt-6 text-center" style={{ color: "#A7B8AA" }}>
+                  <p className="text-xs text-center" style={{ color: "#A7B8AA" }}>
                     {isRegister ? "Уже есть аккаунт?" : "Нет аккаунта?"}{" "}
                     <button
                       onClick={() => { setMode(isRegister ? "login" : "register"); reset(); }}
@@ -242,14 +187,10 @@ export default function AuthPage() {
                     className="flex items-center gap-3 px-4 py-3 rounded-xl mb-6"
                     style={{ background: "rgba(0,138,46,0.1)", border: "1px solid rgba(0,138,46,0.2)" }}
                   >
-                    {channel === "phone" ? (
-                      <Phone className="w-4 h-4 flex-shrink-0" style={{ color: "#12B94F" }} />
-                    ) : (
-                      <Mail className="w-4 h-4 flex-shrink-0" style={{ color: "#12B94F" }} />
-                    )}
+                    <Mail className="w-4 h-4 flex-shrink-0" style={{ color: "#12B94F" }} />
                     <div>
-                      <p className="text-xs font-medium text-white">Код отправлен</p>
-                      <p className="text-xs" style={{ color: "#A7B8AA" }}>{value}</p>
+                      <p className="text-xs font-medium text-white">Код отправлен на email</p>
+                      <p className="text-xs" style={{ color: "#A7B8AA" }}>{email}</p>
                     </div>
                   </div>
 
@@ -257,7 +198,6 @@ export default function AuthPage() {
                     Введите 6-значный код
                   </label>
 
-                  {/* OTP boxes */}
                   <div className="flex gap-2 mb-4">
                     {otp.map((digit, i) => (
                       <input
@@ -281,9 +221,7 @@ export default function AuthPage() {
                     ))}
                   </div>
 
-                  {error && (
-                    <p className="text-xs mb-4" style={{ color: "#f87171" }}>{error}</p>
-                  )}
+                  {error && <p className="text-xs mb-4" style={{ color: "#f87171" }}>{error}</p>}
 
                   <button
                     onClick={handleVerifyOtp}
@@ -300,7 +238,7 @@ export default function AuthPage() {
                     style={{ color: "#A7B8AA" }}
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    Изменить {channel === "phone" ? "номер" : "email"}
+                    Изменить email
                   </button>
                 </>
               )}
@@ -309,7 +247,6 @@ export default function AuthPage() {
         </div>
       </div>
 
-      {/* Footer */}
       <div className="text-center pb-8">
         <p className="text-xs" style={{ color: "rgba(167,184,170,0.3)" }}>
           Beta Version Solutions ООО, DGU No. 61712

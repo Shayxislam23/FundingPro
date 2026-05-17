@@ -1,9 +1,12 @@
 import { NextRequest } from "next/server";
-import { apiSuccess, apiError, getAuthUser } from "@/lib/api";
+import { apiSuccess, apiError } from "@/lib/api";
+import { getCurrentUser } from "@/lib/auth-helpers";
+import { prisma } from "@/lib/prisma";
+import { callAi, PROMPTS, redactPii as redactPiiHelper } from "@/lib/ai-gateway";
 
 // POST /api/v1/ai/proposal/generate
 export async function POST(req: NextRequest) {
-  const authUser = getAuthUser(req);
+  const authUser = await getCurrentUser(req);
   if (!authUser) return apiError("Unauthorized", 401, "UNAUTHORIZED");
 
   try {
@@ -13,39 +16,77 @@ export async function POST(req: NextRequest) {
     if (!projectIdea || !donorFormat || !sections?.length) {
       return apiError("projectIdea, donorFormat, sections required", 400, "MISSING_FIELDS");
     }
+    if (projectIdea.length > 10000) {
+      return apiError("projectIdea too long (max 10000 chars)", 400, "INPUT_TOO_LONG");
+    }
 
-    // AI DATA POLICY CHECKS:
-    // 1. Redact personal data from projectIdea before sending to AI
-    // 2. Never guarantee grant approval
-    // 3. Never fabricate donor requirements
-    // 4. Mark output as draft requiring human review
+    // AI DATA POLICY: redact personal identifiers before sending to AI
+    const { redacted: safeIdea, fieldsFound } = redactPiiHelper(projectIdea);
+    const hasPersonalData = fieldsFound.length > 0;
 
-    const redactedIdea = redactPersonalData(projectIdea);
+    // Generate each requested section (max 5 to prevent abuse)
+    const sectionContents: Record<string, string> = {};
+    let lastProvider = "mock";
+    let lastIsMock = true;
 
-    // TODO: check user subscription for AI generation quota
-    // TODO: call AI Gateway (provider abstraction: OpenAI or Claude)
-    // TODO: validate output schema
-    // TODO: log AIRequest record with token usage
-    // TODO: log RedactionLog if personal data was detected
-    // TODO: write audit log: action="ai_generation"
+    for (const sectionType of sections.slice(0, 5)) {
+      const prompt = PROMPTS["proposal-generate"](sectionType, donorFormat, safeIdea);
+      const result = await callAi(prompt, { module: "proposal-generate", userId: authUser.userId });
+      sectionContents[sectionType] = result.content;
+      lastProvider = result.provider;
+      lastIsMock = result.isMock;
+    }
+
+    // Create ProposalProject + sections in DB
+    const project = await prisma.proposalProject.create({
+      data: {
+        userId: authUser.userId,
+        title: projectIdea.slice(0, 120),
+        grantId: grantId ?? null,
+        donorFormat,
+        status: "DRAFT",
+        sections: {
+          create: Object.entries(sectionContents).map(([sectionType, content]) => ({
+            sectionType,
+            content,
+            version: 1,
+          })),
+        },
+      },
+      include: { sections: true },
+    });
+
+    // Non-blocking redaction log if PII was detected
+    if (hasPersonalData) {
+      prisma.redactionLog.create({
+        data: {
+          aiRequestId: project.id,
+          fieldType: fieldsFound.join(","),
+          redacted: true,
+        },
+      }).catch(() => {});
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        userId: authUser.userId,
+        action: "ai_generation",
+        entityType: "ProposalProject",
+        entityId: project.id,
+        metadata: { donorFormat, sectionCount: sections.length, isMock: lastIsMock },
+      },
+    });
 
     return apiSuccess({
-      proposalId: "TODO_PROPOSAL_ID",
-      sections: {},
-      isDraft: true, // Always mark as draft
+      proposalId: project.id,
+      sections: sectionContents,
+      isDraft: true,
       disclaimer: "Это черновик, сгенерированный AI. Требует профессиональной проверки перед подачей.",
-    });
-  } catch {
+      aiProvider: lastProvider,
+      isMockAi: lastIsMock,
+    }, 201);
+  } catch (err) {
+    console.error("POST /ai/proposal/generate error:", err);
     return apiError("Internal error", 500, "INTERNAL_ERROR");
   }
-}
-
-// AI DATA POLICY: strip personal identifiers before sending to AI provider
-function redactPersonalData(text: string): string {
-  // TODO: implement proper NLP-based redaction
-  // Placeholder: strip obvious patterns
-  return text
-    .replace(/\+?[\d\s\-()]{10,}/g, "[PHONE]")
-    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-z]{2,}/g, "[EMAIL]")
-    .replace(/\d{14}/g, "[PINFL]"); // Uzbek PINFL is 14 digits
 }

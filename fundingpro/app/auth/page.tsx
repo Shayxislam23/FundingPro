@@ -129,9 +129,16 @@ export default function AuthPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: "#A7B8AA" }}>
-                Пароль
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium" style={{ color: "#A7B8AA" }}>
+                  Пароль
+                </label>
+                {mode === "login" && (
+                  <Link href="/auth/forgot-password" className="text-xs font-medium hover:underline" style={{ color: "#12B94F" }}>
+                    Забыли пароль?
+                  </Link>
+                )}
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#A7B8AA" }} />
                 <input

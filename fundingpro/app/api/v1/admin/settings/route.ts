@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { apiSuccess } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-helpers";

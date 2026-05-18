@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://xgvwfnfifzsgscwvtcnz.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_zNSZxwBjjZnXbVkmHRMFJQ_dQyuEP7s",
+    "SUPABASE_SERVICE_ROLE_KEY": "sb_secret_dsElY-Tbi7ksolq_5ur9Ig_ZXLtw2Iq",
+    "RESEND_API_KEY": "re_ZqL9m2kT_McRxLjDzoHDtGdas6spnsjtA",
+    "AI_PROVIDER": "mock",
+    "PAYMENTS_ENABLED": "false",
+    "ADMIN_EMAILS": "",
+    "NEXT_PUBLIC_APP_NAME": "FundingPro"
+  }
+}

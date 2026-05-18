@@ -19,7 +19,7 @@ type Grant = {
   donor: { name: string | null; name_ru: string | null };
 };
 
-const TODAY = new Date("2026-05-18");
+const TODAY = new Date();
 
 const sectorFilters = ["Все", "Экология", "Образование", "Здравоохранение", "Климат", "Права человека", "Гражданское общество", "Экономика", "Исследования", "Биотехнологии", "Водные ресурсы"];
 
@@ -46,7 +46,7 @@ function getSector(sectors: string[]): string {
 export default function DashboardGrantsPage() {
   const [search, setSearch] = useState("");
   const [activeSector, setActiveSector] = useState("Все");
-  const [showExpired, setShowExpired] = useState(false);
+  const [showExpired, setShowExpired] = useState(true);
   const [saved, setSaved] = useState<string[]>([]);
 
   const [grants, setGrants] = useState<Grant[]>([]);

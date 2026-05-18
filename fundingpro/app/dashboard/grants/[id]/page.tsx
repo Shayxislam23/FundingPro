@@ -20,7 +20,7 @@ type Grant = {
   grant_requirements: { id: string; requirement_type: string; text: string; required: boolean }[];
 };
 
-const TODAY = new Date("2026-05-18");
+const TODAY = new Date();
 
 function formatAmount(min: number | null, max: number | null) {
   if (!min && !max) return "Сумма не указана";

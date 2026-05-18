@@ -11,7 +11,7 @@
     "ADMIN_EMAILS": "",
     "NEXT_PUBLIC_APP_NAME": "FundingPro",
     "NEXT_PUBLIC_APP_URL": "https://fundingpro-delta.vercel.app",
-    "SUPPORT_NOTIFY_EMAIL": "shayxislam-ceo@supa-ai.net",
-    "RESEND_FROM_EMAIL": "FundingPro <onboarding@resend.dev>"
+    "SUPPORT_NOTIFY_EMAIL": "info@fundingpro.uz",
+    "RESEND_FROM_EMAIL": "FundingPro <info@fundingpro.uz>"
   }
 }

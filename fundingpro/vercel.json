@@ -9,6 +9,7 @@
     "AI_PROVIDER": "mock",
     "PAYMENTS_ENABLED": "false",
     "ADMIN_EMAILS": "",
-    "NEXT_PUBLIC_APP_NAME": "FundingPro"
+    "NEXT_PUBLIC_APP_NAME": "FundingPro",
+    "NEXT_PUBLIC_APP_URL": "https://fundingpro-delta.vercel.app"
   }
 }

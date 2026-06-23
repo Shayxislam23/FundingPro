@@ -1,6 +1,20 @@
 import { Resend } from "resend";
 
-export const resend = new Resend(process.env.RESEND_API_KEY);
+let resendClient: Resend | null = null;
+
+function getResend(): Resend {
+  if (!resendClient) {
+    const key = process.env.RESEND_API_KEY?.trim() || "re_build_placeholder";
+    resendClient = new Resend(key);
+  }
+  return resendClient;
+}
+
+export const resend = new Proxy({} as Resend, {
+  get(_target, prop, receiver) {
+    return Reflect.get(getResend(), prop, receiver);
+  },
+});
 
 export async function sendOtpEmail(to: string, code: string) {
   return resend.emails.send({

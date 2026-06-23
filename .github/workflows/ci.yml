@@ -70,6 +70,10 @@ jobs:
           USE_LOCAL_DATABASE: "true"
           NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
+          SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-key"
+          RESEND_API_KEY: "re_placeholder"
+          RESEND_FROM_EMAIL: "info@fundingpro.uz"
+          ADMIN_EMAILS: "admin@fundingpro.uz"
         run: npm run build
 
       - name: API auth integration

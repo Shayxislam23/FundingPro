@@ -81,6 +81,7 @@ jobs:
           DATABASE_URL: postgresql://fundingpro:fundingpro_dev@localhost:5433/fundingpro
           USE_LOCAL_DATABASE: "true"
           SKIP_INTEGRATION_BUILD: "true"
+          TEST_PORT: "3098"
           NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
           SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-key"

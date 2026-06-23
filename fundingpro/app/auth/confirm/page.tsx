@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
+import { LegalFooter } from "@/components/design/LegalFooter";
 import { supabase } from "@/lib/supabase";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -106,9 +107,7 @@ export default function ConfirmPage() {
       </div>
 
       <div className="text-center pb-8">
-        <p className="text-xs" style={{ color: "rgba(167,184,170,0.3)" }}>
-          Beta Version Solutions ООО, DGU No. 61712
-        </p>
+        <LegalFooter style={{ color: "rgba(167,184,170,0.3)" }} />
       </div>
     </div>
   );

@@ -2,6 +2,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { isLocalDatabaseEnabled } from "@/lib/pg-pool";
+import { getGrantById } from "@/lib/db/grants";
 
 // GET /api/v1/grants/:id
 export async function GET(
@@ -9,6 +11,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (isLocalDatabaseEnabled()) {
+      const grant = await getGrantById(params.id);
+      if (!grant) return apiError("Grant not found", 404, "NOT_FOUND");
+      return apiSuccess(grant);
+    }
+
     const supabase = createSupabaseAdmin();
 
     const { data: grant, error } = await supabase

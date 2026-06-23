@@ -2,20 +2,38 @@ export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { isLocalDatabaseEnabled } from "@/lib/pg-pool";
+import { listGrants } from "@/lib/db/grants";
+import { parsePagination, sanitizeLikePattern } from "@/lib/validation";
 
 // GET /api/v1/grants
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const search = searchParams.get("search") ?? "";
+    const donorId = searchParams.get("donor") ?? "";
+    const deadlineBefore = searchParams.get("deadlineBefore") ?? "";
+    const q = searchParams.get("q") ?? "";
+    const search = searchParams.get("search") ?? q;
     const sector = searchParams.get("sector") ?? "";
     const country = searchParams.get("country") ?? "";
-    const donorId = searchParams.get("donor") ?? "";
     const featured = searchParams.get("featured") === "true";
-    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
-    const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 100);
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+    const { page, limit, from, to } = parsePagination(searchParams);
+
+    const safeSearch = search ? sanitizeLikePattern(search) : "";
+
+    if (isLocalDatabaseEnabled()) {
+      const result = await listGrants({
+        search: safeSearch || undefined,
+        sector,
+        country,
+        donorId,
+        deadlineBefore: deadlineBefore || undefined,
+        featured,
+        page,
+        limit,
+      });
+      return apiSuccess(result);
+    }
 
     const supabase = createSupabaseAdmin();
 
@@ -36,8 +54,8 @@ export async function GET(req: NextRequest) {
       .order("deadline", { ascending: true, nullsFirst: false })
       .range(from, to);
 
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+    if (safeSearch) {
+      query = query.or(`title.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`);
     }
     if (sector) {
       query = query.contains("sectors", [sector]);
@@ -47,6 +65,9 @@ export async function GET(req: NextRequest) {
     }
     if (donorId) {
       query = query.eq("donor_id", donorId);
+    }
+    if (featured) {
+      query = query.eq("featured", true);
     }
 
     const { data: grants, count, error } = await query;

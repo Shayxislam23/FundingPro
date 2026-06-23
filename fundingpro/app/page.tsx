@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
+import { LegalFooter } from "@/components/design/LegalFooter";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { MetricCard } from "@/components/design/MetricCard";
 import { PricingCard } from "@/components/design/PricingCard";
@@ -15,6 +17,21 @@ import {
   ChevronRight,
   ArrowRight,
 } from "lucide-react";
+
+import { formatPlanPriceDisplay } from "@/lib/format-plan";
+import { trackEvent, captureUtmParams } from "@/lib/analytics";
+import { LeadMagnetForm } from "@/components/landing/LeadMagnetForm";
+
+type LandingPlan = {
+  id: string;
+  nameRu: string;
+  priceUsd: number;
+  priceUzs: number;
+  features: string[];
+  highlighted: boolean;
+};
+
+const FEATURED_PLAN_IDS = ["plan-ngo-basic", "plan-ngo-pro", "plan-business-starter"];
 
 const features = [
   {
@@ -50,6 +67,44 @@ const features = [
 ];
 
 export default function LandingPage() {
+  const [grantTotal, setGrantTotal] = useState<number | null>(null);
+  const [plans, setPlans] = useState<LandingPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [usdUzsRate, setUsdUzsRate] = useState<number | null>(null);
+
+  useEffect(() => {
+    captureUtmParams();
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/v1/grants?limit=1")
+      .then((r) => r.json())
+      .then((d) => setGrantTotal(d.data?.total ?? null))
+      .catch(() => setGrantTotal(null));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/v1/plans")
+      .then((r) => r.json())
+      .then((d) => {
+        const all = (d.data?.plans ?? []) as LandingPlan[];
+        const featured = FEATURED_PLAN_IDS.map((id) => all.find((p) => p.id === id)).filter(
+          (p): p is LandingPlan => Boolean(p)
+        );
+        setPlans(featured.length > 0 ? featured : all.slice(0, 3));
+        if (d.data?.usdUzsRate) setUsdUzsRate(Number(d.data.usdUzsRate));
+      })
+      .catch(() => setPlans([]))
+      .finally(() => setPlansLoading(false));
+  }, []);
+
+  const grantCountLabel =
+    grantTotal !== null && grantTotal > 0
+      ? grantTotal >= 1000
+        ? `${Math.floor(grantTotal / 100) * 100}+`
+        : String(grantTotal)
+      : "1,000+";
+
   return (
     <div className="min-h-screen bg-funding-dark text-white overflow-hidden">
       {/* HERO */}
@@ -57,12 +112,18 @@ export default function LandingPage() {
         {/* Top nav */}
         <nav className="flex items-center justify-between px-6 md:px-12 py-6 border-b border-white/5">
           <FundingProLogo variant="dark" size="md" />
-          <Link
-            href="/auth"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-funding-green text-white text-sm font-semibold hover:bg-funding-accent transition-colors"
-          >
-            Войти <ArrowRight className="w-3 h-3" />
-          </Link>
+          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm" style={{ color: "#A7B8AA" }}>
+            <Link href="/grants" className="hover:text-white hidden sm:inline">Гранты</Link>
+            <Link href="/how-it-works" className="hover:text-white hidden sm:inline">Как работает</Link>
+            <a href="#pricing" className="hover:text-white hidden sm:inline">Тарифы</a>
+            <Link
+              href="/auth"
+              onClick={() => trackEvent("landing_cta_click", { placement: "nav" })}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-funding-green text-white text-sm font-semibold hover:bg-funding-accent transition-colors"
+            >
+              Начать бесплатно <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
         </nav>
 
         {/* Hero content */}
@@ -83,7 +144,14 @@ export default function LandingPage() {
                 className="w-1.5 h-1.5 rounded-full animate-pulse"
                 style={{ background: "#12B94F" }}
               />
-              AI-платформа для грантов
+              AI-платформа для грантов · бесплатный старт
+            </div>
+
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-4"
+              style={{ background: "rgba(0,138,46,0.15)", color: "#86efac" }}
+            >
+              Бесплатно: 2 проверки соответствия + 1 AI-черновик в месяц
             </div>
 
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[0.95] mb-6">
@@ -95,16 +163,26 @@ export default function LandingPage() {
 
             <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: "#A7B8AA" }}>
               AI-платформа для поиска международных грантов, проверки соответствия требованиям
-              и подготовки профессиональных предложений на русском и узбекском языках.
+              и подготовки профессиональных предложений. Юридические документы — на русском и узбекском.
             </p>
 
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/auth"
+              onClick={() => trackEvent("landing_cta_click", { placement: "hero" })}
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-sm transition-colors"
               style={{ background: "#008A2E", color: "#fff" }}
             >
-              Начать работу <ChevronRight className="w-4 h-4" />
+              Начать бесплатно <ChevronRight className="w-4 h-4" />
             </Link>
+            <Link
+              href="/grants"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-sm border transition-colors"
+              style={{ borderColor: "rgba(255,255,255,0.2)", color: "#A7B8AA" }}
+            >
+              Смотреть гранты
+            </Link>
+            </div>
 
             <p className="text-xs mt-8 max-w-lg mx-auto" style={{ color: "rgba(167,184,170,0.6)" }}>
               FundingPro не гарантирует получение гранта. Платформа помогает найти возможности,
@@ -117,7 +195,7 @@ export default function LandingPage() {
         <div className="border-t px-6 md:px-12 py-6" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
           <div className="flex flex-wrap justify-center gap-8 md:gap-16">
             {[
-              { value: "1,000+", label: "грантов в базе" },
+              { value: grantCountLabel, label: "грантов в базе" },
               { value: "Top 10", label: "AI-подбор по профилю" },
               { value: "UNDP/EU/GIZ", label: "форматы заявок" },
               { value: "24/7", label: "AI-поддержка" },
@@ -127,6 +205,41 @@ export default function LandingPage() {
                 <div className="text-xs mt-1" style={{ color: "#A7B8AA" }}>{label}</div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="py-16 px-6 md:px-12 border-t border-white/5" style={{ background: "#020703" }}>
+        <div className="max-w-4xl mx-auto text-center">
+          <SectionLabel className="text-funding-muted">Как это работает</SectionLabel>
+          <h2 className="text-3xl font-black mb-10">Первый грант за 30 минут</h2>
+          <div className="grid sm:grid-cols-3 gap-6 text-left">
+            {[
+              { step: "1", title: "Профиль НКО", desc: "Укажите сектор и миссию — AI подберёт релевантные гранты." },
+              { step: "2", title: "Проверка соответствия", desc: "Узнайте, насколько ваша организация подходит требованиям донора." },
+              { step: "3", title: "AI-черновик", desc: "Получите структурированную заявку в формате UNDP, EU или GIZ." },
+            ].map(({ step, title, desc }) => (
+              <div key={step} className="rounded-2xl border border-white/10 p-5">
+                <span className="text-2xl font-black text-funding-green">{step}</span>
+                <h3 className="font-bold mt-2 mb-1">{title}</h3>
+                <p className="text-sm" style={{ color: "#A7B8AA" }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF */}
+      <section className="py-10 px-6 border-t border-white/5" style={{ background: "#020703" }}>
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-xs uppercase tracking-widest mb-4" style={{ color: "#A7B8AA" }}>Для НКО Узбекистана</p>
+          <div className="flex flex-wrap justify-center gap-8 text-sm font-semibold" style={{ color: "rgba(167,184,170,0.7)" }}>
+            <span>UNDP · EU · GIZ</span>
+            <span>·</span>
+            <span>{grantCountLabel} грантов</span>
+            <span>·</span>
+            <span>Оплата в UZS через Uzum</span>
           </div>
         </div>
       </section>
@@ -164,7 +277,7 @@ export default function LandingPage() {
             </div>
 
             <MetricCard
-              value="1,000+"
+              value={grantCountLabel}
               label="международных грантов в базе данных"
               subvalue="Top 10"
               sublabel="AI-подобранных грантов по профилю пользователя"
@@ -205,7 +318,7 @@ export default function LandingPage() {
       </section>
 
       {/* PRICING */}
-      <section className="py-20 px-6 md:px-12 bg-white">
+      <section id="pricing" className="py-20 px-6 md:px-12 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <SectionLabel className="text-funding-green">Тарифы</SectionLabel>
@@ -217,46 +330,40 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <PricingCard
-              name="НКО / Физлица Basic"
-              price="$30"
-              features={[
-                "Доступ к базе грантов",
-                "5 AI-проверок соответствия",
-                "2 черновика предложений",
-                "Базовый трекер заявок",
-              ]}
-              cta="Начать"
-            />
-            <PricingCard
-              name="НКО / Физлица Pro"
-              price="$50"
-              features={[
-                "Всё из Basic",
-                "Безлимитные проверки",
-                "10 AI-предложений",
-                "Хранилище документов",
-                "Консультация 1 час",
-              ]}
-              cta="Выбрать Pro"
-              highlighted
-            />
-            <PricingCard
-              name="Бизнес Starter"
-              price="$90"
-              features={[
-                "Корпоративный профиль",
-                "Мультипользовательский доступ",
-                "Безлимитные гранты",
-                "Полный AI-пакет",
-                "Приоритетная поддержка",
-              ]}
-              cta="Для бизнеса"
-            />
+            {plansLoading && (
+              <p className="col-span-full text-center text-sm text-gray-400">Загрузка тарифов…</p>
+            )}
+            {!plansLoading &&
+              plans.map((plan) => {
+                const display = formatPlanPriceDisplay(plan.priceUzs, plan.priceUsd);
+                return (
+                <PricingCard
+                  key={plan.id}
+                  name={plan.nameRu}
+                  price={display.primary}
+                  priceSecondary={display.secondary}
+                  features={plan.features.slice(0, 6)}
+                  cta={plan.highlighted ? "Выбрать план" : "Начать"}
+                  highlighted={plan.highlighted}
+                  href="/auth"
+                />
+              );})}
+            {!plansLoading && plans.length === 0 && (
+              <p className="col-span-full text-center text-sm text-gray-500">
+                Тарифы временно недоступны.{" "}
+                <Link href="/auth" className="text-funding-green hover:underline">
+                  Войти в дашборд
+                </Link>
+              </p>
+            )}
           </div>
           <p className="text-center text-xs mt-8" style={{ color: "#9ca3af" }}>
-            Также: Consulting $100/мес, Business Pro $200/мес, Enterprise $500+/мес.
-            Гонорар за успех: 2–5% от суммы полученного гранта при наличии договора.
+            Цены в сумах (UZS){usdUzsRate ? `, курс 1 USD = ${usdUzsRate.toLocaleString("ru-RU")} UZS` : ""}. USD — справочно.
+            {" "}Гонорар за успех: 2–5% — см.{" "}
+            <Link href="/legal/success-fee" className="text-funding-green underline">
+              условия
+            </Link>
+            .
           </p>
         </div>
       </section>
@@ -270,19 +377,21 @@ export default function LandingPage() {
           <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
             Готовы начать?
           </h2>
-          <p className="mb-10 max-w-xl mx-auto" style={{ color: "#A7B8AA" }}>
-            Используйте полный веб-дашборд для поиска грантов и подготовки заявок.
+          <p className="mb-6 max-w-xl mx-auto" style={{ color: "#A7B8AA" }}>
+            Получите подборку грантов для НКО Узбекистана на email или начните бесплатно в дашборде.
           </p>
-          <Link
-            href="/auth"
-            className="inline-block px-6 py-3.5 rounded-xl font-semibold text-sm transition-colors"
-            style={{ background: "#008A2E", color: "#fff" }}
-          >
-            Войти в дашборд
-          </Link>
-          <p className="text-xs mt-8" style={{ color: "rgba(167,184,170,0.4)" }}>
-            Beta Version Solutions ООО, DGU No. 61712
-          </p>
+          <LeadMagnetForm />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
+            <Link
+              href="/auth"
+              onClick={() => trackEvent("landing_cta_click", { placement: "footer" })}
+              className="inline-block px-6 py-3.5 rounded-xl font-semibold text-sm transition-colors"
+              style={{ background: "#008A2E", color: "#fff" }}
+            >
+              Начать бесплатно
+            </Link>
+          </div>
+          <LegalFooter className="mt-8" variant="dark" style={{ color: "rgba(167,184,170,0.4)" }} />
         </div>
       </section>
     </div>

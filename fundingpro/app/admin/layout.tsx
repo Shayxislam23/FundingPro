@@ -1,38 +1,73 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
+import { supabase } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/client-auth";
 import {
+  Building2,
+  Landmark,
   LayoutDashboard,
   Users,
-  Building2,
   BookOpen,
   CreditCard,
-  BarChart3,
   Bot,
   HelpCircle,
   Settings,
-  Briefcase,
-  ScrollText,
   LogOut,
   ShieldCheck,
+  ScrollText,
+  Briefcase,
+  ClipboardList,
+  TrendingUp,
+  Shield,
 } from "lucide-react";
 
 const adminNav = [
   { label: "Главная", href: "/admin", icon: LayoutDashboard },
   { label: "Пользователи", href: "/admin/users", icon: Users },
+  { label: "Воронка", href: "/admin/funnel", icon: TrendingUp },
+  { label: "Заявки", href: "/admin/applications", icon: ClipboardList },
+  { label: "Согласия", href: "/admin/consents", icon: Shield },
+  { label: "Организации", href: "/admin/organizations", icon: Building2 },
   { label: "Гранты", href: "/admin/grants", icon: BookOpen },
+  { label: "Доноры", href: "/admin/donors", icon: Landmark },
+  { label: "Заказы консультантов", href: "/admin/consultant-orders", icon: Briefcase },
   { label: "Платежи", href: "/admin/payments", icon: CreditCard },
-  { label: "Аналитика выручки", href: "/admin/payments", icon: BarChart3 },
   { label: "AI-запросы", href: "/admin/ai-logs", icon: Bot },
   { label: "Поддержка", href: "/admin/support", icon: HelpCircle },
+  { label: "Аудит", href: "/admin/audit", icon: ScrollText },
   { label: "Настройки", href: "/admin/settings", icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [adminEmail, setAdminEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch("/api/v1/me", { headers });
+        if (!res.ok) return;
+        const json = await res.json();
+        setAdminEmail(json.data?.email ?? null);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/auth");
+  }
+
+  const adminInitial = (adminEmail?.[0] ?? "A").toUpperCase();
 
   return (
     <div className="min-h-screen bg-funding-light-bg flex">
@@ -46,7 +81,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {adminNav.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href;
+            const active = pathname === href || (href !== "/admin" && pathname.startsWith(href));
             return (
               <Link
                 key={label + href}
@@ -65,7 +100,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
         <div className="p-4 border-t border-white/10">
-          <button className="flex items-center gap-2 px-3 py-2 text-sm text-funding-muted hover:text-red-400 w-full transition-colors">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-funding-muted hover:text-red-400 w-full transition-colors"
+          >
             <LogOut className="w-4 h-4" />
             Выйти
           </button>
@@ -75,9 +114,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
           <div />
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500">Администратор</span>
+            <span className="text-xs text-gray-500 truncate max-w-[180px]">
+              {adminEmail ?? "Администратор"}
+            </span>
             <div className="w-8 h-8 rounded-xl bg-funding-green text-white flex items-center justify-center font-semibold text-sm">
-              А
+              {adminInitial}
             </div>
           </div>
         </header>

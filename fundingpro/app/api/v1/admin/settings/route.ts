@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { apiSuccess } from "@/lib/api";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { COMPANY } from "@/lib/company-info";
 
 // GET /api/v1/admin/settings — returns safe, non-secret config info
 export async function GET(req: NextRequest) {
@@ -20,6 +21,17 @@ export async function GET(req: NextRequest) {
 
   return apiSuccess({
     platform: "FundingPro v1.0",
+    company: {
+      legalNameRu: COMPANY.legalNameRu,
+      legalNameUz: COMPANY.legalNameUz,
+      stir: COMPANY.stir,
+      dguNumber: COMPANY.dguNumber,
+      dguRegisteredAt: COMPANY.dguRegisteredAt,
+      entityRegisteredAt: COMPANY.entityRegisteredAt,
+      founder: COMPANY.founder,
+      email: COMPANY.email,
+      addressUz: COMPANY.addressUz,
+    },
     aiProvider,
     aiProviderConfigured: aiProvider !== "mock",
     paymentsEnabled,

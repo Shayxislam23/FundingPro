@@ -1,18 +1,25 @@
 export const dynamic = "force-dynamic";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
-import { getCurrentUser, writeAuditLog } from "@/lib/auth-helpers";
-import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { requireActiveUserOrResponse, writeAuditLog } from "@/lib/auth-helpers";
+import { checkAiRateLimitAsync } from "@/lib/ai-rate-limit";
+import { ensureInternalUser } from "@/lib/db/users";
+import { logAiRequest, saveProposalProject } from "@/lib/db/proposals";
 import { callAi, PROMPTS, redactPii as redactPiiHelper } from "@/lib/ai-gateway";
+import { validateProposalContent } from "@/lib/ai-validation";
+import { checkProposalLimit } from "@/lib/plan-limits";
 
 // POST /api/v1/ai/proposal/generate
 export async function POST(req: NextRequest) {
-  const authUser = await getCurrentUser(req);
-  if (!authUser) return apiError("Unauthorized", 401, "UNAUTHORIZED");
+  const authUser = await requireActiveUserOrResponse(req);
+  if (authUser instanceof NextResponse) return authUser;
+  if (!(await checkAiRateLimitAsync(authUser.userId))) {
+    return apiError("Too many AI requests. Try again later.", 429, "RATE_LIMITED");
+  }
 
   try {
     const body = await req.json();
-    const { projectIdea, donorFormat, sections, grantId } = body;
+    const { projectIdea, donorFormat, sections, grantId, confirmSave } = body;
 
     if (!projectIdea || !donorFormat || !sections?.length) {
       return apiError("projectIdea, donorFormat, sections required", 400, "MISSING_FIELDS");
@@ -21,49 +28,87 @@ export async function POST(req: NextRequest) {
       return apiError("projectIdea too long (max 10000 chars)", 400, "INPUT_TOO_LONG");
     }
 
-    const { redacted: safeIdea } = redactPiiHelper(projectIdea);
+    await ensureInternalUser({
+      supabaseId: authUser.supabaseId,
+      email: authUser.email,
+      provider: "supabase_email",
+    });
+
+    if (confirmSave !== false) {
+      const limitCheck = await checkProposalLimit(authUser.userId);
+      if (!limitCheck.allowed) {
+        return apiError(limitCheck.message, 402, limitCheck.code);
+      }
+    }
+
+    const { redacted: safeIdea, fieldsFound } = redactPiiHelper(projectIdea);
 
     const sectionContents: Record<string, string> = {};
     let lastProvider = "mock";
     let lastIsMock = true;
+    let totalTokens = 0;
 
     for (const sectionType of sections.slice(0, 5)) {
       const prompt = PROMPTS["proposal-generate"](sectionType, donorFormat, safeIdea);
       const result = await callAi(prompt, { module: "proposal-generate", userId: authUser.userId });
+      const validation = validateProposalContent(result.content);
+      if (!validation.valid) {
+        return apiError(`AI output invalid for section ${sectionType}`, 502, "AI_OUTPUT_INVALID");
+      }
       sectionContents[sectionType] = result.content;
       lastProvider = result.provider;
       lastIsMock = result.isMock;
+      totalTokens += result.tokensUsed ?? 0;
     }
 
-    // Save to Supabase proposals table if it exists
-    const supabase = createSupabaseAdmin();
-    const proposalId = crypto.randomUUID();
+    const aiRequestId = await logAiRequest({
+      userId: authUser.userId,
+      requestType: "proposal-generate",
+      model: lastProvider,
+      outputTokens: totalTokens,
+      redactionApplied: fieldsFound.length > 0,
+    });
 
-    supabase.from("proposals").insert({
-      id: proposalId,
-      user_id: authUser.userId,
-      grant_id: grantId ?? null,
-      title: projectIdea.slice(0, 120),
-      status: "draft",
-      sections_json: sectionContents,
-    }).then(() => {}, () => {}); // non-blocking — table may not exist yet
+    let proposalId = crypto.randomUUID();
+
+    if (confirmSave !== false) {
+      proposalId = await saveProposalProject({
+        userId: authUser.userId,
+        title: projectIdea.slice(0, 120),
+        grantId: grantId ?? null,
+        donorFormat,
+        sections: sectionContents,
+      });
+    }
 
     await writeAuditLog({
       userId: authUser.userId,
       action: "ai_proposal_generate",
       entityType: "proposal",
       entityId: proposalId,
-      metadata: { donorFormat, sectionCount: sections.length, isMock: lastIsMock },
+      metadata: {
+        donorFormat,
+        sectionCount: sections.length,
+        isMock: lastIsMock,
+        aiRequestId,
+        saved: confirmSave !== false,
+      },
     });
 
-    return apiSuccess({
-      proposalId,
-      sections: sectionContents,
-      isDraft: true,
-      disclaimer: "Это черновик, сгенерированный AI. Требует профессиональной проверки перед подачей.",
-      aiProvider: lastProvider,
-      isMockAi: lastIsMock,
-    }, 201);
+    return apiSuccess(
+      {
+        proposalId,
+        sections: sectionContents,
+        isDraft: true,
+        saved: confirmSave !== false,
+        disclaimer:
+          "Это черновик, сгенерированный AI. Требует профессиональной проверки перед подачей. AI-generated drafts require human review before submission.",
+        aiProvider: lastProvider,
+        isMockAi: lastIsMock,
+        aiRequestId,
+      },
+      201
+    );
   } catch (err) {
     console.error("POST /ai/proposal/generate error:", err);
     return apiError("Internal error", 500, "INTERNAL_ERROR");

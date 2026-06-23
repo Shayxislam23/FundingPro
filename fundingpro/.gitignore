@@ -27,6 +27,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.vercel.*
 
 # SECURITY: never commit real secrets
 .env
@@ -35,6 +36,7 @@ yarn-error.log*
 
 # Private document uploads
 uploads/
+.local/
 private/
 
 # vercel

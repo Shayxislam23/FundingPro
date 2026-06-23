@@ -2,30 +2,42 @@
 
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
+import Link from "next/link";
 
 interface PricingCardProps {
   name: string;
   price: string;
+  priceSecondary?: string;
   period?: string;
   description?: string;
   features: string[];
   cta: string;
   highlighted?: boolean;
   className?: string;
+  href?: string;
   onSelect?: () => void;
 }
 
 export function PricingCard({
   name,
   price,
+  priceSecondary,
   period = "/мес",
   description,
   features,
   cta,
   highlighted,
   className,
+  href,
   onSelect,
 }: PricingCardProps) {
+  const ctaClass = cn(
+    "w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 block text-center",
+    highlighted
+      ? "bg-white text-funding-green hover:bg-green-50"
+      : "bg-funding-green text-white hover:bg-funding-green/90"
+  );
+
   return (
     <div
       className={cn(
@@ -53,6 +65,11 @@ export function PricingCard({
             {period}
           </span>
         </div>
+        {priceSecondary && (
+          <p className={cn("text-xs mt-1", highlighted ? "text-green-200/80" : "text-gray-400")}>
+            {priceSecondary}
+          </p>
+        )}
         {description && (
           <p className={cn("text-sm mt-2", highlighted ? "text-green-100" : "text-gray-500")}>
             {description}
@@ -81,17 +98,15 @@ export function PricingCard({
         ))}
       </ul>
 
-      <button
-        onClick={onSelect}
-        className={cn(
-          "w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200",
-          highlighted
-            ? "bg-white text-funding-green hover:bg-green-50"
-            : "bg-funding-green text-white hover:bg-funding-green/90"
-        )}
-      >
-        {cta}
-      </button>
+      {href ? (
+        <Link href={href} className={ctaClass}>
+          {cta}
+        </Link>
+      ) : (
+        <button onClick={onSelect} className={ctaClass}>
+          {cta}
+        </button>
+      )}
     </div>
   );
 }

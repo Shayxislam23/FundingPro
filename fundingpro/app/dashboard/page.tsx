@@ -4,8 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { GrantCard } from "@/components/design/GrantCard";
-import { BookOpen, BarChart3, CheckCircle2, FileText, ArrowRight, Sparkles, Target, Loader2 } from "lucide-react";
+import { OrgOnboardingBanner } from "@/components/design/OrgOnboardingBanner";
+import { OnboardingChecklist } from "@/components/design/OnboardingChecklist";
+import { ReconsentBanner } from "@/components/legal/ReconsentBanner";
+import { BookOpen, BarChart3, CheckCircle2, FileText, ArrowRight, Sparkles, Target, Loader2, Building2 } from "lucide-react";
 import { translateSector } from "@/lib/sector-labels";
+import { getAuthHeaders } from "@/lib/client-auth";
+import { formatGrantAmount, formatDeadlineDate, getDeadlineUrgency } from "@/lib/format-grant";
+import { getStatusLabel, getStatusStyle } from "@/lib/application-status";
+import type { OnboardingStepId } from "@/lib/db/onboarding";
 
 type Grant = {
   id: string;
@@ -26,53 +33,60 @@ type Application = {
   grant: { title: string; title_ru: string | null };
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  saved: "Сохранено", preparing: "Подготовка", drafting: "Черновик",
-  ready: "Готово", submitted: "Подана", under_review: "На рассмотрении",
-  shortlisted: "Шортлист", won: "Получено", lost: "Отклонено",
-};
-
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  saved: { bg: "#F3F4F6", color: "#6B7280" },
-  preparing: { bg: "#FEF3C7", color: "#D97706" },
-  drafting: { bg: "#DBEAFE", color: "#2563EB" },
-  ready: { bg: "#D9F7DD", color: "#008A2E" },
-  submitted: { bg: "#D9F7DD", color: "#008A2E" },
-  shortlisted: { bg: "#FDE68A", color: "#92400E" },
-  won: { bg: "#D9F7DD", color: "#008A2E" },
-  lost: { bg: "#FEE2E2", color: "#DC2626" },
-};
-
-function formatAmount(min: number | null, max: number | null) {
-  if (!min && !max) return undefined;
-  if (max) return `до $${max.toLocaleString()}`;
-  return `от $${min!.toLocaleString()}`;
-}
-
 export default function DashboardHome() {
   const [grants, setGrants] = useState<Grant[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [totalGrants, setTotalGrants] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [hasOrganization, setHasOrganization] = useState(true);
+  const [orgName, setOrgName] = useState<string | null>(null);
+  const [onboardingSteps, setOnboardingSteps] = useState<Record<OnboardingStepId, boolean> | null>(null);
+  const [onboardingProgress, setOnboardingProgress] = useState({ completed: 0, total: 5 });
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/v1/grants?limit=4").then((r) => r.json()),
-      fetch("/api/v1/applications?limit=3").then((r) => r.json()),
-    ]).then(([grantsData, appsData]) => {
-      setGrants(grantsData.data?.grants ?? []);
-      setApplications(appsData.data?.applications ?? []);
-    }).catch(() => {}).finally(() => setLoading(false));
+    (async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const [grantsData, appsData, meData, onboardingData] = await Promise.all([
+          fetch("/api/v1/grants?limit=4").then((r) => r.json()),
+          fetch("/api/v1/applications?limit=3", { headers }).then((r) => r.json()),
+          fetch("/api/v1/me", { headers }).then((r) => r.json()),
+          fetch("/api/v1/onboarding/status", { headers }).then((r) => r.json()),
+        ]);
+        setGrants(grantsData.data?.grants ?? []);
+        setTotalGrants(grantsData.data?.total ?? 0);
+        setApplications(appsData.data?.applications ?? []);
+        setHasOrganization(!!meData.data?.organization);
+        setOrgName(meData.data?.organization?.name ?? null);
+        if (onboardingData.data?.steps) {
+          setOnboardingSteps(onboardingData.data.steps);
+          setOnboardingProgress({
+            completed: onboardingData.data.completedCount ?? 0,
+            total: onboardingData.data.totalSteps ?? 5,
+          });
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
-
-  const totalGrants = 153;
 
   return (
     <div>
       {/* Welcome */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-black text-funding-black mb-1">Добро пожаловать</h1>
-          <p className="text-sm text-gray-500">{totalGrants} грантов в базе · обновлено сегодня</p>
+          <h1 className="text-2xl font-black text-funding-black mb-1">
+            {orgName ? `Добро пожаловать, ${orgName}` : "Добро пожаловать"}
+          </h1>
+          <p className="text-sm text-gray-500">
+            {totalGrants} грантов в базе
+            {onboardingProgress.completed < onboardingProgress.total
+              ? ` · ${onboardingProgress.completed}/${onboardingProgress.total} шагов онбординга`
+              : " · обновлено сегодня"}
+          </p>
         </div>
         <Link
           href="/dashboard/ai-writer"
@@ -83,6 +97,18 @@ export default function DashboardHome() {
           AI-предложение
         </Link>
       </div>
+
+      <ReconsentBanner />
+
+      {!hasOrganization && <OrgOnboardingBanner />}
+
+      {onboardingSteps && (
+        <OnboardingChecklist
+          steps={onboardingSteps}
+          completedCount={onboardingProgress.completed}
+          totalSteps={onboardingProgress.total}
+        />
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -130,8 +156,9 @@ export default function DashboardHome() {
                     id={g.id}
                     title={g.title_ru ?? g.title}
                     donor={g.donor.name_ru ?? g.donor.name ?? "—"}
-                    amount={formatAmount(g.amount_min, g.amount_max)}
-                    deadline={g.deadline ? new Date(g.deadline).toLocaleDateString("ru-RU") : undefined}
+                    amount={formatGrantAmount(g.amount_min, g.amount_max)}
+                    deadline={formatDeadlineDate(g.deadline)}
+                    deadlineUrgency={getDeadlineUrgency(g.deadline)}
                     country={g.country_scope[0] ?? "—"}
                     sector={g.sectors[0] ? translateSector(g.sectors[0]) : undefined}
                     variant="light"
@@ -158,7 +185,7 @@ export default function DashboardHome() {
             ) : (
               <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 {applications.map((app, i) => {
-                  const sc = STATUS_COLORS[app.status] ?? STATUS_COLORS.saved;
+                  const sc = getStatusStyle(app.status);
                   return (
                     <div
                       key={app.id}
@@ -174,7 +201,7 @@ export default function DashboardHome() {
                         </p>
                       </div>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0" style={sc}>
-                        {STATUS_LABELS[app.status] ?? app.status}
+                        {getStatusLabel(app.status)}
                       </span>
                     </div>
                   );
@@ -190,6 +217,7 @@ export default function DashboardHome() {
               {[
                 { label: "Найти гранты", href: "/dashboard/grants", icon: BookOpen },
                 { label: "Проверить соответствие", href: "/dashboard/eligibility", icon: Target },
+                { label: "Профиль организации", href: "/dashboard/profile", icon: Building2 },
                 { label: "Создать AI-предложение", href: "/dashboard/ai-writer", icon: Sparkles },
               ].map(({ label, href, icon: Icon }) => (
                 <Link

@@ -5,6 +5,9 @@ import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { EmptyState } from "@/components/design/EmptyState";
 import { BarChart3, Plus, Loader2, ChevronDown } from "lucide-react";
+import { getAuthHeaders } from "@/lib/client-auth";
+import { formatGrantAmount, formatDeadlineDate } from "@/lib/format-grant";
+import { getStatusLabel, getStatusStyle } from "@/lib/application-status";
 
 type ApplicationStatus =
   | "saved" | "preparing" | "drafting" | "ready" | "submitted"
@@ -26,45 +29,6 @@ type Application = {
     donor: { name: string | null; name_ru: string | null };
   };
 };
-
-const STATUS_LABELS: Record<string, string> = {
-  saved: "Сохранено",
-  preparing: "Подготовка",
-  drafting: "Черновик",
-  ready: "Готово",
-  submitted: "Подана",
-  under_review: "На рассмотрении",
-  shortlisted: "Шортлист",
-  won: "Получено",
-  lost: "Отклонено",
-  reporting: "Отчётность",
-  closed: "Закрыто",
-};
-
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  saved: { bg: "#F3F4F6", color: "#6B7280" },
-  preparing: { bg: "#FEF3C7", color: "#D97706" },
-  drafting: { bg: "#DBEAFE", color: "#2563EB" },
-  ready: { bg: "#D9F7DD", color: "#008A2E" },
-  submitted: { bg: "#D9F7DD", color: "#008A2E" },
-  under_review: { bg: "#FDE68A", color: "#92400E" },
-  shortlisted: { bg: "#FEF3C7", color: "#D97706" },
-  won: { bg: "#D9F7DD", color: "#008A2E" },
-  lost: { bg: "#FEE2E2", color: "#DC2626" },
-  reporting: { bg: "#DBEAFE", color: "#2563EB" },
-  closed: { bg: "#F3F4F6", color: "#6B7280" },
-};
-
-function formatDeadline(d: string | null) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
-
-function formatAmount(min: number | null, max: number | null) {
-  if (!min && !max) return "—";
-  if (max) return `до $${max.toLocaleString()}`;
-  return `от $${min!.toLocaleString()}`;
-}
 
 const NEXT_STATUSES: Partial<Record<ApplicationStatus, ApplicationStatus[]>> = {
   saved: ["preparing"],
@@ -93,9 +57,10 @@ export default function TrackerDashboard() {
   const fetchApplications = useCallback(async () => {
     setLoading(true);
     try {
+      const headers = await getAuthHeaders();
       const params = new URLSearchParams({ limit: "50" });
       if (filterStatus !== "all") params.set("status", filterStatus);
-      const res = await fetch(`/api/v1/applications?${params}`);
+      const res = await fetch(`/api/v1/applications?${params}`, { headers });
       const data = await res.json();
       setApplications(data.data?.applications ?? []);
     } catch {
@@ -111,11 +76,13 @@ export default function TrackerDashboard() {
     setUpdatingId(id);
     setOpenMenuId(null);
     try {
-      await fetch(`/api/v1/applications/${id}`, {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`/api/v1/applications/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ status }),
       });
+      if (!res.ok) return;
       await fetchApplications();
     } finally {
       setUpdatingId(null);
@@ -178,7 +145,7 @@ export default function TrackerDashboard() {
               className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
               style={filterStatus === s ? { background: "#008A2E", color: "#fff" } : { background: "#F7FAF7", color: "#4A5A4D", border: "1px solid #e5e7eb" }}
             >
-              {STATUS_LABELS[s]}
+              {getStatusLabel(s)}
             </button>
           ))}
         </div>
@@ -200,7 +167,35 @@ export default function TrackerDashboard() {
           }
         />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <>
+        <div className="md:hidden space-y-3">
+          {applications.map((app) => {
+            const sc = getStatusStyle(app.status);
+            const nextStatuses = NEXT_STATUSES[app.status];
+            return (
+              <div key={app.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+                <Link href={`/dashboard/grants/${app.grant?.id ?? ""}`} className="text-sm font-semibold text-funding-black hover:text-funding-green">
+                  {app.grant?.title_ru ?? app.grant?.title ?? "—"}
+                </Link>
+                <p className="text-xs text-gray-400 mt-1">{app.grant?.donor?.name_ru ?? app.grant?.donor?.name ?? "—"}</p>
+                <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-500">
+                  <span>{formatGrantAmount(app.grant?.amount_min ?? null, app.grant?.amount_max ?? null) ?? "—"}</span>
+                  <span>·</span>
+                  <span>{formatDeadlineDate(app.grant?.deadline ?? null) ?? "—"}</span>
+                </div>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={sc}>{getStatusLabel(app.status)}</span>
+                  {nextStatuses?.[0] && (
+                    <button type="button" onClick={() => updateStatus(app.id, nextStatuses[0])} className="text-xs font-semibold text-funding-green">
+                      → {getStatusLabel(nextStatuses[0])}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -214,7 +209,7 @@ export default function TrackerDashboard() {
               </thead>
               <tbody>
                 {applications.map((app, i) => {
-                  const sc = STATUS_COLORS[app.status] ?? STATUS_COLORS.saved;
+                  const sc = getStatusStyle(app.status);
                   const nextStatuses = NEXT_STATUSES[app.status];
                   return (
                     <tr
@@ -223,20 +218,31 @@ export default function TrackerDashboard() {
                       className="hover:bg-funding-light-bg transition-colors"
                     >
                       <td className="px-4 py-3">
-                        <p className="text-sm font-semibold text-funding-black">
+                        <Link
+                          href={`/dashboard/grants/${app.grant?.id ?? ""}`}
+                          className="text-sm font-semibold text-funding-black hover:text-funding-green"
+                        >
                           {app.grant?.title_ru ?? app.grant?.title ?? "—"}
-                        </p>
+                        </Link>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {app.grant?.donor?.name_ru ?? app.grant?.donor?.name ?? "—"}
                         </p>
+                        <Link
+                          href="/dashboard/documents"
+                          className="text-[11px] text-funding-green hover:underline mt-1 inline-block"
+                        >
+                          Документы
+                        </Link>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
-                        {formatAmount(app.grant?.amount_min ?? null, app.grant?.amount_max ?? null)}
+                        {formatGrantAmount(app.grant?.amount_min ?? null, app.grant?.amount_max ?? null) ?? "—"}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{formatDeadline(app.grant?.deadline ?? null)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {formatDeadlineDate(app.grant?.deadline ?? null) ?? "—"}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={sc}>
-                          {STATUS_LABELS[app.status] ?? app.status}
+                          {getStatusLabel(app.status)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400">
@@ -261,7 +267,7 @@ export default function TrackerDashboard() {
                                     onClick={() => updateStatus(app.id, s)}
                                     className="w-full text-left px-3 py-2 text-xs rounded-lg hover:bg-funding-light-bg text-gray-700"
                                   >
-                                    → {STATUS_LABELS[s]}
+                                    → {getStatusLabel(s)}
                                   </button>
                                 ))}
                               </div>
@@ -278,6 +284,7 @@ export default function TrackerDashboard() {
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

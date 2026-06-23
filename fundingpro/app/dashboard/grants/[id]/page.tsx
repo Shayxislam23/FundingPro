@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Calendar, MapPin, DollarSign, FileText, ArrowLeft, Loader2, Plus, AlertTriangle } from "lucide-react";
 import { translateSector } from "@/lib/sector-labels";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 type Grant = {
   id: string;
@@ -59,9 +60,10 @@ export default function GrantDetailPage({ params }: { params: { id: string } }) 
   const handleApply = async () => {
     setApplying(true);
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/v1/applications", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ grantId: params.id }),
       });
       if (res.ok) setApplied(true);

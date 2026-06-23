@@ -3,15 +3,30 @@
 import { useState, useEffect, useRef } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { EmptyState } from "@/components/design/EmptyState";
-import { FolderOpen, Upload, File, Lock, Trash2, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { FolderOpen, Upload, File, Lock, Trash2, Loader2, Download } from "lucide-react";
+import { getAuthHeaders, getAuthHeadersForUpload } from "@/lib/client-auth";
 
 type Doc = {
   id: string;
   file_name: string;
   mime_type: string;
   size_bytes: number;
+  doc_type?: string;
   created_at: string;
+};
+
+const DOC_CATEGORY_LABELS: Record<string, string> = {
+  REG_CERT: "Свидетельство о регистрации",
+  CHARTER: "Устав",
+  TAX_CERT: "Налоговый сертификат",
+  BANK_DETAILS: "Банковские реквизиты",
+  CV: "CV",
+  SUPPORT_LETTER: "Письмо поддержки",
+  PORTFOLIO: "Портфолио проектов",
+  FIN_REPORT: "Финансовый отчёт",
+  PROPOSAL_DRAFT: "Черновик заявки",
+  BUDGET: "Бюджет",
+  OTHER: "Другое",
 };
 
 const DOC_TYPE_MAP: Record<string, string> = {
@@ -29,17 +44,11 @@ function formatSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return {};
-  return { Authorization: `Bearer ${session.access_token}` };
-}
-
 export default function DocumentsPage() {
   const [docs, setDocs] = useState<Doc[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [docType, setDocType] = useState("OTHER");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -66,10 +75,10 @@ export default function DocumentsPage() {
     if (!file) return;
     setUploading(true);
     try {
-      const headers = await getAuthHeaders();
+      const headers = await getAuthHeadersForUpload();
       const form = new FormData();
       form.append("file", file);
-      form.append("docType", "other");
+      form.append("docType", docType);
       const res = await fetch("/api/v1/documents/upload", {
         method: "POST",
         headers,
@@ -80,6 +89,19 @@ export default function DocumentsPage() {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  };
+
+  const handleDownload = async (id: string, fileName: string) => {
+    const headers = await getAuthHeadersForUpload();
+    const res = await fetch(`/api/v1/documents/${id}/download`, { headers });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleDelete = async (id: string) => {
@@ -95,21 +117,32 @@ export default function DocumentsPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+        <div className="flex-1 min-w-0">
           <SectionLabel>Хранилище</SectionLabel>
           <h1 className="text-2xl font-black text-funding-black">Документы</h1>
           <p className="text-sm text-gray-500 mt-1">Безопасное хранение документов. Прямые публичные ссылки отключены.</p>
         </div>
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-60"
-          style={{ background: "#008A2E" }}
-        >
-          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          Загрузить
-        </button>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <select
+            value={docType}
+            onChange={(e) => setDocType(e.target.value)}
+            className="text-sm border border-gray-200 rounded-xl px-3 py-2 text-gray-600"
+          >
+            {Object.entries(DOC_CATEGORY_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold disabled:opacity-60"
+            style={{ background: "#008A2E" }}
+          >
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            Загрузить
+          </button>
+        </div>
         <input
           ref={fileRef}
           type="file"
@@ -135,10 +168,42 @@ export default function DocumentsPage() {
         <EmptyState
           icon={FolderOpen}
           title="Нет документов"
-          description="Загрузите документы организации для использования в заявках"
+          description="Загрузите устав, свидетельство о регистрации или CV для заявок на гранты"
+          action={
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+              style={{ background: "#008A2E" }}
+            >
+              Загрузить документ
+            </button>
+          }
         />
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <>
+        <div className="md:hidden space-y-3">
+          {docs.map((doc) => (
+            <div key={doc.id} className="bg-white rounded-2xl border border-gray-100 p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg bg-funding-light-green flex items-center justify-center flex-shrink-0">
+                  <File className="w-4 h-4 text-funding-green" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-funding-black truncate">{doc.file_name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {DOC_CATEGORY_LABELS[doc.doc_type ?? "OTHER"] ?? "Другое"} · {formatSize(doc.size_bytes)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <button type="button" onClick={() => handleDownload(doc.id, doc.file_name)} className="text-xs text-funding-green font-semibold">Скачать</button>
+                <button type="button" onClick={() => handleDelete(doc.id)} disabled={deletingId === doc.id} className="text-xs text-red-500 font-semibold ml-auto">Удалить</button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <table className="w-full">
             <thead>
               <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
@@ -166,7 +231,7 @@ export default function DocumentsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                      {DOC_TYPE_MAP[doc.mime_type] ?? "Файл"}
+                      {DOC_CATEGORY_LABELS[doc.doc_type ?? "OTHER"] ?? DOC_TYPE_MAP[doc.mime_type] ?? "Файл"}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">{formatSize(doc.size_bytes)}</td>
@@ -174,7 +239,16 @@ export default function DocumentsPage() {
                     {new Date(doc.created_at).toLocaleDateString("ru-RU")}
                   </td>
                   <td className="px-4 py-3">
-                    <button
+                    <div className="flex items-center gap-1 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(doc.id, doc.file_name)}
+                        className="p-1.5 rounded-lg hover:bg-funding-light-green text-gray-400 hover:text-funding-green transition-colors"
+                        title="Скачать"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+                      <button
                       onClick={() => handleDelete(doc.id)}
                       disabled={deletingId === doc.id}
                       className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-40"
@@ -183,12 +257,14 @@ export default function DocumentsPage() {
                         ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         : <Trash2 className="w-3.5 h-3.5" />}
                     </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

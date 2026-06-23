@@ -1,85 +1,73 @@
 export const dynamic = "force-dynamic";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
-import { getCurrentUser, writeAuditLog } from "@/lib/auth-helpers";
-import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { requireActiveUserOrResponse, writeAuditLog } from "@/lib/auth-helpers";
+import { ensureInternalUser } from "@/lib/db/users";
+import {
+  listApplications,
+  createApplication,
+} from "@/lib/db/applications";
+import { parsePagination } from "@/lib/validation";
 
 // GET /api/v1/applications
 export async function GET(req: NextRequest) {
-  const authUser = await getCurrentUser(req);
-  if (!authUser) return apiError("Unauthorized", 401, "UNAUTHORIZED");
+  const authUser = await requireActiveUserOrResponse(req);
+  if (authUser instanceof NextResponse) return authUser;
 
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") ?? "";
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
-  const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 100);
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
+  const { page, limit } = parsePagination(searchParams);
 
-  const supabase = createSupabaseAdmin();
-
-  let query = supabase
-    .from("applications")
-    .select(`
-      id,
-      status,
-      notes,
-      created_at,
-      updated_at,
-      grant:grants ( id, title, title_ru, deadline, amount_min, amount_max, donor:donors ( name, name_ru ) )
-    `, { count: "exact" })
-    .eq("user_id", authUser.userId)
-    .order("updated_at", { ascending: false })
-    .range(from, to);
-
-  if (status) query = query.eq("status", status);
-
-  const { data: applications, count, error } = await query;
-  if (error) return apiError("Internal error", 500, "INTERNAL_ERROR");
-
-  const total = count ?? 0;
-  return apiSuccess({ applications: applications ?? [], total, page, limit, pages: Math.ceil(total / limit) });
+  try {
+    const result = await listApplications(authUser.userId, { status: status || undefined, page, limit });
+    return apiSuccess(result);
+  } catch (err) {
+    console.error("GET /applications error:", err);
+    return apiError("Internal error", 500, "INTERNAL_ERROR");
+  }
 }
 
 // POST /api/v1/applications
 export async function POST(req: NextRequest) {
-  const authUser = await getCurrentUser(req);
-  if (!authUser) return apiError("Unauthorized", 401, "UNAUTHORIZED");
+  const authUser = await requireActiveUserOrResponse(req);
+  if (authUser instanceof NextResponse) return authUser;
 
   try {
     const body = await req.json();
     const { grantId, notes } = body;
-    if (!grantId) return apiError("grantId required", 400, "MISSING_FIELDS");
-
-    const supabase = createSupabaseAdmin();
-
-    // Verify grant exists
-    const { data: grant } = await supabase.from("grants").select("id").eq("id", grantId).single();
-    if (!grant) return apiError("Grant not found", 404, "GRANT_NOT_FOUND");
-
-    // Prevent duplicate
-    const { data: existing } = await supabase
-      .from("applications")
-      .select("id, status")
-      .eq("user_id", authUser.userId)
-      .eq("grant_id", grantId)
-      .maybeSingle();
-
-    if (existing) {
-      return apiSuccess({ applicationId: existing.id, status: existing.status, alreadyExists: true });
+    if (!grantId || typeof grantId !== "string") return apiError("grantId required", 400, "MISSING_FIELDS");
+    if (notes !== undefined && (typeof notes !== "string" || notes.length > 5000)) {
+      return apiError("notes must be a string up to 5000 chars", 400, "INVALID_NOTES");
     }
 
-    const { data: application, error } = await supabase
-      .from("applications")
-      .insert({ user_id: authUser.userId, grant_id: grantId, status: "saved", notes: notes ?? null })
-      .select("id, status")
-      .single();
+    await ensureInternalUser({
+      supabaseId: authUser.supabaseId,
+      email: authUser.email,
+      provider: "supabase_email",
+    });
 
-    if (error) throw new Error(error.message);
+    const normalizedNotes =
+      notes === undefined ? undefined : typeof notes === "string" ? notes.trim() || null : null;
 
-    await writeAuditLog({ userId: authUser.userId, action: "application_create", entityType: "application", entityId: application.id, metadata: { grantId } });
+    const result = await createApplication(authUser.userId, grantId, normalizedNotes);
+    if ("error" in result && result.error === "GRANT_NOT_FOUND") {
+      return apiError("Grant not found", 404, "GRANT_NOT_FOUND");
+    }
 
-    return apiSuccess({ applicationId: application.id, status: application.status }, 201);
+    if (!result.alreadyExists) {
+      await writeAuditLog({
+        userId: authUser.userId,
+        action: "application_create",
+        entityType: "application",
+        entityId: result.applicationId,
+        metadata: { grantId },
+      });
+    }
+
+    return apiSuccess(
+      { applicationId: result.applicationId, status: result.status, alreadyExists: result.alreadyExists },
+      result.alreadyExists ? 200 : 201
+    );
   } catch (err) {
     console.error("POST /applications error:", err);
     return apiError("Internal error", 500, "INTERNAL_ERROR");

@@ -5,8 +5,21 @@ import { SectionLabel } from "@/components/design/SectionLabel";
 import { Globe, Shield, Bot, CreditCard, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
+type CompanyInfo = {
+  legalNameRu: string;
+  legalNameUz: string;
+  stir: string;
+  dguNumber: string;
+  dguRegisteredAt: string;
+  entityRegisteredAt: string;
+  founder: string;
+  email: string;
+  addressUz: string;
+};
+
 type Settings = {
   platform: string;
+  company?: CompanyInfo;
   aiProvider: string;
   aiProviderConfigured: boolean;
   paymentsEnabled: boolean;
@@ -74,8 +87,11 @@ export default function AdminSettingsPage() {
             <div className="space-y-3">
               {[
                 { label: "Платформа", value: s?.platform ?? "FundingPro v1.0", ok: true },
-                { label: "Юридическое лицо", value: "Beta Version Solutions ООО", ok: true },
-                { label: "Номер DGU", value: "61712", ok: true },
+                { label: "Юридическое лицо", value: s?.company?.legalNameRu ?? "—", ok: true },
+                { label: "STIR", value: s?.company?.stir ?? "—", ok: true },
+                { label: "Номер DGU", value: s?.company?.dguNumber ?? "—", ok: true },
+                { label: "Регистрация ПО", value: s?.company?.dguRegisteredAt ?? "—", ok: true },
+                { label: "Регистрация юрлица", value: s?.company?.entityRegisteredAt ?? "—", ok: true },
                 { label: "Окружение", value: s?.nodeEnv ?? "—", ok: s?.nodeEnv === "production" },
                 { label: "Языки UI", value: "Русский / Узбекский", ok: true },
                 { label: "Хранение данных", value: "Supabase (Узбекистан / EU)", ok: true },
@@ -134,16 +150,16 @@ export default function AdminSettingsPage() {
             </div>
             <div className="space-y-3">
               {[
-                { label: "Rate limiting", value: "Включён", ok: true },
-                { label: "CORS", value: "Настроен", ok: true },
-                { label: "Security headers", value: "Включены", ok: true },
-                { label: "Request ID middleware", value: "Включён", ok: true },
+                { label: "AI rate limit (/api/v1/ai/*)", value: "Базовый (in-memory)", ok: true },
+                { label: "CORS", value: "Next.js defaults", ok: true },
+                { label: "Security headers", value: "Vercel / Next.js", ok: true },
                 { label: "Аудит-лог", value: "Активен", ok: true },
                 { label: "Файлы: публичные URL", value: "Отключены", ok: true },
-              ].map(({ label, value }) => (
+                { label: "Admin gate", value: "ADMIN_EMAILS + middleware", ok: s?.adminEmailsConfigured ?? false },
+              ].map(({ label, value, ok }) => (
                 <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50">
                   <span className="text-xs font-medium text-gray-500">{label}</span>
-                  <span className="text-xs font-semibold" style={{ color: "#008A2E" }}>{value}</span>
+                  <span className="text-xs font-semibold" style={{ color: ok !== false ? "#008A2E" : "#d97706" }}>{value}</span>
                 </div>
               ))}
             </div>

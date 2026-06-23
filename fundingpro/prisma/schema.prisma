@@ -1,6 +1,6 @@
-// FundingPro — Prisma Schema
-// Company: Beta Version Solutions ООО, DGU No. 61712
-// IMPORTANT: No lending/credit/loan/borrower/wallet/deposit/microfinance terminology anywhere.
+// FundingPro — Prisma Schema (REFERENCE ONLY — not used at runtime)
+// Runtime schema source of truth: supabase/migrations/*.sql
+// Do not run prisma migrate; use `npm run db:migrate` (supabase db push).
 
 generator client {
   provider = "prisma-client-js"

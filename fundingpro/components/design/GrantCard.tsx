@@ -9,6 +9,7 @@ interface GrantCardProps {
   donor: string;
   amount?: string;
   deadline?: string;
+  deadlineUrgency?: "urgent" | "soon" | "normal" | null;
   country?: string;
   sector?: string;
   matchScore?: number;
@@ -24,6 +25,7 @@ export function GrantCard({
   donor,
   amount,
   deadline,
+  deadlineUrgency,
   country,
   sector,
   matchScore,
@@ -99,9 +101,16 @@ export function GrantCard({
           </span>
         )}
         {deadline && (
-          <span className="flex items-center gap-1">
+          <span
+            className={cn(
+              "flex items-center gap-1",
+              deadlineUrgency === "urgent" && "text-red-600 font-semibold",
+              deadlineUrgency === "soon" && "text-amber-700 font-medium"
+            )}
+          >
             <Calendar className="w-3 h-3" />
             {deadline}
+            {deadlineUrgency === "urgent" && " · срочно"}
           </span>
         )}
         {country && (

@@ -26,6 +26,23 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+
+  const toggleUserActive = async (userId: string, isActive: boolean) => {
+    setDeactivatingId(userId);
+    try {
+      const headers = await getAdminHeaders();
+      const res = await fetch("/api/v1/admin/users", {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, isActive }),
+      });
+      if (res.ok) await fetchUsers();
+    } finally {
+      setDeactivatingId(null);
+    }
+  };
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -97,7 +114,7 @@ export default function AdminUsersPage() {
             <table className="w-full">
               <thead>
                 <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  {["Пользователь", "Email", "Подтверждён", "Последний вход", "Дата регистрации"].map((h) => (
+                  {["Пользователь", "Email", "Подтверждён", "Последний вход", "Дата регистрации", ""].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
@@ -136,6 +153,19 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-400">
                         {new Date(u.created_at).toLocaleDateString("ru-RU")}
+                      </td>
+                      <td className="px-4 py-3">
+                        {deactivatingId === u.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-funding-green" />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => toggleUserActive(u.id, false)}
+                            className="text-xs font-semibold text-red-500 hover:underline"
+                          >
+                            Деактивировать
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

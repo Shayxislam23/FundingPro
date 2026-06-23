@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
+import { LegalFooter } from "@/components/design/LegalFooter";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
 
@@ -130,9 +131,7 @@ export default function ForgotPasswordPage() {
       </div>
 
       <div className="text-center pb-8">
-        <p className="text-xs" style={{ color: "rgba(167,184,170,0.3)" }}>
-          Beta Version Solutions ООО, DGU No. 61712
-        </p>
+        <LegalFooter style={{ color: "rgba(167,184,170,0.3)" }} />
       </div>
     </div>
   );

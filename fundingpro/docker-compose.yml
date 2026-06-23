@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: fundingpro-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: fundingpro
+      POSTGRES_PASSWORD: fundingpro_dev
+      POSTGRES_DB: fundingpro
+    volumes:
+      - fundingpro_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fundingpro -d fundingpro"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  fundingpro_pg_data:

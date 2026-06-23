@@ -4,15 +4,18 @@ import { useEffect, useState } from "react";
 import { DashboardCard } from "@/components/design/DashboardCard";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { Users, BookOpen, BarChart3, Bot, Loader2, RefreshCcw } from "lucide-react";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 type AdminData = {
   totalUsers: number;
+  totalOrganizations: number;
   totalGrants: number;
   totalApplications: number;
   totalSupportTickets: number;
   activeSubscriptions: number;
   aiRequestsThisMonth: number;
   openTickets: number;
+  subscriptionRequests?: number;
   recentUsers: { id: string; email: string | null; createdAt: string }[];
   integrationStatus: { payments: string; paymentsEnabled: boolean; aiProvider: string };
 };
@@ -26,7 +29,8 @@ export default function AdminDashboard() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/v1/admin/dashboard");
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/v1/admin/dashboard", { headers });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Ошибка загрузки");
       setData(json.data);
@@ -95,6 +99,8 @@ export default function AdminDashboard() {
           {/* Second row */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {[
+              { label: "Организаций", value: data.totalOrganizations, color: "#008A2E" },
+              { label: "Запросов тарифов", value: data.subscriptionRequests ?? 0, color: "#6366F1" },
               { label: "Активных подписок", value: data.activeSubscriptions, color: "#008A2E" },
               { label: "Открытых тикетов", value: data.openTickets, color: "#D97706" },
               { label: "Тикетов всего", value: data.totalSupportTickets, color: "#6B7280" },

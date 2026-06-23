@@ -1,8 +1,9 @@
 export const dynamic = "force-dynamic";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
-import { getCurrentUser } from "@/lib/auth-helpers";
+import { requireActiveUserOrResponse } from "@/lib/auth-helpers";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { getPgPool, isLocalDatabaseEnabled } from "@/lib/pg-pool";
 
 const NOTIFY_EMAIL = process.env.SUPPORT_NOTIFY_EMAIL ?? "shayxislam-ceo@supa-ai.net";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "FundingPro <onboarding@resend.dev>";
@@ -42,13 +43,41 @@ async function sendEmailNotification(subject: string, message: string, userEmail
 
 // GET /api/v1/support-tickets
 export async function GET(req: NextRequest) {
-  const authUser = await getCurrentUser(req);
-  if (!authUser) return apiError("Unauthorized", 401, "UNAUTHORIZED");
+  const authUser = await requireActiveUserOrResponse(req);
+  if (authUser instanceof NextResponse) return authUser;
 
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
   const from = (page - 1) * limit;
+
+  if (isLocalDatabaseEnabled()) {
+    const pool = getPgPool();
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total FROM support_tickets WHERE user_id = $1::uuid`,
+      [authUser.userId]
+    );
+    const total = countResult.rows[0]?.total ?? 0;
+    const result = await pool.query(
+      `SELECT id, subject, status, priority, created_at, resolved_at
+       FROM support_tickets WHERE user_id = $1::uuid
+       ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
+      [authUser.userId, limit, from]
+    );
+    return apiSuccess({
+      tickets: result.rows.map((r) => ({
+        id: String(r.id),
+        subject: String(r.subject),
+        status: String(r.status),
+        priority: String(r.priority),
+        created_at: new Date(String(r.created_at)).toISOString(),
+        resolved_at: r.resolved_at ? new Date(String(r.resolved_at)).toISOString() : null,
+      })),
+      total,
+      page,
+      limit,
+    });
+  }
 
   const supabase = createSupabaseAdmin();
   const { data: tickets, count } = await supabase
@@ -63,8 +92,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/v1/support-tickets
 export async function POST(req: NextRequest) {
-  const authUser = await getCurrentUser(req);
-  if (!authUser) return apiError("Unauthorized", 401, "UNAUTHORIZED");
+  const authUser = await requireActiveUserOrResponse(req);
+  if (authUser instanceof NextResponse) return authUser;
 
   try {
     const body = await req.json();
@@ -76,6 +105,22 @@ export async function POST(req: NextRequest) {
 
     const allowed = ["low", "normal", "high", "urgent"];
     const ticketPriority = allowed.includes(priority) ? priority : "normal";
+
+    if (isLocalDatabaseEnabled()) {
+      const pool = getPgPool();
+      const ticketId = crypto.randomUUID();
+      await pool.query(
+        `INSERT INTO support_tickets (id, user_id, subject, message, status, priority)
+         VALUES ($1::uuid, $2::uuid, $3, $4, 'open', $5)`,
+        [ticketId, authUser.userId, subject.trim(), message.trim(), ticketPriority]
+      );
+
+      sendEmailNotification(subject.trim(), message.trim(), authUser.email, ticketId).catch(
+        (e) => console.error("Email notification failed:", e)
+      );
+
+      return apiSuccess({ ticketId, status: "open" }, 201);
+    }
 
     const supabase = createSupabaseAdmin();
     const { data: ticket, error } = await supabase

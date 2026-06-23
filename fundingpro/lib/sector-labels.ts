@@ -194,3 +194,23 @@ export function translateSector(raw: string): string {
   // fallback: replace underscores + capitalise first letter
   return noUnderscore.charAt(0).toUpperCase() + noUnderscore.slice(1);
 }
+
+/** Common NGO sectors for profile dropdown (slug → Russian label). */
+export const SECTOR_OPTIONS: { value: string; label: string }[] = [
+  { value: "education", label: "Образование" },
+  { value: "healthcare", label: "Здравоохранение" },
+  { value: "environment", label: "Экология" },
+  { value: "agriculture", label: "Сельское хозяйство" },
+  { value: "youth", label: "Молодёжь" },
+  { value: "gender", label: "Гендерное равенство" },
+  { value: "human_rights", label: "Права человека" },
+  { value: "civil_society", label: "Гражданское общество" },
+  { value: "social", label: "Социальное развитие" },
+  { value: "climate", label: "Климат" },
+  { value: "water_resources", label: "Водные ресурсы" },
+  { value: "culture", label: "Культура" },
+  { value: "digital", label: "Цифровые технологии" },
+  { value: "research", label: "Исследования" },
+  { value: "ngo", label: "НКО" },
+  { value: "general", label: "Общее" },
+];

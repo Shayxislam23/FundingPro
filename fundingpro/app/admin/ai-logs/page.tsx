@@ -1,32 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { Shield, Loader2, RefreshCcw } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 type AILog = {
   id: string;
   user_id: string;
+  user_email?: string | null;
   action: string;
   model: string;
   tokens: number;
   pii_redacted: boolean;
+  status?: string;
   created_at: string;
 };
-
-const ACTION_LABELS: Record<string, string> = {
-  ai_proposal_generate: "proposal/generate",
-  ai_eligibility_check: "eligibility/check",
-  ai_match_grants: "match-grants",
-  ai_budget_narrative: "budget-narrative",
-};
-
-async function getAdminHeaders(): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return {};
-  return { Authorization: `Bearer ${session.access_token}` };
-}
 
 export default function AILogsPage() {
   const [logs, setLogs] = useState<AILog[]>([]);
@@ -36,7 +25,7 @@ export default function AILogsPage() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const headers = await getAdminHeaders();
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/v1/admin/ai-logs?limit=30", { headers });
       const data = await res.json();
       setLogs(data.data?.logs ?? []);
@@ -59,7 +48,7 @@ export default function AILogsPage() {
             AI-запросы
             {!loading && <span className="ml-2 text-base font-normal text-gray-400">({total})</span>}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Журнал AI-запросов и статусы редакции персональных данных</p>
+          <p className="text-sm text-gray-500 mt-1">Журнал AI-запросов из таблицы ai_requests</p>
         </div>
         <button
           onClick={fetchLogs}
@@ -71,12 +60,11 @@ export default function AILogsPage() {
         </button>
       </div>
 
-      {/* Policy note */}
       <div className="flex items-start gap-3 p-4 rounded-xl mb-5" style={{ background: "#D9F7DD" }}>
         <Shield className="w-4 h-4 text-funding-green flex-shrink-0 mt-0.5" />
         <p className="text-xs text-funding-text-muted-light leading-relaxed">
-          Политика AI: персональные данные (ФИО, ПИНФЛ, телефон, e-mail, паспортные данные) редактируются
-          перед отправкой внешним AI-провайдерам. Все данные хранятся в Узбекистане.
+          Персональные данные редактируются перед отправкой внешним AI-провайдерам.
+          Без API-ключа используется MockProvider.
         </p>
       </div>
 
@@ -86,7 +74,7 @@ export default function AILogsPage() {
         </div>
       ) : logs.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center text-sm text-gray-400">
-          AI-запросов ещё нет
+          AI-запросов ещё нет. Запустите проверку соответствия или AI-черновик.
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -94,7 +82,7 @@ export default function AILogsPage() {
             <table className="w-full">
               <thead>
                 <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
-                  {["ID", "User ID", "Тип запроса", "Модель", "Токены", "ПД-редакция", "Дата"].map((h) => (
+                  {["Пользователь", "Тип", "Модель", "Токены", "ПД", "Статус", "Дата"].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
@@ -106,27 +94,19 @@ export default function AILogsPage() {
                     style={{ borderBottom: i < logs.length - 1 ? "1px solid #f9fafb" : "none" }}
                     className="hover:bg-funding-light-bg"
                   >
-                    <td className="px-4 py-3 text-xs font-mono text-gray-400">{log.id.slice(0, 8)}…</td>
-                    <td className="px-4 py-3 text-xs font-mono text-gray-400">{log.user_id.slice(0, 8)}…</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-mono" style={{ background: "#F7FAF7", color: "#4A5A4D" }}>
-                        {ACTION_LABELS[log.action] ?? log.action}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{String(log.model)}</td>
+                    <td className="px-4 py-3 text-sm text-funding-black">{log.user_email ?? log.user_id.slice(0, 8) + "…"}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-gray-600">{log.action}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{log.model}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{Number(log.tokens).toLocaleString()}</td>
                     <td className="px-4 py-3">
-                      {log.pii_redacted ? (
-                        <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold w-fit" style={{ background: "#D9F7DD", color: "#008A2E" }}>
-                          <Shield className="w-3 h-3" />
-                          Редактировано
-                        </span>
-                      ) : (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold w-fit" style={{ background: "#F3F4F6", color: "#6B7280" }}>
-                          Нет ПД
-                        </span>
-                      )}
+                      <span
+                        className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                        style={log.pii_redacted ? { background: "#D9F7DD", color: "#008A2E" } : { background: "#F3F4F6", color: "#6B7280" }}
+                      >
+                        {log.pii_redacted ? "Да" : "Нет"}
+                      </span>
                     </td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{log.status ?? "—"}</td>
                     <td className="px-4 py-3 text-xs text-gray-400">
                       {new Date(log.created_at).toLocaleString("ru-RU")}
                     </td>

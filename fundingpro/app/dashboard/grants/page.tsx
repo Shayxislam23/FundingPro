@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { GrantCard } from "@/components/design/GrantCard";
 import { Search, Loader2 } from "lucide-react";
 import { translateSector } from "@/lib/sector-labels";
+import { getAuthHeaders } from "@/lib/client-auth";
+import { buildMatchScoreMap } from "@/lib/match-score";
+
+async function authHeaders(): Promise<Record<string, string>> {
+  return getAuthHeaders();
+}
 
 type Grant = {
   id: string;
@@ -44,10 +51,21 @@ function getSector(sectors: string[]): string {
 }
 
 export default function DashboardGrantsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-funding-green" /></div>}>
+      <GrantsPageContent />
+    </Suspense>
+  );
+}
+
+function GrantsPageContent() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [activeSector, setActiveSector] = useState("Все");
   const [showExpired, setShowExpired] = useState(true);
   const [saved, setSaved] = useState<string[]>([]);
+  const [orgProfile, setOrgProfile] = useState<Record<string, unknown> | null>(null);
+  const [matchScores, setMatchScores] = useState<Map<string, number>>(new Map());
 
   const [grants, setGrants] = useState<Grant[]>([]);
   const [total, setTotal] = useState(0);
@@ -81,14 +99,60 @@ export default function DashboardGrantsPage() {
     fetchGrants(1, false);
   }, [fetchGrants]);
 
+  useEffect(() => {
+    const q = searchParams.get("q") ?? "";
+    setSearch(q);
+  }, [searchParams]);
+
+  useEffect(() => {
+    authHeaders()
+      .then((headers) => fetch("/api/v1/me", { headers }))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.data?.savedGrantIds) setSaved(d.data.savedGrantIds);
+        if (d?.data?.organization) setOrgProfile(d.data.organization);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!orgProfile || grants.length === 0) {
+      setMatchScores(new Map());
+      return;
+    }
+    setMatchScores(
+      buildMatchScoreMap(
+        grants.map((g) => ({
+          id: g.id,
+          sectors: g.sectors,
+          country_scope: g.country_scope,
+          deadline: g.deadline,
+        })),
+        orgProfile
+      )
+    );
+  }, [orgProfile, grants]);
+
   const loadMore = () => {
     const next = page + 1;
     setPage(next);
     fetchGrants(next, true);
   };
 
-  const toggleSave = (id: string) =>
-    setSaved((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
+  const toggleSave = async (id: string) => {
+    const isSaved = saved.includes(id);
+    setSaved((prev) => (isSaved ? prev.filter((s) => s !== id) : [...prev, id]));
+    try {
+      const headers = await authHeaders();
+      const method = isSaved ? "DELETE" : "POST";
+      const res = await fetch(`/api/v1/grants/${id}/save`, { method, headers });
+      if (!res.ok) {
+        setSaved((prev) => (isSaved ? [...prev, id] : prev.filter((s) => s !== id)));
+      }
+    } catch {
+      setSaved((prev) => (isSaved ? [...prev, id] : prev.filter((s) => s !== id)));
+    }
+  };
 
   // Client-side sector filter + expired filter
   const filtered = grants.filter((g) => {
@@ -190,6 +254,7 @@ export default function DashboardGrantsPage() {
                         deadline={dl.text}
                         country={g.country_scope.join(", ")}
                         sector={getSector(g.sectors)}
+                        matchScore={matchScores.get(g.id)}
                         isSaved={saved.includes(g.id)}
                         onSave={toggleSave}
                         variant="light"

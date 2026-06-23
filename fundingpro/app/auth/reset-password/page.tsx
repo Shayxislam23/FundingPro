@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
+import { LegalFooter } from "@/components/design/LegalFooter";
 import { supabase } from "@/lib/supabase";
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 
@@ -176,9 +177,7 @@ export default function ResetPasswordPage() {
       </div>
 
       <div className="text-center pb-8">
-        <p className="text-xs" style={{ color: "rgba(167,184,170,0.3)" }}>
-          Beta Version Solutions ООО, DGU No. 61712
-        </p>
+        <LegalFooter style={{ color: "rgba(167,184,170,0.3)" }} />
       </div>
     </div>
   );

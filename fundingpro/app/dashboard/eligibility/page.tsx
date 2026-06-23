@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { CheckCircle2, AlertCircle, RotateCcw, Loader2 } from "lucide-react";
+import { getAuthHeaders } from "@/lib/client-auth";
+import { PlanLimitUpgrade } from "@/components/design/PlanUsageBadge";
 
 type Step = "questions" | "loading" | "result";
 
@@ -31,11 +34,22 @@ const statusLabels: Record<string, { label: string; bg: string; color: string }>
 };
 
 export default function EligibilityDashboard() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-funding-green" /></div>}>
+      <EligibilityContent />
+    </Suspense>
+  );
+}
+
+function EligibilityContent() {
+  const searchParams = useSearchParams();
+  const grantId = searchParams.get("grantId");
   const [step, setStep] = useState<Step>("questions");
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<EligResult | null>(null);
   const [error, setError] = useState("");
+  const [limitError, setLimitError] = useState("");
 
   const handleAnswer = async (answer: string) => {
     const q = questions[currentQ];
@@ -47,14 +61,28 @@ export default function EligibilityDashboard() {
     } else {
       setStep("loading");
       setError("");
+      setLimitError("");
       try {
+        const headers = await getAuthHeaders();
         const res = await fetch("/api/v1/eligibility/check", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answers: newAnswers }),
+          headers,
+          body: JSON.stringify({ answers: newAnswers, grantId: grantId ?? undefined }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Ошибка проверки");
+        if (!res.ok) {
+          const code = data.error?.code as string | undefined;
+          const msg = data.error?.message ?? "Ошибка проверки";
+          if (code?.startsWith("PLAN_LIMIT")) {
+            setLimitError(msg);
+          } else {
+            setError(msg);
+          }
+          setStep("questions");
+          setCurrentQ(0);
+          setAnswers({});
+          return;
+        }
         setResult(data.data);
         setStep("result");
       } catch (e) {
@@ -72,6 +100,7 @@ export default function EligibilityDashboard() {
     setAnswers({});
     setResult(null);
     setError("");
+    setLimitError("");
   };
 
   const statusInfo = result ? (statusLabels[result.status] ?? statusLabels.PENDING) : null;
@@ -83,6 +112,12 @@ export default function EligibilityDashboard() {
         <h1 className="text-2xl font-black text-funding-black">Проверка соответствия</h1>
         <p className="text-sm text-gray-500 mt-1">AI оценит соответствие вашего профиля требованиям донора</p>
       </div>
+
+      {limitError && (
+        <div className="mb-4">
+          <PlanLimitUpgrade message={limitError} />
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">

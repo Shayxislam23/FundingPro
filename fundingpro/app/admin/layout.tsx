@@ -1,11 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
-import { supabase } from "@/lib/supabase";
 import { getAuthHeaders } from "@/lib/client-auth";
 import {
   Building2,
@@ -17,7 +14,6 @@ import {
   Bot,
   HelpCircle,
   Settings,
-  LogOut,
   ShieldCheck,
   ScrollText,
   Briefcase,
@@ -25,8 +21,13 @@ import {
   TrendingUp,
   Shield,
 } from "lucide-react";
+import {
+  AppShellSidebar,
+  AppShellHeader,
+  type AppNavItem,
+} from "@/components/layout/AppShell";
 
-const adminNav = [
+const adminNav: AppNavItem[] = [
   { label: "Главная", href: "/admin", icon: LayoutDashboard },
   { label: "Пользователи", href: "/admin/users", icon: Users },
   { label: "Воронка", href: "/admin/funnel", icon: TrendingUp },
@@ -47,24 +48,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
         const headers = await getAuthHeaders();
         const res = await fetch("/api/v1/me", { headers });
-        if (!res.ok) return;
+        if (!res.ok) {
+          router.replace("/auth?next=/admin");
+          return;
+        }
         const json = await res.json();
-        setAdminEmail(json.data?.email ?? null);
+        const data = json.data;
+        if (!data?.isAdmin) {
+          router.replace("/dashboard");
+          return;
+        }
+        setAdminEmail(data.email ?? null);
+        setIsAdmin(true);
       } catch {
-        /* ignore */
+        router.replace("/auth?next=/admin");
       }
     })();
-  }, []);
+  }, [router]);
 
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/auth");
+  if (isAdmin === null) {
+    return (
+      <div className="min-h-screen bg-funding-light-bg flex items-center justify-center">
+        <p className="text-sm text-gray-500">Проверка доступа…</p>
+      </div>
+    );
   }
 
   const adminInitial = (adminEmail?.[0] ?? "A").toUpperCase();
@@ -72,56 +86,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-funding-light-bg flex">
       <aside className="w-64 bg-funding-dark flex flex-col fixed h-full">
-        <div className="p-6 border-b border-white/10">
-          <FundingProLogo variant="dark" size="sm" />
-          <div className="flex items-center gap-1.5 mt-2">
-            <ShieldCheck className="w-3 h-3 text-funding-accent" />
-            <span className="text-xs text-funding-muted font-medium">Admin Panel</span>
-          </div>
-        </div>
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {adminNav.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href || (href !== "/admin" && pathname.startsWith(href));
-            return (
-              <Link
-                key={label + href}
-                href={href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
-                  active
-                    ? "bg-funding-green text-white"
-                    : "text-funding-muted hover:bg-white/5 hover:text-white"
-                )}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="p-4 border-t border-white/10">
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-funding-muted hover:text-red-400 w-full transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            Выйти
-          </button>
-        </div>
+        <AppShellSidebar
+          variant="dark"
+          pathname={pathname}
+          navItems={adminNav}
+          logo={
+            <>
+              <FundingProLogo variant="dark" size="sm" />
+              <div className="flex items-center gap-1.5 mt-2">
+                <ShieldCheck className="w-3 h-3 text-funding-accent" />
+                <span className="text-xs text-funding-muted font-medium">Admin Panel</span>
+              </div>
+            </>
+          }
+        />
       </aside>
       <div className="flex-1 ml-64">
-        <header className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
-          <div />
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500 truncate max-w-[180px]">
-              {adminEmail ?? "Администратор"}
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-funding-green text-white flex items-center justify-center font-semibold text-sm">
-              {adminInitial}
-            </div>
-          </div>
-        </header>
+        <AppShellHeader email={adminEmail ?? "Администратор"} initial={adminInitial} />
         <main className="p-6">{children}</main>
       </div>
     </div>

@@ -26,6 +26,7 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { getAuthHeaders } from "@/lib/client-auth";
 import { PlanUsageBadge } from "@/components/design/PlanUsageBadge";
+import { ShellNavLink, isNavItemActive } from "@/components/layout/AppShell";
 
 const navItems = [
   { label: "Главная", href: "/dashboard", icon: LayoutDashboard },
@@ -52,43 +53,6 @@ interface DashboardShellProps {
   className?: string;
 }
 
-function NavLink({
-  label,
-  href,
-  icon: Icon,
-  active,
-  onNavigate,
-  compact,
-}: {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  active: boolean;
-  onNavigate?: () => void;
-  compact?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onNavigate}
-      className={cn(
-        "flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-150",
-        compact ? "flex-col gap-1 px-2 py-2 text-[10px]" : "px-3 py-2.5",
-        active
-          ? compact
-            ? "text-funding-green"
-            : "bg-funding-green text-white"
-          : compact
-            ? "text-gray-500"
-            : "text-gray-600 hover:bg-funding-light-green hover:text-funding-green"
-      )}
-    >
-      <Icon className={cn("flex-shrink-0", compact ? "w-5 h-5" : "w-4 h-4")} />
-      <span className={compact ? "truncate max-w-[4.5rem]" : undefined}>{label}</span>
-    </Link>
-  );
-}
-
 export function DashboardShell({ children, className }: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -103,7 +67,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
   const userInitial = (userEmail?.[0] ?? orgName?.[0] ?? "U").toUpperCase();
 
   function isActive(href: string) {
-    return pathname === href || pathname?.startsWith(href + "/");
+    return isNavItemActive(pathname ?? "", href);
   }
 
   function handleSearchSubmit(e: React.FormEvent) {
@@ -159,7 +123,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
-            <NavLink key={item.href} {...item} active={isActive(item.href)} />
+            <ShellNavLink key={item.href} {...item} active={isActive(item.href)} />
           ))}
         </nav>
         <div className="px-4 pb-2">
@@ -199,7 +163,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
             </div>
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
               {navItems.map((item) => (
-                <NavLink
+                <ShellNavLink
                   key={item.href}
                   {...item}
                   active={isActive(item.href)}
@@ -304,7 +268,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 px-2 py-2 safe-area-pb">
           <div className="flex items-center justify-around">
             {mobileBottomNav.map((item) => (
-              <NavLink
+              <ShellNavLink
                 key={item.href}
                 {...item}
                 active={isActive(item.href)}

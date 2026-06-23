@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { canAccessAdminMiddleware } from "@/lib/auth/admin-access";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/admin"];
 const AUTH_PATHS = ["/auth"];
@@ -14,21 +15,6 @@ function isAuthPath(pathname: string): boolean {
 
 function isAdminPath(pathname: string): boolean {
   return pathname === "/admin" || pathname.startsWith("/admin/");
-}
-
-function parseAdminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-function canAccessAdmin(email: string | undefined): boolean {
-  if (!email) return false;
-  if (process.env.ADMIN_BYPASS_DEV === "true" && process.env.NODE_ENV !== "production") {
-    return true;
-  }
-  return parseAdminEmails().includes(email.toLowerCase());
 }
 
 async function getSessionUser(request: NextRequest) {
@@ -68,7 +54,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isAdminPath(pathname) && authed && !canAccessAdmin(user.email)) {
+  if (
+    isAdminPath(pathname) &&
+    authed &&
+    user &&
+    !(await canAccessAdminMiddleware(user.id, user.email ?? null))
+  ) {
     const dashUrl = request.nextUrl.clone();
     dashUrl.pathname = "/dashboard";
     dashUrl.search = "";

@@ -1,20 +1,16 @@
 export const dynamic = "force-dynamic";
-import { NextRequest, NextResponse } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
-import { requireActiveUserOrResponse, writeAuditLog } from "@/lib/auth-helpers";
+import { withActiveUser } from "@/lib/api-route";
+import { writeAuditLog } from "@/lib/auth-helpers";
 import { assertPaymentConsents, recordConsents } from "@/lib/db/consents";
 import { ensureInternalUser } from "@/lib/db/users";
 import { createSubscriptionPaymentIntent, isPaymentsEnabled } from "@/lib/payments";
 import { getConsentVersion } from "@/lib/legal/documents";
 
-// POST /api/v1/payments/intent
-export async function POST(req: NextRequest) {
+export const POST = withActiveUser(async (req, authUser) => {
   if (!isPaymentsEnabled()) {
     return apiError("Payments are not enabled", 503, "PAYMENTS_DISABLED");
   }
-
-  const authUser = await requireActiveUserOrResponse(req);
-  if (authUser instanceof NextResponse) return authUser;
 
   try {
     const body = await req.json();
@@ -59,4 +55,4 @@ export async function POST(req: NextRequest) {
     console.error("POST /payments/intent error:", err);
     return apiError(err instanceof Error ? err.message : "Internal error", 500, "INTERNAL_ERROR");
   }
-}
+});

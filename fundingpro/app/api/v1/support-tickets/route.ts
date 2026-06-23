@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
-import { NextRequest, NextResponse } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
-import { requireActiveUserOrResponse } from "@/lib/auth-helpers";
+import { withActiveUser } from "@/lib/api-route";
 import { createSupabaseAdmin } from "@/lib/supabase-server";
 import { getPgPool, isLocalDatabaseEnabled } from "@/lib/pg-pool";
 
@@ -41,11 +40,7 @@ async function sendEmailNotification(subject: string, message: string, userEmail
   });
 }
 
-// GET /api/v1/support-tickets
-export async function GET(req: NextRequest) {
-  const authUser = await requireActiveUserOrResponse(req);
-  if (authUser instanceof NextResponse) return authUser;
-
+export const GET = withActiveUser(async (req, authUser) => {
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 50);
@@ -88,57 +83,47 @@ export async function GET(req: NextRequest) {
     .range(from, from + limit - 1);
 
   return apiSuccess({ tickets: tickets ?? [], total: count ?? 0, page, limit });
-}
+});
 
-// POST /api/v1/support-tickets
-export async function POST(req: NextRequest) {
-  const authUser = await requireActiveUserOrResponse(req);
-  if (authUser instanceof NextResponse) return authUser;
+export const POST = withActiveUser(async (req, authUser) => {
+  const body = await req.json();
+  const { subject, message, priority } = body;
 
-  try {
-    const body = await req.json();
-    const { subject, message, priority } = body;
+  if (!subject?.trim() || !message?.trim()) return apiError("subject and message required", 400, "MISSING_FIELDS");
+  if (subject.length > 200) return apiError("Subject too long (max 200)", 400, "SUBJECT_TOO_LONG");
+  if (message.length > 5000) return apiError("Message too long (max 5000)", 400, "MESSAGE_TOO_LONG");
 
-    if (!subject?.trim() || !message?.trim()) return apiError("subject and message required", 400, "MISSING_FIELDS");
-    if (subject.length > 200) return apiError("Subject too long (max 200)", 400, "SUBJECT_TOO_LONG");
-    if (message.length > 5000) return apiError("Message too long (max 5000)", 400, "MESSAGE_TOO_LONG");
+  const allowed = ["low", "normal", "high", "urgent"];
+  const ticketPriority = allowed.includes(priority) ? priority : "normal";
 
-    const allowed = ["low", "normal", "high", "urgent"];
-    const ticketPriority = allowed.includes(priority) ? priority : "normal";
+  if (isLocalDatabaseEnabled()) {
+    const pool = getPgPool();
+    const ticketId = crypto.randomUUID();
+    await pool.query(
+      `INSERT INTO support_tickets (id, user_id, subject, message, status, priority)
+       VALUES ($1::uuid, $2::uuid, $3, $4, 'open', $5)`,
+      [ticketId, authUser.userId, subject.trim(), message.trim(), ticketPriority]
+    );
 
-    if (isLocalDatabaseEnabled()) {
-      const pool = getPgPool();
-      const ticketId = crypto.randomUUID();
-      await pool.query(
-        `INSERT INTO support_tickets (id, user_id, subject, message, status, priority)
-         VALUES ($1::uuid, $2::uuid, $3, $4, 'open', $5)`,
-        [ticketId, authUser.userId, subject.trim(), message.trim(), ticketPriority]
-      );
-
-      sendEmailNotification(subject.trim(), message.trim(), authUser.email, ticketId).catch(
-        (e) => console.error("Email notification failed:", e)
-      );
-
-      return apiSuccess({ ticketId, status: "open" }, 201);
-    }
-
-    const supabase = createSupabaseAdmin();
-    const { data: ticket, error } = await supabase
-      .from("support_tickets")
-      .insert({ user_id: authUser.userId, subject: subject.trim(), message: message.trim(), status: "open", priority: ticketPriority })
-      .select("id, status")
-      .single();
-
-    if (error) throw new Error(error.message);
-
-    // Send email notification (non-blocking)
-    sendEmailNotification(subject.trim(), message.trim(), authUser.email, ticket.id).catch(
+    sendEmailNotification(subject.trim(), message.trim(), authUser.email, ticketId).catch(
       (e) => console.error("Email notification failed:", e)
     );
 
-    return apiSuccess({ ticketId: ticket.id, status: ticket.status }, 201);
-  } catch (err) {
-    console.error("POST /support-tickets error:", err);
-    return apiError("Internal error", 500, "INTERNAL_ERROR");
+    return apiSuccess({ ticketId, status: "open" }, 201);
   }
-}
+
+  const supabase = createSupabaseAdmin();
+  const { data: ticket, error } = await supabase
+    .from("support_tickets")
+    .insert({ user_id: authUser.userId, subject: subject.trim(), message: message.trim(), status: "open", priority: ticketPriority })
+    .select("id, status")
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  sendEmailNotification(subject.trim(), message.trim(), authUser.email, ticket.id).catch(
+    (e) => console.error("Email notification failed:", e)
+  );
+
+  return apiSuccess({ ticketId: ticket.id, status: ticket.status }, 201);
+});

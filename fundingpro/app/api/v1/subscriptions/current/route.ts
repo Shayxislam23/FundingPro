@@ -1,15 +1,10 @@
 export const dynamic = "force-dynamic";
-import { NextRequest, NextResponse } from "next/server";
-import { apiSuccess, apiError } from "@/lib/api";
-import { requireActiveUserOrResponse } from "@/lib/auth-helpers";
+import { apiSuccess } from "@/lib/api";
+import { withActiveUser } from "@/lib/api-route";
 import { getUserSubscription } from "@/lib/db/users";
 import { getPaymentIntegrationStatus, getPublicPaymentConfig, isPaymentsEnabled } from "@/lib/payments";
 
-// GET /api/v1/subscriptions/current
-export async function GET(req: NextRequest) {
-  const authUser = await requireActiveUserOrResponse(req);
-  if (authUser instanceof NextResponse) return authUser;
-
+export const GET = withActiveUser(async (_req, authUser) => {
   const subscription = await getUserSubscription(authUser.userId);
   const paymentConfig = getPublicPaymentConfig();
 
@@ -27,4 +22,4 @@ export async function GET(req: NextRequest) {
       message: paymentConfig.message,
     },
   });
-}
+});

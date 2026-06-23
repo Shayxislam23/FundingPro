@@ -48,6 +48,22 @@ assert("GET /api/v1/grants?q= works", grantsQ.status === 200);
 const subs = await request("/api/v1/subscriptions/current");
 assert("subscriptions/current requires auth", subs.status === 401);
 
+const me = await request("/api/v1/me");
+assert("GET /me requires auth", me.status === 401);
+
+const adminDash = await request("/api/v1/admin/dashboard");
+assert("GET /admin/dashboard requires auth", adminDash.status === 401);
+
+const postApp = await request("/api/v1/applications", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ grantId: "00000000-0000-0000-0000-000000000001" }),
+});
+assert("POST /applications requires auth", postApp.status === 401);
+
+const legacyWebhook = await request("/api/v1/payments/webhook", { method: "POST" });
+assert("legacy webhook returns 410", legacyWebhook.status === 410);
+
 const plans = await request("/api/v1/plans");
 assert("GET /plans returns 200", plans.status === 200);
 

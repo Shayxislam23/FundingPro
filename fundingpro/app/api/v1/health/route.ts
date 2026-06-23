@@ -1,7 +1,5 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
-import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { isLocalDatabaseEnabled } from "@/lib/pg-pool";
 import { grantsHealthCheck } from "@/lib/db/grants";
 import { getCompanyHealthLabel } from "@/lib/company-info";
 import {
@@ -16,13 +14,7 @@ export async function GET() {
   let dbError: string | null = null;
 
   try {
-    if (isLocalDatabaseEnabled()) {
-      await grantsHealthCheck();
-    } else {
-      const supabase = createSupabaseAdmin();
-      const { error } = await supabase.from("grants").select("id").limit(1);
-      if (error) throw new Error(error.message);
-    }
+    await grantsHealthCheck();
   } catch (err) {
     dbStatus = "error";
     dbError = err instanceof Error ? err.message : "unknown";

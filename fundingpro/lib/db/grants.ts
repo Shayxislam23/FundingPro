@@ -1,4 +1,7 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Pool } from "pg";
 import { getPgPool } from "@/lib/pg-pool";
+import { withDatabase } from "@/lib/db/runtime";
 
 export type GrantListItem = {
   id: string;
@@ -24,7 +27,7 @@ export type GrantDetail = GrantListItem & {
   donor: { id: string; name: string; name_ru: string | null; website: string | null };
 };
 
-type ListParams = {
+export type ListGrantsParams = {
   search?: string;
   sector?: string;
   country?: string;
@@ -34,6 +37,42 @@ type ListParams = {
   page: number;
   limit: number;
 };
+
+export type ListGrantsResult = {
+  grants: GrantListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+};
+
+const GRANT_LIST_SELECT = `
+  id,
+  title,
+  title_ru,
+  description,
+  sectors,
+  country_scope,
+  amount_min,
+  amount_max,
+  deadline,
+  donor:donors ( id, name, name_ru )
+`;
+
+const GRANT_DETAIL_SELECT = `
+  id,
+  title,
+  title_ru,
+  description,
+  description_ru,
+  sectors,
+  country_scope,
+  amount_min,
+  amount_max,
+  deadline,
+  donor:donors ( id, name, name_ru, website ),
+  grant_requirements ( id, requirement_type, text, required )
+`;
 
 function mapGrantRow(row: Record<string, unknown>): GrantListItem {
   const donor = row.donor as Record<string, unknown> | null;
@@ -55,8 +94,7 @@ function mapGrantRow(row: Record<string, unknown>): GrantListItem {
   };
 }
 
-export async function listGrants(params: ListParams) {
-  const pool = getPgPool();
+async function listGrantsPg(pool: Pool, params: ListGrantsParams): Promise<ListGrantsResult> {
   const conditions: string[] = [];
   const values: unknown[] = [];
   let i = 1;
@@ -126,9 +164,54 @@ export async function listGrants(params: ListParams) {
   };
 }
 
-export async function getGrantById(id: string): Promise<GrantDetail | null> {
-  const pool = getPgPool();
+async function listGrantsSupabase(
+  supabase: SupabaseClient,
+  params: ListGrantsParams
+): Promise<ListGrantsResult> {
+  const from = (params.page - 1) * params.limit;
+  const to = from + params.limit - 1;
 
+  let query = supabase
+    .from("grants")
+    .select(GRANT_LIST_SELECT, { count: "exact" })
+    .order("deadline", { ascending: true, nullsFirst: false })
+    .range(from, to);
+
+  if (params.search) {
+    query = query.or(
+      `title.ilike.%${params.search}%,description.ilike.%${params.search}%`
+    );
+  }
+  if (params.sector) {
+    query = query.contains("sectors", [params.sector]);
+  }
+  if (params.country) {
+    query = query.contains("country_scope", [params.country]);
+  }
+  if (params.donorId) {
+    query = query.eq("donor_id", params.donorId);
+  }
+  if (params.deadlineBefore) {
+    query = query.lte("deadline", params.deadlineBefore);
+  }
+  if (params.featured) {
+    query = query.eq("featured", true);
+  }
+
+  const { data: grants, count, error } = await query;
+  if (error) throw new Error(error.message);
+
+  const total = count ?? 0;
+  return {
+    grants: (grants ?? []) as unknown as GrantListItem[],
+    total,
+    page: params.page,
+    limit: params.limit,
+    pages: Math.ceil(total / params.limit),
+  };
+}
+
+async function getGrantByIdPg(pool: Pool, id: string): Promise<GrantDetail | null> {
   const grantResult = await pool.query(
     `SELECT g.id, g.title, g.title_ru, g.description, g.description_ru,
             g.sectors, g.country_scope, g.amount_min, g.amount_max, g.deadline,
@@ -176,7 +259,47 @@ export async function getGrantById(id: string): Promise<GrantDetail | null> {
   };
 }
 
+async function getGrantByIdSupabase(
+  supabase: SupabaseClient,
+  id: string
+): Promise<GrantDetail | null> {
+  const { data: grant, error } = await supabase
+    .from("grants")
+    .select(GRANT_DETAIL_SELECT)
+    .eq("id", id)
+    .single();
+
+  if (error || !grant) return null;
+  return grant as unknown as GrantDetail;
+}
+
+export async function listGrants(params: ListGrantsParams): Promise<ListGrantsResult> {
+  return withDatabase(
+    (pool) => listGrantsPg(pool, params),
+    (supabase) => listGrantsSupabase(supabase, params)
+  );
+}
+
+export async function getGrantById(id: string): Promise<GrantDetail | null> {
+  return withDatabase(
+    (pool) => getGrantByIdPg(pool, id),
+    (supabase) => getGrantByIdSupabase(supabase, id)
+  );
+}
+
 export async function grantsHealthCheck(): Promise<void> {
-  const pool = getPgPool();
-  await pool.query("SELECT id FROM grants LIMIT 1");
+  await withDatabase(
+    async (pool) => {
+      await pool.query("SELECT id FROM grants LIMIT 1");
+    },
+    async (supabase) => {
+      const { error } = await supabase.from("grants").select("id").limit(1);
+      if (error) throw new Error(error.message);
+    }
+  );
+}
+
+/** @deprecated use getPgPool via withDatabase */
+export function getGrantsPgPool(): Pool {
+  return getPgPool();
 }

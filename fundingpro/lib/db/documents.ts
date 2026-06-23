@@ -1,5 +1,5 @@
-import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { getPgPool, isLocalDatabaseEnabled } from "@/lib/pg-pool";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { withUserOrAdminDatabase } from "@/lib/db/runtime";
 
 export const DOCUMENT_TYPES = [
   "REG_CERT",
@@ -28,20 +28,30 @@ export type DocumentRow = {
   created_at: string;
 };
 
-export async function listUserDocuments(userId: string): Promise<DocumentRow[]> {
-  if (isLocalDatabaseEnabled()) {
-    const pool = getPgPool();
-    const result = await pool.query(
-      `SELECT id, file_name, mime_type, size_bytes, storage_key, doc_type, status, created_at
-       FROM documents
-       WHERE user_id = $1::uuid AND status = 'active'
-       ORDER BY created_at DESC`,
-      [userId]
-    );
-    return result.rows.map(mapRow);
-  }
+export async function listUserDocuments(
+  userId: string,
+  accessToken?: string | null
+): Promise<DocumentRow[]> {
+  return withUserOrAdminDatabase(
+    accessToken,
+    async (pool) => {
+      const result = await pool.query(
+        `SELECT id, file_name, mime_type, size_bytes, storage_key, doc_type, status, created_at
+         FROM documents
+         WHERE user_id = $1::uuid AND status = 'active'
+         ORDER BY created_at DESC`,
+        [userId]
+      );
+      return result.rows.map(mapRow);
+    },
+    async (supabase) => listDocumentsSupabase(supabase, userId)
+  );
+}
 
-  const supabase = createSupabaseAdmin();
+async function listDocumentsSupabase(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<DocumentRow[]> {
   const { data, error } = await supabase
     .from("documents")
     .select("id, file_name, mime_type, size_bytes, storage_key, doc_type, status, created_at")
@@ -56,98 +66,126 @@ export async function listUserDocuments(userId: string): Promise<DocumentRow[]> 
   return (data ?? []) as DocumentRow[];
 }
 
-export async function insertDocument(params: {
-  userId: string;
-  fileName: string;
-  mimeType: string;
-  sizeBytes: number;
-  storageKey: string;
-  docType: string;
-}): Promise<string> {
+export async function insertDocument(
+  params: {
+    userId: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    storageKey: string;
+    docType: string;
+  },
+  accessToken?: string | null
+): Promise<string> {
   const docType = DOCUMENT_TYPES.includes(params.docType as DocumentType)
     ? params.docType
     : "OTHER";
 
-  if (isLocalDatabaseEnabled()) {
-    const pool = getPgPool();
-    const id = crypto.randomUUID();
-    await pool.query(
-      `INSERT INTO documents (id, user_id, file_name, mime_type, size_bytes, storage_key, doc_type, status)
-       VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, 'active')`,
-      [id, params.userId, params.fileName, params.mimeType, params.sizeBytes, params.storageKey, docType]
-    );
-    return id;
-  }
+  return withUserOrAdminDatabase(
+    accessToken,
+    async (pool) => {
+      const id = crypto.randomUUID();
+      await pool.query(
+        `INSERT INTO documents (id, user_id, file_name, mime_type, size_bytes, storage_key, doc_type, status)
+         VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, 'active')`,
+        [
+          id,
+          params.userId,
+          params.fileName,
+          params.mimeType,
+          params.sizeBytes,
+          params.storageKey,
+          docType,
+        ]
+      );
+      return id;
+    },
+    async (supabase) => {
+      const { data, error } = await supabase
+        .from("documents")
+        .insert({
+          user_id: params.userId,
+          file_name: params.fileName,
+          mime_type: params.mimeType,
+          size_bytes: params.sizeBytes,
+          storage_key: params.storageKey,
+          doc_type: docType,
+          status: "active",
+        })
+        .select("id")
+        .single();
 
-  const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("documents")
-    .insert({
-      user_id: params.userId,
-      file_name: params.fileName,
-      mime_type: params.mimeType,
-      size_bytes: params.sizeBytes,
-      storage_key: params.storageKey,
-      doc_type: docType,
-      status: "active",
-    })
-    .select("id")
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data.id;
+      if (error) throw new Error(error.message);
+      return data.id;
+    }
+  );
 }
 
-export async function getDocumentById(userId: string, docId: string): Promise<DocumentRow | null> {
-  if (isLocalDatabaseEnabled()) {
-    const pool = getPgPool();
-    const result = await pool.query(
-      `SELECT id, file_name, mime_type, size_bytes, storage_key, doc_type, status, created_at
-       FROM documents
-       WHERE id = $1::uuid AND user_id = $2::uuid AND status = 'active'`,
-      [docId, userId]
-    );
-    const row = result.rows[0];
-    return row ? mapRow(row) : null;
-  }
+export async function getDocumentById(
+  userId: string,
+  docId: string,
+  accessToken?: string | null
+): Promise<DocumentRow | null> {
+  return withUserOrAdminDatabase(
+    accessToken,
+    async (pool) => {
+      const result = await pool.query(
+        `SELECT id, file_name, mime_type, size_bytes, storage_key, doc_type, status, created_at
+         FROM documents
+         WHERE id = $1::uuid AND user_id = $2::uuid AND status = 'active'`,
+        [docId, userId]
+      );
+      const row = result.rows[0];
+      return row ? mapRow(row) : null;
+    },
+    async (supabase) => {
+      const { data, error } = await supabase
+        .from("documents")
+        .select("id, file_name, mime_type, size_bytes, storage_key, doc_type, status, created_at")
+        .eq("id", docId)
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .maybeSingle();
 
-  const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("documents")
-    .select("id, file_name, mime_type, size_bytes, storage_key, doc_type, status, created_at")
-    .eq("id", docId)
-    .eq("user_id", userId)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (error) throw new Error(error.message);
-  return data as DocumentRow | null;
+      if (error) throw new Error(error.message);
+      return data as DocumentRow | null;
+    }
+  );
 }
 
-export async function softDeleteDocument(userId: string, docId: string): Promise<boolean> {
-  if (isLocalDatabaseEnabled()) {
-    const pool = getPgPool();
-    const result = await pool.query(
-      `UPDATE documents SET status = 'deleted', updated_at = now()
-       WHERE id = $1::uuid AND user_id = $2::uuid AND status = 'active'
-       RETURNING id`,
-      [docId, userId]
-    );
-    return (result.rowCount ?? 0) > 0;
-  }
+export async function softDeleteDocument(
+  userId: string,
+  docId: string,
+  accessToken?: string | null
+): Promise<boolean> {
+  return withUserOrAdminDatabase(
+    accessToken,
+    async (pool) => {
+      const result = await pool.query(
+        `UPDATE documents SET status = 'deleted', updated_at = now()
+         WHERE id = $1::uuid AND user_id = $2::uuid AND status = 'active'
+         RETURNING id`,
+        [docId, userId]
+      );
+      return (result.rowCount ?? 0) > 0;
+    },
+    async (supabase) => {
+      const { data: doc, error: fetchErr } = await supabase
+        .from("documents")
+        .select("id, user_id")
+        .eq("id", docId)
+        .single();
 
-  const supabase = createSupabaseAdmin();
-  const { data: doc, error: fetchErr } = await supabase
-    .from("documents")
-    .select("id, user_id")
-    .eq("id", docId)
-    .single();
+      if (fetchErr || !doc || doc.user_id !== userId) return false;
 
-  if (fetchErr || !doc || doc.user_id !== userId) return false;
-
-  const { error } = await supabase.from("documents").update({ status: "deleted" }).eq("id", docId);
-  if (error) throw new Error(error.message);
-  return true;
+      const { error } = await supabase
+        .from("documents")
+        .update({ status: "deleted" })
+        .eq("id", docId);
+      if (error) throw new Error(error.message);
+      return true;
+    }
+  );
 }
 
 function mapRow(r: Record<string, unknown>): DocumentRow {

@@ -1,19 +1,14 @@
 export const dynamic = "force-dynamic";
-import { NextRequest, NextResponse } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
-import { requireActiveUserOrResponse } from "@/lib/auth-helpers";
+import { withActiveUser } from "@/lib/api-route";
 import { getPaymentById } from "@/lib/db/payments";
 import { syncUzumCheckoutStatus } from "@/lib/payments/uzum-checkout";
 import { isPaymentsEnabled } from "@/lib/payments";
 
-// GET /api/v1/payments/checkout/return?paymentId=...
-export async function GET(req: NextRequest) {
+export const GET = withActiveUser(async (req, authUser) => {
   if (!isPaymentsEnabled()) {
     return apiError("Payments are not enabled", 503, "PAYMENTS_DISABLED");
   }
-
-  const authUser = await requireActiveUserOrResponse(req);
-  if (authUser instanceof NextResponse) return authUser;
 
   const paymentId = req.nextUrl.searchParams.get("paymentId")?.trim();
   if (!paymentId) return apiError("paymentId required", 400, "MISSING_FIELDS");
@@ -30,4 +25,4 @@ export async function GET(req: NextRequest) {
     console.error("GET /payments/checkout/return error:", err);
     return apiError(err instanceof Error ? err.message : "Internal error", 500, "INTERNAL_ERROR");
   }
-}
+});

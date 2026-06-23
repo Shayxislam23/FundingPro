@@ -1,17 +1,9 @@
 export const dynamic = "force-dynamic";
-import { NextRequest } from "next/server";
 import { apiSuccess } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth-helpers";
+import { withAdmin } from "@/lib/api-route";
 import { COMPANY } from "@/lib/company-info";
 
-// GET /api/v1/admin/settings — returns safe, non-secret config info
-export async function GET(req: NextRequest) {
-  try {
-    await requireAdmin(req);
-  } catch (e) {
-    return e as Response;
-  }
-
+export const GET = withAdmin(async () => {
   const aiProvider = process.env.AI_PROVIDER ?? "mock";
   const paymentsEnabled = process.env.PAYMENTS_ENABLED === "true";
   const hasWebhookSecret = !!(process.env.PAYMENT_WEBHOOK_SECRET);
@@ -41,4 +33,4 @@ export async function GET(req: NextRequest) {
     adminEmailsConfigured: adminEmails.trim().length > 0,
     nodeEnv: process.env.NODE_ENV ?? "development",
   });
-}
+});

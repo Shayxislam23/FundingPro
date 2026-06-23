@@ -3,38 +3,42 @@ import { getSupabaseUser, createSupabaseAdmin, createSupabaseServerClient } from
 import { isLocalDatabaseEnabled, getPgPool } from "./pg-pool";
 import { apiError } from "./api";
 import { getUserAccountStatus } from "./db/user-status";
-import { getUserPlatformRole } from "./db/user-roles";
+import {
+  canAccessAdmin,
+  isAdminEmail,
+  parseAdminEmails,
+} from "./auth/admin-access";
 
 export type AuthUser = {
   supabaseId: string;
   userId: string;
   email: string | null;
+  accessToken: string | null;
 };
 
-function parseAdminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+/** Bearer token from Authorization header or Supabase session cookie. */
+export async function getAccessToken(req: NextRequest): Promise<string | null> {
+  const authHeader = req.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.slice(7);
+  }
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? null;
+  } catch {
+    return null;
+  }
 }
 
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-  if (process.env.ADMIN_BYPASS_DEV === "true" && process.env.NODE_ENV !== "production") {
-    return true;
-  }
-  return parseAdminEmails().includes(email.toLowerCase());
-}
+export { isAdminEmail, parseAdminEmails };
 
 /** DB-backed admin check: platform_role, then ADMIN_EMAILS allowlist. */
-export async function isAdminUser(userId: string, email: string | null | undefined): Promise<boolean> {
-  if (process.env.ADMIN_BYPASS_DEV === "true" && process.env.NODE_ENV !== "production") {
-    return true;
-  }
-  if (await getUserPlatformRole(userId) === "admin") {
-    return true;
-  }
-  return isAdminEmail(email);
+export async function isAdminUser(
+  userId: string,
+  email: string | null | undefined
+): Promise<boolean> {
+  return canAccessAdmin(userId, email);
 }
 
 /**
@@ -51,6 +55,7 @@ export async function getCurrentUser(req: NextRequest): Promise<AuthUser | null>
         supabaseId: user.id,
         userId: user.id,
         email: user.email ?? null,
+        accessToken: token,
       };
     }
   }
@@ -59,10 +64,12 @@ export async function getCurrentUser(req: NextRequest): Promise<AuthUser | null>
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+      const { data: { session } } = await supabase.auth.getSession();
       return {
         supabaseId: user.id,
         userId: user.id,
         email: user.email ?? null,
+        accessToken: session?.access_token ?? null,
       };
     }
   } catch {

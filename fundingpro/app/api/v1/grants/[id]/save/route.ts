@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
-import { NextRequest, NextResponse } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
-import { requireActiveUserOrResponse, writeAuditLog } from "@/lib/auth-helpers";
+import { withActiveUser } from "@/lib/api-route";
+import { writeAuditLog } from "@/lib/auth-helpers";
 import { saveGrant, unsaveGrant } from "@/lib/db/saved-grants";
 import { getGrantById } from "@/lib/db/grants";
 import { isLocalDatabaseEnabled } from "@/lib/pg-pool";
@@ -17,56 +17,38 @@ async function grantExists(grantId: string): Promise<boolean> {
   return !!data;
 }
 
-// POST /api/v1/grants/:id/save
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const authUser = await requireActiveUserOrResponse(req);
-  if (authUser instanceof NextResponse) return authUser;
+export const POST = withActiveUser(async (_req, authUser, ctx) => {
+  const id = ctx.params?.id;
+  if (!id) return apiError("Missing id", 400, "MISSING_ID");
 
-  try {
-    if (!(await grantExists(params.id))) {
-      return apiError("Grant not found", 404, "NOT_FOUND");
-    }
-
-    await saveGrant(authUser.userId, params.id);
-
-    await writeAuditLog({
-      userId: authUser.userId,
-      action: "grant_save",
-      entityType: "grant",
-      entityId: params.id,
-    });
-
-    return apiSuccess({ grantId: params.id, saved: true });
-  } catch (err) {
-    console.error("POST /grants/[id]/save error:", err);
-    return apiError("Internal error", 500, "INTERNAL_ERROR");
+  if (!(await grantExists(id))) {
+    return apiError("Grant not found", 404, "NOT_FOUND");
   }
-}
 
-// DELETE /api/v1/grants/:id/save
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const authUser = await requireActiveUserOrResponse(req);
-  if (authUser instanceof NextResponse) return authUser;
+  await saveGrant(authUser.userId, id, authUser.accessToken);
 
-  try {
-    await unsaveGrant(authUser.userId, params.id);
+  await writeAuditLog({
+    userId: authUser.userId,
+    action: "grant_save",
+    entityType: "grant",
+    entityId: id,
+  });
 
-    await writeAuditLog({
-      userId: authUser.userId,
-      action: "grant_unsave",
-      entityType: "grant",
-      entityId: params.id,
-    });
+  return apiSuccess({ grantId: id, saved: true });
+});
 
-    return apiSuccess({ grantId: params.id, saved: false });
-  } catch (err) {
-    console.error("DELETE /grants/[id]/save error:", err);
-    return apiError("Internal error", 500, "INTERNAL_ERROR");
-  }
-}
+export const DELETE = withActiveUser(async (_req, authUser, ctx) => {
+  const id = ctx.params?.id;
+  if (!id) return apiError("Missing id", 400, "MISSING_ID");
+
+  await unsaveGrant(authUser.userId, id, authUser.accessToken);
+
+  await writeAuditLog({
+    userId: authUser.userId,
+    action: "grant_unsave",
+    entityType: "grant",
+    entityId: id,
+  });
+
+  return apiSuccess({ grantId: id, saved: false });
+});

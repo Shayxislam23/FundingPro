@@ -19,6 +19,11 @@ function run(label, args) {
 
 console.log("=== FundingPro production readiness (automated) ===\n");
 
+if (process.env.NODE_ENV === "production" && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error("FAIL: SUPABASE_SERVICE_ROLE_KEY is required in production");
+  process.exit(1);
+}
+
 const steps = [
   ["typecheck + unit tests", ["run", "check"]],
   ["lint", ["run", "lint"]],

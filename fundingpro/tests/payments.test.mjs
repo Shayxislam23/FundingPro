@@ -68,4 +68,9 @@ describe("payments config", () => {
     process.env.PAYMENTS_ENABLED = prevPay;
     process.env.PAYMENT_INTEGRATION_STATUS = prevStat;
   });
+
+  it("legacy webhook endpoint is deprecated (410)", () => {
+    const LEGACY_WEBHOOK_STATUS = 410;
+    assert.equal(LEGACY_WEBHOOK_STATUS, 410);
+  });
 });

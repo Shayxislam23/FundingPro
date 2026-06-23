@@ -1,5 +1,4 @@
-import { getPgPool, isLocalDatabaseEnabled } from "@/lib/pg-pool";
-import { createSupabaseAdmin } from "@/lib/supabase-server";
+import { withDatabase } from "@/lib/db/runtime";
 
 export type GrantMatch = {
   grantId: string;
@@ -38,47 +37,48 @@ export async function matchGrantsFromDatabase(profile: Record<string, unknown>, 
   const sectorTerms = sectorRaw ? normalizeSector(sectorRaw) : [];
   const country = countryRaw || "Uzbekistan";
 
-  if (isLocalDatabaseEnabled()) {
-    const pool = getPgPool();
-    const result = await pool.query(
-      `SELECT g.id, g.title, g.title_ru, g.sectors, g.country_scope, g.applicant_types, g.deadline,
-              d.name_ru AS donor_name_ru, d.name AS donor_name
-       FROM grants g
-       LEFT JOIN donors d ON d.id = g.donor_id
-       WHERE g.is_active = true
-       ORDER BY g.is_featured DESC, g.deadline ASC NULLS LAST
-       LIMIT 100`
-    );
+  return withDatabase(
+    async (pool) => {
+      const result = await pool.query(
+        `SELECT g.id, g.title, g.title_ru, g.sectors, g.country_scope, g.applicant_types, g.deadline,
+                d.name_ru AS donor_name_ru, d.name AS donor_name
+         FROM grants g
+         LEFT JOIN donors d ON d.id = g.donor_id
+         WHERE g.is_active = true
+         ORDER BY g.is_featured DESC, g.deadline ASC NULLS LAST
+         LIMIT 100`
+      );
 
-    return scoreGrants(result.rows, { sectorTerms, country, orgType }).slice(0, limit);
-  }
+      return scoreGrants(result.rows, { sectorTerms, country, orgType }).slice(0, limit);
+    },
+    async (supabase) => {
+      const { data, error } = await supabase
+        .from("grants")
+        .select("id, title, title_ru, sectors, country_scope, applicant_types, deadline, donor:donors ( name, name_ru )")
+        .eq("is_active", true)
+        .order("is_featured", { ascending: false })
+        .limit(100);
 
-  const supabase = createSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("grants")
-    .select("id, title, title_ru, sectors, country_scope, applicant_types, deadline, donor:donors ( name, name_ru )")
-    .eq("is_active", true)
-    .order("is_featured", { ascending: false })
-    .limit(100);
+      if (error) throw new Error(error.message);
 
-  if (error) throw new Error(error.message);
+      const rows = (data ?? []).map((g) => {
+        const donor = g.donor as unknown as { name: string; name_ru: string | null } | null;
+        return {
+          id: g.id,
+          title: g.title,
+          title_ru: g.title_ru,
+          sectors: g.sectors,
+          country_scope: g.country_scope,
+          applicant_types: g.applicant_types,
+          deadline: g.deadline,
+          donor_name: donor?.name ?? null,
+          donor_name_ru: donor?.name_ru ?? null,
+        };
+      });
 
-  const rows = (data ?? []).map((g) => {
-    const donor = g.donor as unknown as { name: string; name_ru: string | null } | null;
-    return {
-      id: g.id,
-      title: g.title,
-      title_ru: g.title_ru,
-      sectors: g.sectors,
-      country_scope: g.country_scope,
-      applicant_types: g.applicant_types,
-      deadline: g.deadline,
-      donor_name: donor?.name ?? null,
-      donor_name_ru: donor?.name_ru ?? null,
-    };
-  });
-
-  return scoreGrants(rows, { sectorTerms, country, orgType }).slice(0, limit);
+      return scoreGrants(rows, { sectorTerms, country, orgType }).slice(0, limit);
+    }
+  );
 }
 
 function scoreGrants(

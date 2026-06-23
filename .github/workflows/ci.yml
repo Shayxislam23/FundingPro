@@ -71,3 +71,24 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
         run: npm run build
+
+      - name: API auth integration
+        env:
+          DATABASE_URL: postgresql://fundingpro:fundingpro_dev@localhost:5433/fundingpro
+          USE_LOCAL_DATABASE: "true"
+          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
+          SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-key"
+        run: npm run test:integration
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E smoke
+        env:
+          DATABASE_URL: postgresql://fundingpro:fundingpro_dev@localhost:5433/fundingpro
+          USE_LOCAL_DATABASE: "true"
+          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
+          CI: "true"
+        run: npm run test:e2e

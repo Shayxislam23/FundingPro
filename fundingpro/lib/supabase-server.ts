@@ -30,14 +30,22 @@ export async function createSupabaseServerClient() {
 
 /**
  * Admin Supabase client — bypasses RLS. Use only in trusted server code.
- * Falls back to anon key if service role key not set (dev mode).
+ * Falls back to anon key in development only when service role key is not set.
  */
 export function createSupabaseAdmin() {
-  return createClient(
-    supabaseUrl,
-    supabaseServiceKey ?? supabaseAnonKey,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
+  if (process.env.NODE_ENV === "production" && !supabaseServiceKey) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY is required in production for createSupabaseAdmin()"
+    );
+  }
+  if (!supabaseServiceKey && process.env.NODE_ENV !== "production") {
+    console.warn(
+      "[supabase-server] SUPABASE_SERVICE_ROLE_KEY not set — using anon key (dev only)"
+    );
+  }
+  return createClient(supabaseUrl, supabaseServiceKey ?? supabaseAnonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 }
 
 /**

@@ -1,42 +1,28 @@
 export const dynamic = "force-dynamic";
-import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth-helpers";
+import { withAdmin } from "@/lib/api-route";
 import { listGrantRequirements, addGrantRequirement } from "@/lib/db/admin-grants";
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    await requireAdmin(_req);
-  } catch (e) {
-    return e as Response;
-  }
-  try {
-    const requirements = await listGrantRequirements(params.id);
-    return apiSuccess({ requirements });
-  } catch (err) {
-    console.error("GET /admin/grants/requirements error:", err);
-    return apiError("Internal error", 500, "INTERNAL_ERROR");
-  }
-}
+export const GET = withAdmin(async (_req, _admin, ctx) => {
+  const id = ctx.params?.id;
+  if (!id) return apiError("Missing id", 400, "MISSING_ID");
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    await requireAdmin(req);
-  } catch (e) {
-    return e as Response;
-  }
-  try {
-    const body = await req.json();
-    const text = String(body.text ?? "").trim();
-    if (!text) return apiError("text required", 400, "MISSING_FIELDS");
-    const id = await addGrantRequirement(params.id, {
-      text,
-      requirementType: body.requirementType ? String(body.requirementType) : undefined,
-      required: body.required !== false,
-    });
-    return apiSuccess({ id }, 201);
-  } catch (err) {
-    console.error("POST /admin/grants/requirements error:", err);
-    return apiError("Internal error", 500, "INTERNAL_ERROR");
-  }
-}
+  const requirements = await listGrantRequirements(id);
+  return apiSuccess({ requirements });
+});
+
+export const POST = withAdmin(async (req, _admin, ctx) => {
+  const id = ctx.params?.id;
+  if (!id) return apiError("Missing id", 400, "MISSING_ID");
+
+  const body = await req.json();
+  const text = String(body.text ?? "").trim();
+  if (!text) return apiError("text required", 400, "MISSING_FIELDS");
+
+  const requirementId = await addGrantRequirement(id, {
+    text,
+    requirementType: body.requirementType ? String(body.requirementType) : undefined,
+    required: body.required !== false,
+  });
+  return apiSuccess({ id: requirementId }, 201);
+});

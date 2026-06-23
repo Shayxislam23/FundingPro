@@ -8,7 +8,11 @@ export function isSupabaseStorageMigration(filename) {
 
 /** Migrations that are RLS-only and require Supabase auth roles. */
 export function isSupabaseRlsMigration(filename) {
-  return /_rls\.sql$/i.test(filename) || /rls_sensitive/i.test(filename);
+  return (
+    /_rls\.sql$/i.test(filename) ||
+    /rls_sensitive/i.test(filename) ||
+    /rls_user_tables_extend/i.test(filename)
+  );
 }
 
 export async function hasStorageSchema(pool) {

@@ -6,6 +6,7 @@
  * Starts `next start` on TEST_PORT (default 3099) if SMOKE_BASE_URL is not set.
  */
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -101,8 +102,13 @@ async function runTests() {
   console.log("\nAll API auth integration checks passed.");
 }
 
+const skipBuild =
+  USE_EXTERNAL ||
+  process.env.SKIP_INTEGRATION_BUILD === "true" ||
+  existsSync(resolve(root, ".next", "BUILD_ID"));
+
 try {
-  if (!USE_EXTERNAL) {
+  if (!skipBuild) {
     console.log("Building Next.js app...");
     const build = spawn("npm", ["run", "build"], {
       cwd: root,

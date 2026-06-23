@@ -14,7 +14,6 @@ const envFile = join(root, ".env.production.local");
 const REQUIRED_FOR_APP = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
   "DATABASE_URL",
   "RESEND_API_KEY",
   "RESEND_FROM_EMAIL",
@@ -23,6 +22,8 @@ const REQUIRED_FOR_APP = [
 ];
 
 const OPTIONAL = [
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SECRET_KEY",
   "DIRECT_URL",
   "AI_PROVIDER",
   "PAYMENTS_ENABLED",
@@ -86,6 +87,12 @@ if (missing.length) {
       "  https://supabase.com/dashboard/project/xgvwfnfifzsgscwvtcnz/settings/api\n"
   );
   process.exit(1);
+}
+
+if (!env.SUPABASE_SERVICE_ROLE_KEY && !env.SUPABASE_SECRET_KEY) {
+  console.warn(
+    "Warning: SUPABASE_SERVICE_ROLE_KEY not set — admin auth API uses anon fallback until added.\n"
+  );
 }
 
 console.log("Pushing env vars to Vercel (production)...\n");

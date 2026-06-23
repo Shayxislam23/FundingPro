@@ -69,9 +69,15 @@ async function startServer() {
   await waitForServer(Number(process.env.INTEGRATION_SERVER_TIMEOUT_MS ?? 90_000));
 }
 
-function stopServer() {
+async function stopServer() {
+  if (!serverProc || serverProc.killed) return;
+  serverProc.kill("SIGTERM");
+  await Promise.race([
+    new Promise((resolve) => serverProc?.once("exit", resolve)),
+    new Promise((resolve) => setTimeout(resolve, 3000)),
+  ]);
   if (serverProc && !serverProc.killed) {
-    serverProc.kill("SIGTERM");
+    serverProc.kill("SIGKILL");
   }
 }
 
@@ -140,5 +146,5 @@ try {
   console.error("\n✗", err instanceof Error ? err.message : err);
   process.exit(1);
 } finally {
-  stopServer();
+  await stopServer();
 }

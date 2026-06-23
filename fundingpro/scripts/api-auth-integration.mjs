@@ -18,7 +18,10 @@ const USE_EXTERNAL = Boolean(process.env.SMOKE_BASE_URL);
 let serverProc = null;
 
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, options);
+  const res = await fetch(`${BASE}${path}`, {
+    ...options,
+    signal: AbortSignal.timeout(Number(process.env.INTEGRATION_FETCH_TIMEOUT_MS ?? 15_000)),
+  });
   const json = await res.json().catch(() => ({}));
   return { status: res.status, json };
 }
@@ -47,9 +50,9 @@ async function waitForServer(maxMs = 60000) {
 async function startServer() {
   if (USE_EXTERNAL) return;
 
-  serverProc = spawn("npx", ["next", "start", "-p", String(PORT)], {
+  serverProc = spawn("npx", ["next", "start", "-H", "127.0.0.1", "-p", String(PORT)], {
     cwd: root,
-    stdio: ["ignore", "pipe", "pipe"],
+    stdio: "ignore",
     env: {
       ...process.env,
       PORT: String(PORT),
@@ -57,10 +60,13 @@ async function startServer() {
     },
   });
 
-  serverProc.stdout?.on("data", () => {});
-  serverProc.stderr?.on("data", () => {});
+  serverProc.on("exit", (code) => {
+    if (code && code !== 0) {
+      console.error(`next start exited with code ${code}`);
+    }
+  });
 
-  await waitForServer();
+  await waitForServer(Number(process.env.INTEGRATION_SERVER_TIMEOUT_MS ?? 90_000));
 }
 
 function stopServer() {

@@ -16,11 +16,19 @@ export type AuthUser = {
   accessToken: string | null;
 };
 
+function shouldSkipSupabaseSessionLookup(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  return !url || url.includes("placeholder");
+}
+
 /** Bearer token from Authorization header or Supabase session cookie. */
 export async function getAccessToken(req: NextRequest): Promise<string | null> {
   const authHeader = req.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
     return authHeader.slice(7);
+  }
+  if (shouldSkipSupabaseSessionLookup()) {
+    return null;
   }
   try {
     const supabase = await createSupabaseServerClient();
@@ -58,6 +66,10 @@ export async function getCurrentUser(req: NextRequest): Promise<AuthUser | null>
         accessToken: token,
       };
     }
+  }
+
+  if (shouldSkipSupabaseSessionLookup()) {
+    return null;
   }
 
   try {

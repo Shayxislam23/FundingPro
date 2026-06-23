@@ -3,10 +3,11 @@
  * Initialize local Postgres: migration + seed + dev user.
  * Usage: npm run db:init
  */
-import { readFileSync, readdirSync } from "fs";
+import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import pg from "pg";
+import { applyMigrations } from "./lib/migrations.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
@@ -18,10 +19,6 @@ if (!connectionString) {
   console.error("Set LOCAL_DATABASE_URL or DATABASE_URL");
   process.exit(1);
 }
-
-const migrationFiles = readdirSync(join(root, "supabase/migrations"))
-  .filter((f) => f.endsWith(".sql"))
-  .sort();
 
 const seedSql = readFileSync(join(root, "supabase/seed.sql"), "utf8");
 
@@ -69,11 +66,7 @@ try {
   }
 
   console.log("Applying migrations...");
-  for (const file of migrationFiles) {
-    const sql = readFileSync(join(root, "supabase/migrations", file), "utf8");
-    console.log(`  ${file}`);
-    await pool.query(sql);
-  }
+  await applyMigrations(pool, join(root, "supabase/migrations"));
   console.log("Seeding data...");
   await pool.query(seedSql);
   console.log("Creating dev user (info@info.uz)...");

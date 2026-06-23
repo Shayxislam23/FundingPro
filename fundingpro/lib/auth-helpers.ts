@@ -3,6 +3,7 @@ import { getSupabaseUser, createSupabaseAdmin, createSupabaseServerClient } from
 import { isLocalDatabaseEnabled, getPgPool } from "./pg-pool";
 import { apiError } from "./api";
 import { getUserAccountStatus } from "./db/user-status";
+import { getUserPlatformRole } from "./db/user-roles";
 
 export type AuthUser = {
   supabaseId: string;
@@ -23,6 +24,17 @@ export function isAdminEmail(email: string | null | undefined): boolean {
     return true;
   }
   return parseAdminEmails().includes(email.toLowerCase());
+}
+
+/** DB-backed admin check: platform_role, then ADMIN_EMAILS allowlist. */
+export async function isAdminUser(userId: string, email: string | null | undefined): Promise<boolean> {
+  if (process.env.ADMIN_BYPASS_DEV === "true" && process.env.NODE_ENV !== "production") {
+    return true;
+  }
+  if (await getUserPlatformRole(userId) === "admin") {
+    return true;
+  }
+  return isAdminEmail(email);
 }
 
 /**
@@ -96,7 +108,7 @@ export async function requireActiveUserOrResponse(
 
 export async function requireAdmin(req: NextRequest): Promise<AuthUser> {
   const user = await requireActiveUser(req);
-  if (!isAdminEmail(user.email)) {
+  if (!(await isAdminUser(user.userId, user.email))) {
     throw apiError("Forbidden", 403, "FORBIDDEN");
   }
 

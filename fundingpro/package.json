@@ -29,6 +29,7 @@
     "deploy:env": "node scripts/vercel-env-push.mjs",
     "deploy:production": "node scripts/production-next-steps.mjs",
     "deploy:setup-env": "node scripts/setup-production-env.mjs",
+    "production:readiness": "node scripts/production-readiness.mjs",
     "check": "npm run typecheck && npm test"
   },
   "dependencies": {
@@ -50,7 +51,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
     "next": "14.2.35",
-    "nodemailer": "^8.0.7",
+    "nodemailer": "^9.0.1",
     "pg": "^8.20.0",
     "react": "^18",
     "react-dom": "^18",

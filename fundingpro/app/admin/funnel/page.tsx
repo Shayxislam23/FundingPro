@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { TrendingUp, Loader2, RefreshCcw, Users, Building2, CheckCircle2, Bot, CreditCard } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
@@ -33,7 +33,7 @@ export default function AdminFunnelPage() {
   const [loading, setLoading] = useState(true);
   const [recentOnly, setRecentOnly] = useState(false);
 
-  const fetchFunnel = async () => {
+  const fetchFunnel = useCallback(async () => {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
@@ -46,11 +46,11 @@ export default function AdminFunnelPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [recentOnly]);
 
   useEffect(() => {
-    fetchFunnel();
-  }, [recentOnly]);
+    void fetchFunnel();
+  }, [fetchFunnel]);
 
   return (
     <div>

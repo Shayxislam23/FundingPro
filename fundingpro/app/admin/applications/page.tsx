@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { ClipboardList, Loader2, RefreshCcw } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
@@ -38,7 +38,7 @@ export default function AdminApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
@@ -53,11 +53,11 @@ export default function AdminApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
-    fetchApplications();
-  }, [statusFilter]);
+    void fetchApplications();
+  }, [fetchApplications]);
 
   return (
     <div>

@@ -2,10 +2,16 @@ export const dynamic = "force-dynamic";
 import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api";
 import { resend } from "@/lib/resend";
+import { checkRateLimitAsync } from "@/lib/ai-rate-limit";
 
 // POST /api/v1/lead-magnet — email capture for grant digest PDF
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anonymous";
+    if (!(await checkRateLimitAsync(`lead-magnet:${ip}`))) {
+      return apiError("Too many requests. Try again later.", 429, "RATE_LIMITED");
+    }
+
     const body = await req.json();
     const email = String(body.email ?? "").trim().toLowerCase();
     const source = String(body.source ?? "landing");

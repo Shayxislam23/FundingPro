@@ -7,6 +7,7 @@ import { ensureInternalUser } from "@/lib/db/users";
 import { logAiRequest, saveProposalProject } from "@/lib/db/proposals";
 import { callAi, PROMPTS, redactPii as redactPiiHelper } from "@/lib/ai-gateway";
 import { validateProposalContent } from "@/lib/ai-validation";
+import { filterProposalSections } from "@/lib/proposal-sections";
 import { checkProposalLimit } from "@/lib/plan-limits";
 
 // POST /api/v1/ai/proposal/generate
@@ -21,8 +22,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { projectIdea, donorFormat, sections, grantId, confirmSave } = body;
 
-    if (!projectIdea || !donorFormat || !sections?.length) {
-      return apiError("projectIdea, donorFormat, sections required", 400, "MISSING_FIELDS");
+    const allowedSections = filterProposalSections(sections);
+    if (!projectIdea || !donorFormat || allowedSections.length === 0) {
+      return apiError("projectIdea, donorFormat, and valid sections required", 400, "MISSING_FIELDS");
     }
     if (projectIdea.length > 10000) {
       return apiError("projectIdea too long (max 10000 chars)", 400, "INPUT_TOO_LONG");
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
     let lastIsMock = true;
     let totalTokens = 0;
 
-    for (const sectionType of sections.slice(0, 5)) {
+    for (const sectionType of allowedSections) {
       const prompt = PROMPTS["proposal-generate"](sectionType, donorFormat, safeIdea);
       const result = await callAi(prompt, { module: "proposal-generate", userId: authUser.userId });
       const validation = validateProposalContent(result.content);
@@ -88,7 +90,7 @@ export async function POST(req: NextRequest) {
       entityId: proposalId,
       metadata: {
         donorFormat,
-        sectionCount: sections.length,
+        sectionCount: allowedSections.length,
         isMock: lastIsMock,
         aiRequestId,
         saved: confirmSave !== false,

@@ -8,11 +8,12 @@
  *
  * Usage: node scripts/production-next-steps.mjs [--skip-db] [--skip-deploy]
  */
-import { readFileSync, existsSync, readdirSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { spawnSync } from "child_process";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import pg from "pg";
+import { applyMigrations } from "./lib/migrations.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -60,17 +61,10 @@ run("node", ["scripts/vercel-env-push.mjs"]);
 
 if (!skipDb && env.DATABASE_URL) {
   console.log("\nApplying migrations to remote database...");
-  const migrationFiles = readdirSync(join(root, "supabase/migrations"))
-    .filter((f) => f.endsWith(".sql"))
-    .sort();
   const pool = new pg.Pool({ connectionString: env.DATABASE_URL });
   try {
     await pool.query("SELECT 1");
-    for (const file of migrationFiles) {
-      const sql = readFileSync(join(root, "supabase/migrations", file), "utf8");
-      console.log(`  Applying ${file}...`);
-      await pool.query(sql);
-    }
+    await applyMigrations(pool, join(root, "supabase/migrations"));
     const seedSql = readFileSync(join(root, "supabase/seed.sql"), "utf8");
     console.log("  Seeding...");
     await pool.query(seedSql);

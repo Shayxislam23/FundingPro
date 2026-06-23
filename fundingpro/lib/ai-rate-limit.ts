@@ -90,3 +90,11 @@ export async function checkAiRateLimitAsync(userId: string): Promise<boolean> {
     return checkMemoryRateLimit(key);
   }
 }
+
+export async function checkRateLimitAsync(bucketKey: string): Promise<boolean> {
+  try {
+    return await checkDatabaseRateLimit(bucketKey);
+  } catch {
+    return checkMemoryRateLimit(bucketKey);
+  }
+}

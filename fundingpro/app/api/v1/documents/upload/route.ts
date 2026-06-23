@@ -8,6 +8,7 @@ import { createSupabaseAdmin } from "@/lib/supabase-server";
 import { isLocalDatabaseEnabled } from "@/lib/pg-pool";
 import { saveLocalFile, deleteLocalFile } from "@/lib/local-storage";
 import { sanitizeStorageFileName } from "@/lib/validation";
+import { validateFileContent, isAllowedUploadMime } from "@/lib/file-sniff";
 
 // POST /api/v1/documents/upload
 export async function POST(req: NextRequest) {
@@ -21,21 +22,17 @@ export async function POST(req: NextRequest) {
 
     if (!file) return apiError("file required", 400, "MISSING_FILE");
 
-    const allowedTypes = [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "image/jpeg",
-      "image/png",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
+    if (!isAllowedUploadMime(file.type)) {
       return apiError("File type not allowed", 400, "INVALID_FILE_TYPE");
     }
     if (file.size > 10 * 1024 * 1024) {
       return apiError("File too large (max 10MB)", 400, "FILE_TOO_LARGE");
+    }
+
+    const fileBytes = await file.arrayBuffer();
+    const contentError = validateFileContent(file.type, fileBytes);
+    if (contentError) {
+      return apiError(contentError, 400, "INVALID_FILE_CONTENT");
     }
 
     const normalizedDocType = DOCUMENT_TYPES.includes(docType as (typeof DOCUMENT_TYPES)[number])
@@ -50,7 +47,6 @@ export async function POST(req: NextRequest) {
 
     const safeName = sanitizeStorageFileName(file.name);
     const storagePath = `${authUser.userId}/${crypto.randomUUID()}-${safeName}`;
-    const fileBytes = await file.arrayBuffer();
 
     if (isLocalDatabaseEnabled()) {
       await saveLocalFile(storagePath, fileBytes);

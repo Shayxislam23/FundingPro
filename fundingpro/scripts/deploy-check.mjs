@@ -18,6 +18,13 @@ const recommended = [
   "DIRECT_URL",
 ];
 
+const growthOptional = [
+  "NEXT_PUBLIC_PLAUSIBLE_DOMAIN",
+  "NEXT_PUBLIC_POSTHOG_KEY",
+  "TELEGRAM_BOT_TOKEN",
+  "TELEGRAM_CHAT_ID",
+];
+
 const warnings = [];
 
 for (const key of required) {
@@ -32,6 +39,16 @@ for (const key of recommended) {
   if (!val || val.includes("your-")) {
     warnings.push(`WARN optional: ${key}`);
   }
+}
+
+const growthConfigured = growthOptional.filter((key) => {
+  const val = process.env[key];
+  return val && !val.includes("your-");
+});
+if (growthConfigured.length === 0) {
+  warnings.push(
+    "WARN growth: set Plausible/PostHog and/or Telegram env for digest + analytics (see docs/GROWTH_PLAYBOOK.md)"
+  );
 }
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";

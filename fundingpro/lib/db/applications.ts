@@ -121,12 +121,27 @@ export async function createApplication(userId: string, grantId: string, notes?:
     }
 
     const id = crypto.randomUUID();
-    await pool.query(
-      `INSERT INTO applications (id, user_id, grant_id, status, notes)
-       VALUES ($1::uuid, $2::uuid, $3::uuid, 'saved', $4)`,
-      [id, userId, grantId, notes ?? null]
-    );
-    return { applicationId: id, status: "saved", alreadyExists: false };
+    try {
+      await pool.query(
+        `INSERT INTO applications (id, user_id, grant_id, status, notes)
+         VALUES ($1::uuid, $2::uuid, $3::uuid, 'saved', $4)`,
+        [id, userId, grantId, notes ?? null]
+      );
+      return { applicationId: id, status: "saved", alreadyExists: false };
+    } catch (err) {
+      const code = err && typeof err === "object" && "code" in err ? String((err as { code: string }).code) : "";
+      if (code !== "23505") throw err;
+      const raced = await pool.query(
+        `SELECT id, status FROM applications WHERE user_id = $1::uuid AND grant_id = $2::uuid`,
+        [userId, grantId]
+      );
+      if (!raced.rows[0]) throw err;
+      return {
+        applicationId: String(raced.rows[0].id),
+        status: String(raced.rows[0].status),
+        alreadyExists: true,
+      };
+    }
   }
 
   const supabase = createSupabaseAdmin();
@@ -150,7 +165,20 @@ export async function createApplication(userId: string, grantId: string, notes?:
     .select("id, status")
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.code === "23505") {
+      const { data: raced } = await supabase
+        .from("applications")
+        .select("id, status")
+        .eq("user_id", userId)
+        .eq("grant_id", grantId)
+        .maybeSingle();
+      if (raced) {
+        return { applicationId: raced.id, status: raced.status, alreadyExists: true };
+      }
+    }
+    throw new Error(error.message);
+  }
   return { applicationId: application.id, status: application.status, alreadyExists: false };
 }
 

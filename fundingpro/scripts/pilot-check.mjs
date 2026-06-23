@@ -32,11 +32,18 @@ const checks = [];
 checks.push(["typecheck + unit tests", () => run("npm", ["run", "check"])]);
 checks.push(["deploy check", () => run("npm", ["run", "deploy:check"])]);
 
-if (env.UZUM_MERCHANT_ID && env.UZUM_MERCHANT_SECRET) {
+if (
+  env.UZUM_MERCHANT_SERVICE_ID &&
+  env.UZUM_MERCHANT_LOGIN &&
+  env.UZUM_MERCHANT_PASSWORD
+) {
   checks.push(["uzum sandbox", () => run("npm", ["run", "uzum:sandbox"])]);
 } else {
   console.warn("⚠ UZUM credentials missing — skip sandbox (expected before contract)");
 }
+
+console.log("\n→ uzum readiness (informational)...");
+spawnSync("npm", ["run", "uzum:check"], { cwd: root, stdio: "inherit", shell: true });
 
 console.log("\n=== FundingPro pilot readiness ===\n");
 let failed = 0;

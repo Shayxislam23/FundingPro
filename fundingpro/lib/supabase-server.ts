@@ -6,7 +6,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
 
 /**
  * Server-side Supabase client that reads cookies (for RSC / Server Actions).
@@ -33,14 +34,12 @@ export async function createSupabaseServerClient() {
  * Falls back to anon key in development only when service role key is not set.
  */
 export function createSupabaseAdmin() {
-  if (process.env.NODE_ENV === "production" && !supabaseServiceKey) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is required in production for createSupabaseAdmin()"
-    );
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL and anon/publishable key are required");
   }
-  if (!supabaseServiceKey && process.env.NODE_ENV !== "production") {
+  if (!supabaseServiceKey) {
     console.warn(
-      "[supabase-server] SUPABASE_SERVICE_ROLE_KEY not set — using anon key (dev only)"
+      "[supabase-server] SUPABASE_SERVICE_ROLE_KEY not set — using anon/publishable key"
     );
   }
   return createClient(supabaseUrl, supabaseServiceKey ?? supabaseAnonKey, {

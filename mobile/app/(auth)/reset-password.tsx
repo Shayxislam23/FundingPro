@@ -8,7 +8,7 @@ import { Input } from "../../components/ui/Input";
 
 function clerkErrorMessage(err: unknown): string {
   if (err && typeof err === "object" && "errors" in err) {
-    const errors = (err as { errors?: Array<{ message?: string }> }).errors;
+    const errors = (err as { errors?: { message?: string }[] }).errors;
     if (errors?.[0]?.message) return errors[0].message;
   }
   if (err instanceof Error) return err.message;

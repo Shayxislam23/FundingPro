@@ -33,15 +33,30 @@ export function limitsForPlanId(planId: string | null | undefined): PlanUsageLim
   return PLAN_LIMITS[planId] ?? FREE_LIMITS;
 }
 
+function getUtcMonthStart(): number {
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  return monthStart.getTime();
+}
+
 async function countMonthlyEligibilityChecks(accessToken: string): Promise<number> {
   const { convexQuery, api } = await import("@/lib/convex-server");
-  const usage = await convexQuery(api.planUsage.monthlyUsage, {}, accessToken);
+  const usage = await convexQuery(
+    api.planUsage.monthlyUsage,
+    { monthStart: getUtcMonthStart() },
+    accessToken
+  );
   return usage.eligibilityChecks;
 }
 
 async function countMonthlyAiProposals(accessToken: string): Promise<number> {
   const { convexQuery, api } = await import("@/lib/convex-server");
-  const usage = await convexQuery(api.planUsage.monthlyUsage, {}, accessToken);
+  const usage = await convexQuery(
+    api.planUsage.monthlyUsage,
+    { monthStart: getUtcMonthStart() },
+    accessToken
+  );
   return usage.aiProposals;
 }
 

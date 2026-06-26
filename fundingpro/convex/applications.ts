@@ -1,7 +1,17 @@
 import { v } from "convex/values";
 import { type QueryCtx } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { authedMutation, authedQuery, adminQuery } from "./lib/customFunctions";
 import type { Doc, Id } from "./_generated/dataModel";
+
+const APPLICATION_STATUS_LABELS: Record<string, string> = {
+  SAVED: "Сохранена",
+  IN_PROGRESS: "В работе",
+  SUBMITTED: "Подана",
+  AWARDED: "Одобрена",
+  REJECTED: "Отклонена",
+  WITHDRAWN: "Отозвана",
+};
 
 async function mapApplication(ctx: { db: QueryCtx["db"] }, app: Doc<"applications">) {
   const grant = await ctx.db.get("grants", app.grantId);
@@ -161,11 +171,28 @@ export const update = authedMutation({
     const app = await ctx.db.get("applications", args.applicationId as Id<"applications">);
     if (!app || app.userId !== ctx.user._id) return null;
 
+    const previousStatus = app.status;
+    const nextStatus = args.status ?? app.status;
     const patch: Partial<Doc<"applications">> = { updatedAt: Date.now() };
     if (args.status !== undefined) patch.status = args.status;
     if (args.notes !== undefined) patch.notes = args.notes ?? undefined;
     await ctx.db.patch("applications", app._id, patch);
-    return { id: app._id, status: args.status ?? app.status };
+
+    if (args.status !== undefined && args.status !== previousStatus) {
+      const label = APPLICATION_STATUS_LABELS[args.status] ?? args.status;
+      await ctx.scheduler.runAfter(0, internal.pushNotifications.sendToUser, {
+        userId: app.userId,
+        title: "Статус заявки обновлён",
+        body: `Ваша заявка: ${label}`,
+        data: {
+          type: "application_status",
+          applicationId: app._id,
+          status: args.status,
+        },
+      });
+    }
+
+    return { id: app._id, status: nextStatus };
   },
 });
 

@@ -1,7 +1,7 @@
 import { useAuth } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import { useEffect } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function AuthCallbackScreen() {

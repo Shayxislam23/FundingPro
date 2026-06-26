@@ -78,6 +78,7 @@ export const list = query({
     deadlineAfter: v.optional(v.string()),
     activeOnly: v.optional(v.boolean()),
     featured: v.optional(v.boolean()),
+    today: v.optional(v.number()),
     page: v.number(),
     limit: v.number(),
   },
@@ -112,7 +113,7 @@ export const list = query({
         if (grant.deadline > new Date(args.deadlineBefore).getTime()) continue;
       }
       if (args.activeOnly) {
-        const today = new Date().setHours(0, 0, 0, 0);
+        const today = args.today ?? 0;
         const openStatuses = ["open", "upcoming", "active"];
         if (!openStatuses.includes(grant.status)) continue;
         if (grant.deadline && grant.deadline < today) continue;

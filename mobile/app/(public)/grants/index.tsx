@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
-import { Pressable, RefreshControl, Text, View } from "react-native";
+import { Pressable, RefreshControl, Text } from "react-native";
 import { formatDeadlineDisplay } from "@fundingpro/shared";
 import { Screen } from "../../../components/ui/Screen";
 import { EmptyState, ErrorState, LoadingState } from "../../../components/ui/States";

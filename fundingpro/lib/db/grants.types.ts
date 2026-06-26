@@ -33,6 +33,7 @@ export type ListGrantsParams = {
   deadlineAfter?: string;
   activeOnly?: boolean;
   featured?: boolean;
+  today?: number;
   page: number;
   limit: number;
 };

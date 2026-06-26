@@ -2,7 +2,9 @@ import { v } from "convex/values";
 import { adminQuery } from "./lib/customFunctions";
 
 export const dashboard = adminQuery({
-  args: {},
+  args: {
+    monthStart: v.number(),
+  },
   returns: v.object({
     totalUsers: v.number(),
     totalOrganizations: v.number(),
@@ -22,22 +24,34 @@ export const dashboard = adminQuery({
     ),
     integrationStatus: v.string(),
   }),
-  handler: async (ctx) => {
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-
-    const [users, orgs, grants, apps, tickets, subs, ai, requests] =
-      await Promise.all([
-        ctx.db.query("users").collect(),
-        ctx.db.query("organizations").collect(),
-        ctx.db.query("grants").collect(),
-        ctx.db.query("applications").collect(),
-        ctx.db.query("supportTickets").collect(),
-        ctx.db.query("subscriptions").collect(),
-        ctx.db.query("aiRequests").collect(),
-        ctx.db.query("subscriptionRequests").collect(),
-      ]);
+  handler: async (ctx, args) => {
+    const [
+      users,
+      orgs,
+      grants,
+      apps,
+      tickets,
+      subs,
+      aiThisMonth,
+      requests,
+      openTickets,
+    ] = await Promise.all([
+      ctx.db.query("users").collect(),
+      ctx.db.query("organizations").collect(),
+      ctx.db.query("grants").collect(),
+      ctx.db.query("applications").collect(),
+      ctx.db.query("supportTickets").collect(),
+      ctx.db.query("subscriptions").collect(),
+      ctx.db
+        .query("aiRequests")
+        .withIndex("by_created", (q) => q.gte("createdAt", args.monthStart))
+        .collect(),
+      ctx.db.query("subscriptionRequests").collect(),
+      ctx.db
+        .query("supportTickets")
+        .withIndex("by_status", (q) => q.eq("status", "OPEN"))
+        .collect(),
+    ]);
 
     const recentUsers = [...users]
       .sort((a, b) => b.createdAt - a.createdAt)
@@ -55,8 +69,8 @@ export const dashboard = adminQuery({
       totalApplications: apps.length,
       totalSupportTickets: tickets.length,
       activeSubscriptions: subs.filter((s) => s.status === "ACTIVE").length,
-      aiRequestsThisMonth: ai.filter((a) => a.createdAt >= monthStart.getTime()).length,
-      openTickets: tickets.filter((t) => t.status === "OPEN").length,
+      aiRequestsThisMonth: aiThisMonth.length,
+      openTickets: openTickets.length,
       subscriptionRequests: requests.filter((r) => r.status === "PENDING").length,
       recentUsers,
       integrationStatus: "convex",
@@ -65,7 +79,10 @@ export const dashboard = adminQuery({
 });
 
 export const funnel = adminQuery({
-  args: { last30DaysSignups: v.optional(v.boolean()) },
+  args: {
+    last30DaysSignups: v.optional(v.boolean()),
+    now: v.optional(v.number()),
+  },
   returns: v.object({
     signups: v.number(),
     withOrg: v.number(),
@@ -76,7 +93,7 @@ export const funnel = adminQuery({
   }),
   handler: async (ctx, args) => {
     const cutoff = args.last30DaysSignups
-      ? Date.now() - 30 * 24 * 60 * 60 * 1000
+      ? (args.now ?? 0) - 30 * 24 * 60 * 60 * 1000
       : 0;
 
     const users = await ctx.db.query("users").collect();

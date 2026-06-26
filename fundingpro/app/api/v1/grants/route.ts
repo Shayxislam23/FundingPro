@@ -18,6 +18,7 @@ export const GET = withPublic(async (req) => {
   const { page, limit } = parsePagination(searchParams);
 
   const safeSearch = search ? sanitizeLikePattern(search) : "";
+  const today = activeOnly ? new Date().setHours(0, 0, 0, 0) : undefined;
 
   const result = await listGrants({
     search: safeSearch || undefined,
@@ -28,6 +29,7 @@ export const GET = withPublic(async (req) => {
     deadlineAfter: deadlineAfter || undefined,
     activeOnly: activeOnly || undefined,
     featured,
+    today,
     page,
     limit,
   });

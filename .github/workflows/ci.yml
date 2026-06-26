@@ -48,6 +48,20 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: API smoke (contract + Playwright)
+        run: |
+          npm run start -- -p 3099 &
+          SERVER_PID=$!
+          for i in $(seq 1 45); do
+            if curl -sf http://127.0.0.1:3099/api/v1/health > /dev/null; then break; fi
+            sleep 2
+          done
+          SMOKE_BASE_URL=http://127.0.0.1:3099 npm run contract:mobile-api
+          npx playwright install chromium --with-deps
+          PLAYWRIGHT_BASE_URL=http://127.0.0.1:3099 npm run test:e2e
+          kill $SERVER_PID || true
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+
   mobile:
     runs-on: ubuntu-latest
     steps:
@@ -72,6 +86,9 @@ jobs:
 
       - name: Lint mobile
         run: npm run lint --workspace=@fundingpro/mobile
+
+      - name: API types unit tests
+        run: npm test --workspace=@fundingpro/api-types
 
   security:
     runs-on: ubuntu-latest

@@ -17,7 +17,7 @@ function clerkErrorMessage(err: unknown): string {
 
 export default function ConfirmScreen() {
   const { signIn, setActive: setSignInActive } = useSignIn();
-  const { isLoaded: signUpLoaded, signUp, setActive: setSignUpActive } = useSignUp();
+  const { signUp, setActive: setSignUpActive } = useSignUp();
   const [otp, setOtp] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);

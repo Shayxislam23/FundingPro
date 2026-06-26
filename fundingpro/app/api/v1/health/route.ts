@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
+import { withPublic } from "@/lib/api-route";
 import { grantsHealthCheck } from "@/lib/db/grants";
 import { getCompanyHealthLabel } from "@/lib/company-info";
 import {
@@ -9,7 +10,7 @@ import {
   isUzumMerchantConfigured,
 } from "@/lib/payments";
 
-export async function GET() {
+export const GET = withPublic(async () => {
   let dbStatus = "ok";
   let dbError: string | null = null;
 
@@ -44,4 +45,4 @@ export async function GET() {
     },
     { status: status === "ok" ? 200 : 503 }
   );
-}
+});

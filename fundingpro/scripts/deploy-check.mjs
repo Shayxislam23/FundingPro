@@ -20,6 +20,7 @@ const recommended = [
   "NEXT_PUBLIC_APP_URL",
   "CLERK_JWT_ISSUER_DOMAIN",
   "CONVEX_DEPLOY_KEY",
+  "CONVEX_SYSTEM_SECRET",
 ];
 
 const growthOptional = [
@@ -63,6 +64,12 @@ if (appUrl && !appUrl.startsWith("https://") && process.env.NODE_ENV === "produc
 const adminEmails = process.env.ADMIN_EMAILS ?? "";
 if (adminEmails && !adminEmails.includes("@fundingpro.uz")) {
   warnings.push("WARN ADMIN_EMAILS does not include @fundingpro.uz — use a company email for admin access");
+}
+
+if (process.env.NODE_ENV === "production" && !process.env.CONVEX_SYSTEM_SECRET) {
+  warnings.push(
+    "WARN CONVEX_SYSTEM_SECRET missing — payment webhooks and system Convex actions will fail in production"
+  );
 }
 
 if (process.env.PAYMENTS_ENABLED === "true") {

@@ -2,16 +2,15 @@ import { v } from "convex/values";
 import { authedQuery } from "./lib/customFunctions";
 
 export const monthlyUsage = authedQuery({
-  args: {},
+  args: {
+    monthStart: v.number(),
+  },
   returns: v.object({
     eligibilityChecks: v.number(),
     aiProposals: v.number(),
   }),
-  handler: async (ctx) => {
-    const monthStart = new Date();
-    monthStart.setUTCDate(1);
-    monthStart.setUTCHours(0, 0, 0, 0);
-    const since = monthStart.getTime();
+  handler: async (ctx, args) => {
+    const since = args.monthStart;
 
     const [eligibility, proposals] = await Promise.all([
       ctx.db

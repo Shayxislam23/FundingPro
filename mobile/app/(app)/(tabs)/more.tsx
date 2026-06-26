@@ -1,5 +1,5 @@
 import { Link, router } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../lib/auth/context";
 import { Button } from "../../../components/ui/Button";

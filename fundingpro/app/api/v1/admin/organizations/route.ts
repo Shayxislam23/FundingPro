@@ -3,9 +3,9 @@ import { apiSuccess } from "@/lib/api";
 import { withAdmin } from "@/lib/api-route";
 import { listOrganizations } from "@/lib/db/organizations";
 
-export const GET = withAdmin(async (req) => {
+export const GET = withAdmin(async (req, admin) => {
   const { searchParams } = new URL(req.url);
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "50"), 100);
-  const organizations = await listOrganizations(limit);
+  const organizations = await listOrganizations(limit, admin.accessToken);
   return apiSuccess({ organizations, total: organizations.length });
 });

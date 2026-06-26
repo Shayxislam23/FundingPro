@@ -21,25 +21,36 @@ export const POST = withActiveUser(async (req, authUser) => {
       return apiError("Accept offer and refund policy before payment", 400, "PAYMENT_TERMS_REQUIRED");
     }
 
-    await ensureInternalUser({
-      supabaseId: authUser.supabaseId,
-      email: authUser.email,
-      provider: "supabase_email",
-    });
+    await ensureInternalUser(
+      {
+        email: authUser.email,
+        provider: "clerk",
+      },
+      authUser.accessToken
+    );
 
     try {
-      await assertPaymentConsents(authUser.userId);
+      await assertPaymentConsents(authUser.accessToken);
     } catch {
       return apiError("Legal consent required. Please accept terms in account settings.", 403, "LEGAL_CONSENT_REQUIRED");
     }
 
-    await recordConsents(authUser.userId, [
-      { consentType: "payment_terms", documentVersion: getConsentVersion("payment_terms"), locale: "ru" },
-    ]);
+    await recordConsents(
+      [
+        {
+          consentType: "payment_terms",
+          documentVersion: getConsentVersion("payment_terms"),
+          locale: "ru",
+        },
+      ],
+      authUser.accessToken
+    );
+
+    const platform = typeof body.platform === "string" ? body.platform : "web";
 
     const intent = await createSubscriptionPaymentIntent({
-      userId: authUser.userId,
       planId,
+      accessToken: authUser.accessToken,
     });
 
     await writeAuditLog({
@@ -47,7 +58,7 @@ export const POST = withActiveUser(async (req, authUser) => {
       action: "payment_intent_created",
       entityType: "payment",
       entityId: intent.paymentId,
-      metadata: { planId, amountTiyin: intent.amountTiyin },
+      metadata: { planId, amountTiyin: intent.amountTiyin, platform },
     });
 
     return apiSuccess(intent, 201);

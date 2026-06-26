@@ -5,12 +5,14 @@ import { writeAuditLog } from "@/lib/auth-helpers";
 import { ensureInternalUser } from "@/lib/db/users";
 
 export const POST = withActiveUser(async (_req, authUser) => {
-  const internal = await ensureInternalUser({
-    supabaseId: authUser.supabaseId,
-    email: authUser.email,
-    emailVerified: true,
-    provider: "supabase_email",
-  });
+  const internal = await ensureInternalUser(
+    {
+      email: authUser.email,
+      emailVerified: true,
+      provider: "clerk",
+    },
+    authUser.accessToken
+  );
 
   await writeAuditLog({
     userId: internal.id,

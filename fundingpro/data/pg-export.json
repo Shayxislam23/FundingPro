@@ -1,0 +1,10 @@
+{
+  "exportedAt": "2026-06-24T03:17:09.412Z",
+  "source": "postgresql://fundingpro:***@127.0.0.1:5433/fundingpro",
+  "users": [],
+  "organizations": [],
+  "organizationMembers": [],
+  "applications": [],
+  "payments": [],
+  "userConsents": []
+}

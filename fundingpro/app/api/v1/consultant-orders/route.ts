@@ -5,9 +5,9 @@ import { writeAuditLog } from "@/lib/auth-helpers";
 import {
   createConsultantOrder,
   ensureUserForOrder,
+  listConsultants,
   listUserConsultantOrders,
 } from "@/lib/db/consultant-orders";
-import { createSupabaseAdmin } from "@/lib/supabase-server";
 
 function parseAmountUsd(price: string | number): number {
   if (typeof price === "number") return price;
@@ -16,7 +16,7 @@ function parseAmountUsd(price: string | number): number {
 }
 
 export const GET = withActiveUser(async (_req, authUser) => {
-  const orders = await listUserConsultantOrders(authUser.userId);
+  const orders = await listUserConsultantOrders(authUser.accessToken);
   return apiSuccess({ orders });
 });
 
@@ -28,15 +28,13 @@ export const POST = withActiveUser(async (req, authUser) => {
     return apiError("consultantId and packageName required", 400, "MISSING_FIELDS");
   }
 
-  await ensureUserForOrder(authUser.supabaseId, authUser.email);
+  await ensureUserForOrder(authUser.email, authUser.accessToken);
 
-  const supabase = createSupabaseAdmin();
-  const { data: consultant } = await supabase
-    .from("consultant_profiles")
-    .select("id, full_name, is_active, is_verified")
-    .eq("id", consultantId)
-    .maybeSingle();
-
+  const consultants = await listConsultants({
+    page: 1,
+    limit: 100,
+  });
+  const consultant = consultants.consultants.find((c) => c.id === consultantId);
   if (!consultant) return apiError("Consultant not found", 404, "NOT_FOUND");
 
   const amount = amountUsd != null ? Number(amountUsd) : parseAmountUsd(price ?? "0");
@@ -44,21 +42,21 @@ export const POST = withActiveUser(async (req, authUser) => {
     return apiError("Valid amount required", 400, "INVALID_AMOUNT");
   }
 
-  const result = await createConsultantOrder({
-    userId: authUser.userId,
-    email: authUser.email,
-    consultantId,
-    packageName: packageName.trim(),
-    amountUsd: amount,
-    notes: notes?.trim(),
-  });
+  const result = await createConsultantOrder(
+    {
+      consultantId,
+      packageName: packageName.trim(),
+      amountUsd: amount,
+      notes: notes?.trim(),
+    },
+    authUser.accessToken
+  );
 
   await writeAuditLog({
     userId: authUser.userId,
     action: "consultant_order_create",
     entityType: "consultant_order",
     entityId: result.orderId,
-    metadata: { consultantId, packageName, amountUsd: amount },
   });
 
   return apiSuccess(result, 201);

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { Globe, Shield, Bot, CreditCard, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 type CompanyInfo = {
   legalNameRu: string;
@@ -25,7 +25,8 @@ type Settings = {
   paymentsEnabled: boolean;
   hasWebhookSecret: boolean;
   hasResendKey: boolean;
-  hasServiceKey: boolean;
+  hasConvexUrl: boolean;
+  hasClerkKeys: boolean;
   adminEmailsConfigured: boolean;
   nodeEnv: string;
 };
@@ -48,9 +49,7 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const headers: Record<string, string> = {};
-        if (session) headers["Authorization"] = `Bearer ${session.access_token}`;
+        const headers = await getAuthHeaders();
         const res = await fetch("/api/v1/admin/settings", { headers });
         const data = await res.json();
         setSettings(data.data ?? null);
@@ -94,7 +93,7 @@ export default function AdminSettingsPage() {
                 { label: "Регистрация юрлица", value: s?.company?.entityRegisteredAt ?? "—", ok: true },
                 { label: "Окружение", value: s?.nodeEnv ?? "—", ok: s?.nodeEnv === "production" },
                 { label: "Языки UI", value: "Русский / Узбекский", ok: true },
-                { label: "Хранение данных", value: "Supabase (Узбекистан / EU)", ok: true },
+                { label: "Хранение данных", value: "Convex Storage", ok: true },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50">
                   <span className="text-xs font-medium text-gray-500">{label}</span>
@@ -123,8 +122,12 @@ export default function AdminSettingsPage() {
                 <StatusCell ok={s?.aiProviderConfigured ?? false} yes="Настроен" no="Не настроен" />
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-xs font-medium text-gray-500">Supabase service key</span>
-                <StatusCell ok={s?.hasServiceKey ?? false} yes="Настроен" />
+                <span className="text-xs font-medium text-gray-500">Convex backend</span>
+                <StatusCell ok={s?.hasConvexUrl ?? false} yes="Настроен" />
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-gray-50">
+                <span className="text-xs font-medium text-gray-500">Clerk auth</span>
+                <StatusCell ok={s?.hasClerkKeys ?? false} yes="Настроен" />
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
                 <span className="text-xs font-medium text-gray-500">Редакция ПД</span>

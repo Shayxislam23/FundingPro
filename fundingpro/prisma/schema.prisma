@@ -1,6 +1,6 @@
 // FundingPro — Prisma Schema (REFERENCE ONLY — not used at runtime)
-// Runtime schema source of truth: supabase/migrations/*.sql
-// Do not run prisma migrate; use `npm run db:migrate` (supabase db push).
+// Runtime schema source of truth: convex/schema.ts
+// Legacy Prisma model — use Convex for all runtime data access.
 
 generator client {
   provider = "prisma-client-js"

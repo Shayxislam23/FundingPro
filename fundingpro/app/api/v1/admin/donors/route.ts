@@ -3,22 +3,25 @@ import { apiSuccess, apiError } from "@/lib/api";
 import { withAdmin } from "@/lib/api-route";
 import { listDonors, createDonor } from "@/lib/db/admin-grants";
 
-export const GET = withAdmin(async () => {
-  const donors = await listDonors();
+export const GET = withAdmin(async (_req, admin) => {
+  const donors = await listDonors(admin.accessToken);
   return apiSuccess({ donors });
 });
 
-export const POST = withAdmin(async (req) => {
+export const POST = withAdmin(async (req, admin) => {
   const body = await req.json();
   const name = String(body.name ?? "").trim();
   if (!name) return apiError("name required", 400, "MISSING_FIELDS");
 
-  const id = await createDonor({
-    name,
-    nameRu: body.nameRu ? String(body.nameRu) : undefined,
-    shortName: body.shortName ? String(body.shortName) : undefined,
-    country: body.country ? String(body.country) : undefined,
-    website: body.website ? String(body.website) : undefined,
-  });
+  const id = await createDonor(
+    {
+      name,
+      nameRu: body.nameRu ? String(body.nameRu) : undefined,
+      shortName: body.shortName ? String(body.shortName) : undefined,
+      country: body.country ? String(body.country) : undefined,
+      website: body.website ? String(body.website) : undefined,
+    },
+    admin.accessToken
+  );
   return apiSuccess({ id }, 201);
 });

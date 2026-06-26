@@ -28,7 +28,7 @@ export const privacyUz: LegalDocumentContent = {
     {
       title: "3. Uchinchi shaxslar va transchegaraviy uzatish",
       paragraphs: [
-        "Ma'lumotlar Supabase, Vercel, Resend, Uzum Bank, OpenAI/Anthropic (tashqi AI yoqilganda) da qayta ishlanishi mumkin.",
+        "Ma'lumotlar Convex (DB), Clerk (auth), Vercel, Resend, Uzum Bank, OpenAI/Anthropic (tashqi AI yoqilganda) da qayta ishlanishi mumkin.",
         "Transchegaraviy uzatish Foydalanuvchi roziligi va/yoki shartnoma asosida amalga oshiriladi.",
       ],
     },

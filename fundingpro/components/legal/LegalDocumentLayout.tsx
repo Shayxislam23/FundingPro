@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
-import { LEGAL_DOCUMENTS } from "@/lib/legal/documents";
+import { LEGAL_DOCUMENTS } from "@/lib/legal/meta";
 import type { LegalDocId, LegalLocale } from "@/lib/legal/types";
 import { cn } from "@/lib/utils";
 

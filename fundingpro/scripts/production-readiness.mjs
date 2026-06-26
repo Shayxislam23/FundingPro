@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Production + growth readiness (code-side checks).
- * Manual steps: Supabase SMTP, Storage bucket, Vercel env, Uzum contract.
+ * Manual steps: Convex seed, Clerk JWT template, Vercel env, Uzum contract.
  *
  * Usage: npm run production:readiness
  */
@@ -19,8 +19,8 @@ function run(label, args) {
 
 console.log("=== FundingPro production readiness (automated) ===\n");
 
-if (process.env.NODE_ENV === "production" && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("FAIL: SUPABASE_SERVICE_ROLE_KEY is required in production");
+if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_CONVEX_URL) {
+  console.error("FAIL: NEXT_PUBLIC_CONVEX_URL is required in production");
   process.exit(1);
 }
 
@@ -39,9 +39,8 @@ console.log("\n→ uzum checklist (informational — may show blockers before co
 spawnSync("npm", ["run", "uzum:check"], { cwd: root, stdio: "inherit", shell: true });
 
 console.log("\n--- Manual steps (cannot automate without your credentials) ---");
-console.log("  • supabase link --project-ref xgvwfnfifzsgscwvtcnz && supabase db push");
-console.log("  • DATABASE_URL=... npm run db:seed");
-console.log("  • Supabase Dashboard → SMTP (Resend) + Storage bucket documents");
+console.log("  • npx convex dev && npm run convex:seed");
+console.log("  • Clerk Dashboard → JWT template `convex` + CLERK_JWT_ISSUER_DOMAIN in Convex env");
 console.log("  • npm run deploy:env  (after .env.production.local)");
 console.log("  • vercel --prod  OR  npm run deploy:production");
 console.log("  • Growth: TELEGRAM_* + analytics keys → docs/GROWTH_PLAYBOOK.md");

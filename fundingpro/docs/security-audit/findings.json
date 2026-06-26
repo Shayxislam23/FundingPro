@@ -1,0 +1,150 @@
+{
+  "generatedAt": "2026-06-24T00:21:48.795Z",
+  "project": "FundingPro",
+  "totalFindings": 13,
+  "bySeverity": {
+    "High": 1,
+    "Medium": 8,
+    "Low": 4
+  },
+  "findings": [
+    {
+      "id": "NPM-AUDIT-HIGH",
+      "severity": "High",
+      "title": "npm audit reports high/critical vulnerabilities",
+      "owasp": "A06:2021 Vulnerable Components",
+      "details": {
+        "info": 0,
+        "low": 0,
+        "moderate": 1,
+        "high": 4,
+        "critical": 0,
+        "total": 5
+      },
+      "remediation": "Run npm audit fix or update dependencies"
+    },
+    {
+      "id": "API-CUSTOM-AUTH",
+      "severity": "Medium",
+      "title": "API routes without standard auth wrappers",
+      "owasp": "API5:2023 Broken Function Level Authorization",
+      "details": [
+        "app/api/v1/auth/admin-check/route.ts",
+        "app/api/v1/health/route.ts",
+        "app/api/v1/lead-magnet/route.ts",
+        "app/api/v1/legal/route.ts",
+        "app/api/v1/payments/status/route.ts",
+        "app/api/v1/payments/uzum/check/route.ts",
+        "app/api/v1/payments/uzum/confirm/route.ts",
+        "app/api/v1/payments/uzum/create/route.ts",
+        "app/api/v1/payments/uzum/reverse/route.ts",
+        "app/api/v1/payments/uzum/status/route.ts",
+        "app/api/v1/payments/webhook/route.ts",
+        "app/api/v1/plans/route.ts"
+      ],
+      "remediation": "Audit each custom route; prefer withPublic/withActiveUser/withAdmin"
+    },
+    {
+      "id": "EDGE-API-BYPASS",
+      "severity": "Medium",
+      "title": "Middleware skips all /api/* routes",
+      "owasp": "A01:2021 Broken Access Control",
+      "file": "middleware.ts",
+      "remediation": "Defense in depth: optional API rate-limit or auth at edge"
+    },
+    {
+      "id": "AI-RATE-LIMIT-MEMORY",
+      "severity": "Medium",
+      "title": "AI rate limiting has in-memory fallback on serverless",
+      "file": "lib/ai-rate-limit.ts",
+      "remediation": "Rely solely on rate_limit_buckets table in production"
+    },
+    {
+      "id": "CORS-UNENFORCED",
+      "severity": "Medium",
+      "title": "CORS_ALLOWED_ORIGINS defined but not enforced in Next config",
+      "remediation": "Add CORS headers middleware or API route checks"
+    },
+    {
+      "id": "SUPABASE-AUTH-LEAKED-PASSWORDS",
+      "severity": "Medium",
+      "title": "Supabase Auth leaked password protection disabled",
+      "owasp": "A07:2021 Identification and Authentication Failures",
+      "remediation": "Enable in Supabase Dashboard → Authentication → Password security"
+    },
+    {
+      "id": "SUPABASE-SMTP-MANUAL",
+      "severity": "Medium",
+      "title": "Custom SMTP (Resend) not configured in Supabase Auth",
+      "remediation": "Dashboard → Authentication → SMTP: smtp.resend.com:465"
+    },
+    {
+      "id": "SUPABASE-SERVICE-ROLE-MISSING",
+      "severity": "Medium",
+      "title": "SUPABASE_SERVICE_ROLE_KEY not in local production env / Vercel",
+      "remediation": "Run npm run sync:supabase-keys (needs SUPABASE_ACCESS_TOKEN) or add key from Dashboard → API",
+      "status": "mitigated-pg-runtime"
+    },
+    {
+      "id": "PROD-PLANS-SCHEMA-DRIFT",
+      "severity": "Medium",
+      "title": "Production plans table schema differs from application (GET /plans returns 500)",
+      "owasp": "A05:2021 Security Misconfiguration",
+      "details": "Remote has segment/code/status; app expects name/target_type/is_active",
+      "remediation": "Deploy listPlans() legacy fallback; long-term: align Supabase schema with migrations",
+      "status": "mitigated-in-code"
+    },
+    {
+      "id": "AUTH-SERVICE-ROLE-DEV-FALLBACK",
+      "severity": "Low",
+      "title": "Supabase admin client falls back to anon key in non-production only",
+      "owasp": "API2:2023 Broken Authentication",
+      "file": "lib/supabase-server.ts",
+      "status": "mitigated"
+    },
+    {
+      "id": "CI-ACTIONS-MUTABLE-TAGS",
+      "severity": "Low",
+      "title": "GitHub Actions use mutable version tags (@v4)",
+      "owasp": "Supply chain",
+      "file": ".github/workflows/ci.yml",
+      "remediation": "Pin actions to SHA digests"
+    },
+    {
+      "id": "ADMIN-CHECK-NO-STATUS",
+      "severity": "Low",
+      "title": "admin-check endpoint skips banned/disabled account validation",
+      "file": "app/api/v1/auth/admin-check/route.ts"
+    },
+    {
+      "id": "HEALTH-ERROR-LEAK",
+      "severity": "Low",
+      "title": "Health endpoint exposes dbError in non-production only (verify prod)",
+      "file": "app/api/v1/health/route.ts",
+      "status": "mitigated-in-prod"
+    }
+  ],
+  "routeStats": {
+    "routeFiles": 57,
+    "wrapperPatterns": {
+      "withPublic": 2,
+      "withActiveUser": 25,
+      "withAdmin": 18,
+      "custom": 12
+    },
+    "customRoutes": [
+      "app/api/v1/auth/admin-check/route.ts",
+      "app/api/v1/health/route.ts",
+      "app/api/v1/lead-magnet/route.ts",
+      "app/api/v1/legal/route.ts",
+      "app/api/v1/payments/status/route.ts",
+      "app/api/v1/payments/uzum/check/route.ts",
+      "app/api/v1/payments/uzum/confirm/route.ts",
+      "app/api/v1/payments/uzum/create/route.ts",
+      "app/api/v1/payments/uzum/reverse/route.ts",
+      "app/api/v1/payments/uzum/status/route.ts",
+      "app/api/v1/payments/webhook/route.ts",
+      "app/api/v1/plans/route.ts"
+    ]
+  }
+}

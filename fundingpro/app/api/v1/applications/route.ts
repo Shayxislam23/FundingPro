@@ -13,7 +13,6 @@ export const GET = withActiveUser(async (req, authUser) => {
   const { page, limit } = parsePagination(searchParams);
 
   const result = await listApplications(
-    authUser.userId,
     { status: status || undefined, page, limit },
     authUser.accessToken
   );
@@ -30,21 +29,18 @@ export const POST = withActiveUser(async (req, authUser) => {
     return apiError("notes must be a string up to 5000 chars", 400, "INVALID_NOTES");
   }
 
-  await ensureInternalUser({
-    supabaseId: authUser.supabaseId,
-    email: authUser.email,
-    provider: "supabase_email",
-  });
+  await ensureInternalUser(
+    {
+      email: authUser.email,
+      provider: "clerk",
+    },
+    authUser.accessToken
+  );
 
   const normalizedNotes =
     notes === undefined ? undefined : typeof notes === "string" ? notes.trim() || null : null;
 
-  const result = await createApplication(
-    authUser.userId,
-    grantId,
-    normalizedNotes,
-    authUser.accessToken
-  );
+  const result = await createApplication(grantId, normalizedNotes, authUser.accessToken);
   if ("error" in result && result.error === "GRANT_NOT_FOUND") {
     return apiError("Grant not found", 404, "GRANT_NOT_FOUND");
   }

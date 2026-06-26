@@ -1,4 +1,17 @@
-import { supabase } from "@/lib/supabase";
+async function getClerkConvexToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const clerk = (
+    window as unknown as {
+      Clerk?: {
+        session?: {
+          getToken: (opts?: { template?: string }) => Promise<string | null>;
+        };
+      };
+    }
+  ).Clerk;
+  if (!clerk?.session) return null;
+  return clerk.session.getToken({ template: "convex" });
+}
 
 /** Client-side Authorization headers for API calls */
 export async function getAuthHeaders(
@@ -9,9 +22,9 @@ export async function getAuthHeaders(
     ...extra,
   };
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session?.access_token) {
-    headers.Authorization = `Bearer ${session.access_token}`;
+  const token = await getClerkConvexToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
   return headers;
@@ -19,10 +32,10 @@ export async function getAuthHeaders(
 
 /** For FormData uploads — omit Content-Type so browser sets boundary */
 export async function getAuthHeadersForUpload(): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession();
   const headers: Record<string, string> = {};
-  if (session?.access_token) {
-    headers.Authorization = `Bearer ${session.access_token}`;
+  const token = await getClerkConvexToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
   return headers;
 }

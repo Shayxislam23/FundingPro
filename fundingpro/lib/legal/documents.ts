@@ -1,5 +1,7 @@
 import type { ConsentType, LegalDocId, LegalDocMeta, LegalDocumentContent, LegalLocale } from "./types";
 import { LEGAL_EFFECTIVE_DATE } from "./types";
+import { LEGAL_DOCUMENTS } from "./meta";
+import { getUsdUzsRate } from "./rates";
 import { offerRu } from "./content/ru/offer";
 import { privacyRu } from "./content/ru/privacy";
 import { refundsRu } from "./content/ru/refunds";
@@ -11,52 +13,8 @@ import { refundsUz } from "./content/uz/refunds";
 import { aiUz } from "./content/uz/ai";
 import { successFeeUz } from "./content/uz/success-fee";
 
-export const LEGAL_DOCUMENTS: LegalDocMeta[] = [
-  {
-    id: "offer",
-    version: LEGAL_EFFECTIVE_DATE,
-    path: "/legal/offer",
-    titleRu: "Публичная оферта",
-    titleUz: "Ommaviy oferta",
-    consentType: "terms",
-    required: true,
-  },
-  {
-    id: "privacy",
-    version: LEGAL_EFFECTIVE_DATE,
-    path: "/legal/privacy",
-    titleRu: "Политика конфиденциальности",
-    titleUz: "Maxfiylik siyosati",
-    consentType: "privacy",
-    required: true,
-  },
-  {
-    id: "refunds",
-    version: LEGAL_EFFECTIVE_DATE,
-    path: "/legal/refunds",
-    titleRu: "Возврат средств",
-    titleUz: "Pulni qaytarish",
-    consentType: "payment_terms",
-    required: false,
-  },
-  {
-    id: "ai",
-    version: LEGAL_EFFECTIVE_DATE,
-    path: "/legal/ai",
-    titleRu: "Обработка данных AI",
-    titleUz: "AI ma'lumotlarini qayta ishlash",
-    consentType: "ai_processing",
-    required: false,
-  },
-  {
-    id: "success-fee",
-    version: LEGAL_EFFECTIVE_DATE,
-    path: "/legal/success-fee",
-    titleRu: "Гонорар за успех",
-    titleUz: "Muvaffaqiyat mukofoti",
-    required: false,
-  },
-];
+export { LEGAL_DOCUMENTS } from "./meta";
+export { getUsdUzsRate } from "./rates";
 
 const CONTENT: Record<LegalLocale, Record<LegalDocId, LegalDocumentContent>> = {
   ru: {
@@ -74,10 +32,6 @@ const CONTENT: Record<LegalLocale, Record<LegalDocId, LegalDocumentContent>> = {
     "success-fee": successFeeUz,
   },
 };
-
-export function getUsdUzsRate(): number {
-  return Number(process.env.USD_UZS_RATE ?? "12800");
-}
 
 export function getLegalDocument(id: LegalDocId, locale: LegalLocale): LegalDocumentContent {
   return CONTENT[locale][id];

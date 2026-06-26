@@ -1,0 +1,10 @@
+appId: uz.fundingpro.app
+---
+# Smoke: public grants catalog (no auth required)
+- launchApp:
+    clearState: true
+- assertVisible: "FundingPro"
+- tapOn: "Публичные гранты"
+- extendedWaitUntil:
+    visible: "Публичные гранты"
+    timeout: 10000

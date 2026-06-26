@@ -8,7 +8,10 @@ export const GET = withAdmin(async () => {
   const paymentsEnabled = process.env.PAYMENTS_ENABLED === "true";
   const hasWebhookSecret = !!(process.env.PAYMENT_WEBHOOK_SECRET);
   const hasResendKey = !!(process.env.RESEND_API_KEY);
-  const hasServiceKey = !!(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const hasConvexUrl = !!(process.env.NEXT_PUBLIC_CONVEX_URL);
+  const hasClerkKeys = !!(
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
+  );
   const adminEmails = process.env.ADMIN_EMAILS ?? "";
 
   return apiSuccess({
@@ -29,7 +32,8 @@ export const GET = withAdmin(async () => {
     paymentsEnabled,
     hasWebhookSecret,
     hasResendKey,
-    hasServiceKey,
+    hasConvexUrl,
+    hasClerkKeys,
     adminEmailsConfigured: adminEmails.trim().length > 0,
     nodeEnv: process.env.NODE_ENV ?? "development",
   });

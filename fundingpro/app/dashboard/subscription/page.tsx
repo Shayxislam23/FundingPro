@@ -49,8 +49,10 @@ function mapApiPlan(row: {
 }
 
 export default function SubscriptionPage() {
-  const [requested, setRequested] = useState<string | null>(null);
+  const [requested, setRequested] = useState<Set<string>>(new Set());
   const [requesting, setRequesting] = useState<string | null>(null);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [requestSuccess, setRequestSuccess] = useState<string | null>(null);
   const [paying, setPaying] = useState<string | null>(null);
   const [ngoPlans, setNgoPlans] = useState<Plan[]>([]);
   const [businessPlans, setBusinessPlans] = useState<Plan[]>([]);
@@ -109,16 +111,43 @@ export default function SubscriptionPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch("/api/v1/subscription-requests", { headers });
+        if (!res.ok) return;
+        const json = await res.json();
+        const ids: string[] = json.data?.pendingPlanIds ?? [];
+        if (ids.length) setRequested(new Set(ids));
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, []);
+
   async function handleRequest(planId: string, planName: string) {
+    if (requested.has(planId)) return;
     setRequesting(planId);
+    setRequestError(null);
+    setRequestSuccess(null);
     try {
       const headers = await getAuthHeaders();
-      await fetch("/api/v1/subscription-requests", {
+      const res = await fetch("/api/v1/subscription-requests", {
         method: "POST",
         headers,
         body: JSON.stringify({ planId, planName }),
       });
-      setRequested(planId);
+      const json = await res.json();
+      if (!res.ok) {
+        setRequestError(json.error?.message ?? "Не удалось отправить запрос");
+        return;
+      }
+      setRequested((prev) => new Set(prev).add(planId));
+      setRequestSuccess(planName);
+      setTimeout(() => setRequestSuccess(null), 8000);
+    } catch {
+      setRequestError("Не удалось отправить запрос");
     } finally {
       setRequesting(null);
     }
@@ -210,10 +239,29 @@ export default function SubscriptionPage() {
             </p>
             <p className="text-sm leading-relaxed" style={{ color: "#C2410C" }}>
               {paymentConfig?.message ??
-                "Вы можете отправить запрос на подключение тарифа, и команда FundingPro свяжется с вами в течение 24 часов."}
+                "Отправьте запрос на подключение — команда FundingPro свяжется с вами по email в течение 1–2 рабочих дней."}
             </p>
           </div>
         </div>
+      )}
+
+      {requestSuccess && (
+        <div
+          className="flex items-start gap-3 rounded-2xl p-5 mb-6 border"
+          style={{ background: "#D9F7DD", borderColor: "#BBF7D0" }}
+        >
+          <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5 text-funding-green" />
+          <div>
+            <p className="text-sm font-semibold text-funding-green mb-1">Запрос получен</p>
+            <p className="text-sm text-gray-600">
+              Тариф «{requestSuccess}» — мы свяжемся с вами по email в течение 1–2 рабочих дней.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {requestError && (
+        <div className="rounded-2xl p-4 mb-6 bg-red-50 text-red-600 text-sm">{requestError}</div>
       )}
 
       {paymentsOn && (
@@ -268,7 +316,7 @@ export default function SubscriptionPage() {
                     key={plan.id}
                     plan={plan}
                     paymentsOn={paymentsOn}
-                    requested={requested === plan.id}
+                    requested={requested.has(plan.id)}
                     requesting={requesting === plan.id}
                     paying={paying?.startsWith(plan.id) ?? false}
                     onRequest={() => handleRequest(plan.id, plan.nameRu)}
@@ -289,7 +337,7 @@ export default function SubscriptionPage() {
                     key={plan.id}
                     plan={plan}
                     paymentsOn={paymentsOn}
-                    requested={requested === plan.id}
+                    requested={requested.has(plan.id)}
                     requesting={requesting === plan.id}
                     paying={paying?.startsWith(plan.id) ?? false}
                     onRequest={() => handleRequest(plan.id, plan.nameRu)}
@@ -418,12 +466,17 @@ function PlanCard({
           </button>
         </div>
       ) : requested ? (
-        <div
-          className="w-full py-3 rounded-xl text-xs font-semibold text-center flex items-center justify-center gap-2"
-          style={{ background: "rgba(0,138,46,0.15)", color: "#12B94F" }}
-        >
-          <CheckCircle2 className="w-3.5 h-3.5" />
-          Запрос отправлен
+        <div className="space-y-2">
+          <div
+            className="w-full py-3 rounded-xl text-xs font-semibold text-center flex items-center justify-center gap-2"
+            style={{ background: "rgba(0,138,46,0.15)", color: "#12B94F" }}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Запрос отправлен
+          </div>
+          <p className="text-[10px] text-center leading-relaxed" style={{ color: plan.highlighted ? "#A7B8AA" : "#9ca3af" }}>
+            Ответ придёт на ваш email в течение 1–2 рабочих дней
+          </p>
         </div>
       ) : (
         <button

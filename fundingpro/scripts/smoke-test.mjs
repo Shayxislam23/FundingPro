@@ -3,7 +3,7 @@
  * Smoke tests against running dev server (default localhost:3000).
  * Usage: npm run test:smoke
  *
- * Auth uses Supabase Email OTP — no mock login API.
+ * Auth uses Clerk — no mock login API in smoke tests.
  * Set SMOKE_AUTH=1 and SMOKE_BEARER_TOKEN=<jwt> to test protected routes.
  */
 const BASE = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";

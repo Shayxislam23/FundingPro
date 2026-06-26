@@ -56,8 +56,8 @@ export function verifyWebhookSignature(
 }
 
 export async function createSubscriptionPaymentIntent(input: {
-  userId: string;
   planId: string;
+  accessToken: string;
 }): Promise<PaymentIntentResult> {
   if (!isPaymentsEnabled()) {
     throw new Error("Payments are not enabled");
@@ -69,14 +69,16 @@ export async function createSubscriptionPaymentIntent(input: {
   const amountUzs = plan.priceUzs > 0 ? plan.priceUzs : usdToUzs(plan.priceUsd);
   const amountTiyin = usdToTiyin(plan.priceUsd);
 
-  const { paymentId, subscriptionId } = await createPaymentIntent({
-    userId: input.userId,
-    planId: input.planId,
-    planName: plan.nameRu,
-    amountUsd: plan.priceUsd,
-    amountUzs,
-    amountTiyin,
-  });
+  const { paymentId, subscriptionId } = await createPaymentIntent(
+    {
+      planId: input.planId,
+      planName: plan.nameRu,
+      amountUsd: plan.priceUsd,
+      amountUzs,
+      amountTiyin,
+    },
+    input.accessToken
+  );
 
   return {
     paymentId,
@@ -92,11 +94,15 @@ export async function createSubscriptionPaymentIntent(input: {
   };
 }
 
-export async function startCheckoutSession(paymentId: string): Promise<CheckoutSessionResult> {
+export async function startCheckoutSession(
+  paymentId: string,
+  accessToken: string,
+  options?: { returnUrl?: string; platform?: string }
+): Promise<CheckoutSessionResult> {
   if (!isPaymentsEnabled()) {
     throw new Error("Payments are not enabled");
   }
-  return registerUzumCheckout(paymentId);
+  return registerUzumCheckout(paymentId, accessToken, { returnUrl: options?.returnUrl });
 }
 
 export function getPublicPaymentConfig() {

@@ -24,11 +24,22 @@ const ALLOWED_STATUSES = [
 
 const LOCKED_STATUSES = ["submitted", "under_review", "shortlisted", "won", "reporting"];
 
+export const GET = withActiveUser(async (_req, authUser, ctx) => {
+  const id = ctx.params?.id;
+  if (!id) return apiError("Missing id", 400, "MISSING_ID");
+
+  const app = await getApplicationForUser(id, authUser.accessToken);
+  if (!app) return apiError("Not found", 404, "NOT_FOUND");
+  if ("forbidden" in app) return apiError("Forbidden", 403, "FORBIDDEN");
+
+  return apiSuccess(app);
+});
+
 export const PATCH = withActiveUser(async (req, authUser, ctx) => {
   const id = ctx.params?.id;
   if (!id) return apiError("Missing id", 400, "MISSING_ID");
 
-  const app = await getApplicationForUser(authUser.userId, id, authUser.accessToken);
+  const app = await getApplicationForUser(id, authUser.accessToken);
   if (!app) return apiError("Not found", 404, "NOT_FOUND");
   if ("forbidden" in app) return apiError("Forbidden", 403, "FORBIDDEN");
 
@@ -47,7 +58,6 @@ export const PATCH = withActiveUser(async (req, authUser, ctx) => {
   }
 
   const updated = await updateApplication(
-    authUser.userId,
     id,
     {
       status: status ? status.toLowerCase() : undefined,
@@ -73,7 +83,7 @@ export const DELETE = withActiveUser(async (req, authUser, ctx) => {
   const id = ctx.params?.id;
   if (!id) return apiError("Missing id", 400, "MISSING_ID");
 
-  const app = await getApplicationForUser(authUser.userId, id, authUser.accessToken);
+  const app = await getApplicationForUser(id, authUser.accessToken);
   if (!app) return apiError("Not found", 404, "NOT_FOUND");
   if ("forbidden" in app) return apiError("Forbidden", 403, "FORBIDDEN");
 
@@ -81,7 +91,7 @@ export const DELETE = withActiveUser(async (req, authUser, ctx) => {
     return apiError("Cannot delete a submitted or active application", 400, "CANNOT_DELETE");
   }
 
-  await deleteApplication(authUser.userId, id, authUser.accessToken);
+  await deleteApplication(id, authUser.accessToken);
   await writeAuditLog({
     userId: authUser.userId,
     action: "application_delete",

@@ -3,6 +3,7 @@ import { apiSuccess, apiError } from "@/lib/api";
 import { withActiveUser } from "@/lib/api-route";
 import { getPaymentById } from "@/lib/db/payments";
 import { isPaymentsEnabled, startCheckoutSession } from "@/lib/payments";
+import { resolveCheckoutReturnUrl } from "@/lib/payments/return-url";
 
 export const POST = withActiveUser(async (req, authUser) => {
   if (!isPaymentsEnabled()) {
@@ -14,12 +15,18 @@ export const POST = withActiveUser(async (req, authUser) => {
     const paymentId = String(body.paymentId ?? "").trim();
     if (!paymentId) return apiError("paymentId required", 400, "MISSING_FIELDS");
 
-    const payment = await getPaymentById(paymentId);
+    const payment = await getPaymentById(paymentId, authUser.accessToken);
     if (!payment || payment.userId !== authUser.userId) {
       return apiError("Payment not found", 404, "NOT_FOUND");
     }
 
-    const session = await startCheckoutSession(paymentId);
+    const platform = typeof body.platform === "string" ? body.platform : "web";
+    const returnUrl = resolveCheckoutReturnUrl(platform);
+
+    const session = await startCheckoutSession(paymentId, authUser.accessToken, {
+      returnUrl,
+      platform,
+    });
     return apiSuccess(session);
   } catch (err) {
     console.error("POST /payments/checkout error:", err);

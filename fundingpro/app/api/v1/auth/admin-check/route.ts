@@ -11,6 +11,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, data: { isAdmin: false } }, { status: 401 });
   }
 
-  const isAdmin = await canAccessAdmin(user.userId, user.email);
+  const isAdmin = await canAccessAdmin(user.accessToken, user.email);
   return apiSuccess({ isAdmin });
 }

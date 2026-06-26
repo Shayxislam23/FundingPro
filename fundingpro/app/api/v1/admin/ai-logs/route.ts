@@ -3,11 +3,11 @@ import { apiSuccess } from "@/lib/api";
 import { withAdmin } from "@/lib/api-route";
 import { listAiRequests } from "@/lib/db/admin-users";
 
-export const GET = withAdmin(async (req) => {
+export const GET = withAdmin(async (req, admin) => {
   const { searchParams } = new URL(req.url);
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 100);
 
-  const result = await listAiRequests({ page, limit });
+  const result = await listAiRequests({ page, limit }, admin.accessToken);
   return apiSuccess(result);
 });

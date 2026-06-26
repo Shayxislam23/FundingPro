@@ -1,4 +1,4 @@
-import { listDonors } from "@/lib/db/admin-grants";
+import { listPublicDonors as listDonorsFromDb } from "@/lib/db/donors";
 
 export type PublicDonor = {
   id: string;
@@ -6,20 +6,11 @@ export type PublicDonor = {
   nameRu: string | null;
 };
 
-const STATIC_DONORS: PublicDonor[] = [
-  { id: "undp", name: "UNDP", nameRu: "ПРООН" },
-  { id: "eu", name: "European Union", nameRu: "Европейский Союз" },
-  { id: "giz", name: "GIZ", nameRu: "GIZ" },
-  { id: "world-bank", name: "World Bank", nameRu: "Всемирный банк" },
-  { id: "swiss", name: "Swiss Embassy", nameRu: "Посольство Швейцарии" },
-];
-
 export async function listPublicDonors(): Promise<PublicDonor[]> {
-  try {
-    const donors = await listDonors();
-    if (donors.length > 0) return donors;
-  } catch {
-    // fall through to static seed
-  }
-  return STATIC_DONORS;
+  const { donors } = await listDonorsFromDb();
+  return donors.map((d) => ({
+    id: d.id,
+    name: d.name,
+    nameRu: d.name_ru,
+  }));
 }

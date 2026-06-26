@@ -22,7 +22,7 @@ const SECTION_KEYS: Record<string, string> = {
 
 const sectionKeys = Object.keys(SECTION_KEYS);
 const defaultSelected = sectionKeys.slice(0, 4);
-const donorFormats = ["UNDP", "EU", "GIZ", "World Bank", "USAID", "Aga Khan"];
+const donorFormats = ["UNDP", "EU", "GIZ", "World Bank", "Aga Khan"];
 
 type ProposalResult = {
   proposalId: string;

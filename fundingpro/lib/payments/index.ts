@@ -6,3 +6,4 @@ export * from "./uzum-auth";
 export * from "./uzum-merchant";
 export * from "./uzum-checkout";
 export * from "./activate-subscription";
+export * from "./return-url";

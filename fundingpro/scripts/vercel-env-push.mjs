@@ -12,9 +12,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const envFile = join(root, ".env.production.local");
 
 const REQUIRED_FOR_APP = [
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  "DATABASE_URL",
+  "NEXT_PUBLIC_CONVEX_URL",
+  "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  "CLERK_SECRET_KEY",
   "RESEND_API_KEY",
   "RESEND_FROM_EMAIL",
   "ADMIN_EMAILS",
@@ -22,9 +22,9 @@ const REQUIRED_FOR_APP = [
 ];
 
 const OPTIONAL = [
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "SUPABASE_SECRET_KEY",
-  "DIRECT_URL",
+  "CONVEX_DEPLOYMENT",
+  "CONVEX_DEPLOY_KEY",
+  "CLERK_JWT_ISSUER_DOMAIN",
   "AI_PROVIDER",
   "PAYMENTS_ENABLED",
   "PAYMENT_INTEGRATION_STATUS",
@@ -37,9 +37,11 @@ const OPTIONAL = [
   "UZUM_CHECKOUT_TERMINAL_ID",
   "UZUM_CHECKOUT_SECRET",
   "UZUM_CHECKOUT_RETURN_URL",
-  "STORAGE_BUCKET",
   "CORS_ALLOWED_ORIGINS",
   "NEXT_PUBLIC_APP_NAME",
+  "ADMIN_BYPASS_DEV",
+  "OPENAI_API_KEY",
+  "ANTHROPIC_API_KEY",
 ];
 
 function parseEnvFile(path) {
@@ -83,16 +85,9 @@ if (missing.length) {
   console.error("\nMissing or placeholder values in .env.production.local:");
   missing.forEach((k) => console.error(`  - ${k}`));
   console.error(
-    "\nCopy .env.production.example → .env.production.local and fill Supabase keys from:\n" +
-      "  https://supabase.com/dashboard/project/xgvwfnfifzsgscwvtcnz/settings/api\n"
+    "\nCopy .env.production.example → .env.production.local and fill Convex + Clerk keys.\n"
   );
   process.exit(1);
-}
-
-if (!env.SUPABASE_SERVICE_ROLE_KEY && !env.SUPABASE_SECRET_KEY) {
-  console.warn(
-    "Warning: SUPABASE_SERVICE_ROLE_KEY not set — admin auth API uses anon fallback until added.\n"
-  );
 }
 
 console.log("Pushing env vars to Vercel (production)...\n");

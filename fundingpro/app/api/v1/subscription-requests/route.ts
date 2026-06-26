@@ -3,7 +3,24 @@ import { apiSuccess, apiError } from "@/lib/api";
 import { withActiveUser } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
 import { ensureInternalUser } from "@/lib/db/users";
-import { createSubscriptionRequest, getPlanPriceUsd } from "@/lib/db/subscription-requests";
+import {
+  createSubscriptionRequest,
+  getPlanPriceUsd,
+  listPendingSubscriptionPlanIds,
+} from "@/lib/db/subscription-requests";
+
+export const GET = withActiveUser(async (_req, authUser) => {
+  await ensureInternalUser(
+    {
+      email: authUser.email,
+      provider: "clerk",
+    },
+    authUser.accessToken
+  );
+
+  const pendingPlanIds = await listPendingSubscriptionPlanIds(authUser.accessToken);
+  return apiSuccess({ pendingPlanIds });
+});
 
 export const POST = withActiveUser(async (req, authUser) => {
   const body = await req.json();
@@ -13,21 +30,30 @@ export const POST = withActiveUser(async (req, authUser) => {
     return apiError("planId and planName required", 400, "MISSING_FIELDS");
   }
 
-  await ensureInternalUser({
-    supabaseId: authUser.supabaseId,
-    email: authUser.email,
-    provider: "supabase_email",
-  });
+  await ensureInternalUser(
+    {
+      email: authUser.email,
+      provider: "clerk",
+    },
+    authUser.accessToken
+  );
 
   const amountUsd = (await getPlanPriceUsd(planId.trim())) ?? 0;
 
-  const result = await createSubscriptionRequest({
-    userId: authUser.userId,
-    email: authUser.email,
-    planId: planId.trim(),
-    planName: planName.trim(),
-    amountUsd,
-  });
+  const rate = Number(process.env.USD_UZS_RATE ?? 12800);
+  const amountUzs = Math.round(amountUsd * rate);
+  const amountTiyin = amountUzs * 100;
+
+  const result = await createSubscriptionRequest(
+    {
+      planId: planId.trim(),
+      planName: planName.trim(),
+      amountUsd,
+      amountUzs,
+      amountTiyin,
+    },
+    authUser.accessToken
+  );
 
   await writeAuditLog({
     userId: authUser.userId,

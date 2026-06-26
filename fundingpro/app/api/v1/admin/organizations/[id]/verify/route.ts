@@ -11,7 +11,7 @@ export const PATCH = withAdmin(async (req, admin, ctx) => {
   const body = await req.json();
   const verified = body.verified === true;
 
-  await setOrganizationVerified(id, verified);
+  await setOrganizationVerified(id, verified, admin.accessToken);
 
   await writeAuditLog({
     userId: admin.userId,

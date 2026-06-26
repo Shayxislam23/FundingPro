@@ -1,0 +1,22 @@
+title = "FundingPro gitleaks allowlist"
+
+[allowlist]
+description = "Known non-secret placeholders and examples"
+paths = [
+  '''\.env\.example''',
+  '''\.env\.production\.example''',
+  '''\.env\.local''',
+  '''\.env\.production\.local''',
+  '''\.env\.vercel\.production''',
+  '''user_prompt-.*\.md''',
+  '''scripts/smoke-test\.mjs''',
+  '''\.github/workflows/ci\.yml''',
+]
+
+[[allowlist.regexes]]
+description = "Supabase demo JWT keys"
+regex = '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZS1kZW1v'''
+
+[[allowlist.regexes]]
+description = "Placeholder keys in CI"
+regex = '''placeholder-(anon|service)-key'''

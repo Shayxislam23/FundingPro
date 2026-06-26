@@ -1,0 +1,16 @@
+{
+  "name": "fundingpro-monorepo",
+  "private": true,
+  "workspaces": [
+    "fundingpro",
+    "mobile",
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "mobile:start": "npm run start --workspace=mobile",
+    "mobile:typecheck": "npm run typecheck --workspace=mobile",
+    "contract:mobile-api": "node fundingpro/scripts/mobile-api-contract.mjs"
+  }
+}

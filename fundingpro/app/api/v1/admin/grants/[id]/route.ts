@@ -10,20 +10,16 @@ export const PATCH = withAdmin(async (req, admin, ctx) => {
 
   const body = await req.json();
 
-  await updateGrant(id, {
-    title: body.title?.trim(),
-    titleRu: body.titleRu?.trim(),
-    description: body.description?.trim(),
-    donorId: body.donorId,
-    sectors: body.sectors,
-    countryScope: body.countryScope,
-    amountMin: body.amountMin != null ? Number(body.amountMin) : undefined,
-    amountMax: body.amountMax != null ? Number(body.amountMax) : undefined,
-    deadline: body.deadline,
-    sourceUrl: body.sourceUrl?.trim(),
-    isActive: body.isActive,
-    isFeatured: body.isFeatured,
-  });
+  await updateGrant(
+    id,
+    {
+      title: body.title?.trim(),
+      description: body.description?.trim(),
+      isActive: body.isActive,
+      isFeatured: body.isFeatured,
+    },
+    admin.accessToken
+  );
 
   await writeAuditLog({
     userId: admin.userId,

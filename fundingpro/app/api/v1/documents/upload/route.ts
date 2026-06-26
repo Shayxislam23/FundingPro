@@ -4,11 +4,12 @@ import { withActiveUser } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
 import { ensureInternalUser } from "@/lib/db/users";
 import { insertDocument, DOCUMENT_TYPES } from "@/lib/db/documents";
-import { createSupabaseAdmin } from "@/lib/supabase-server";
-import { isLocalDatabaseEnabled } from "@/lib/pg-pool";
+import { convexMutation } from "@/lib/convex-server";
+import { api } from "@/lib/convex-server";
 import { saveLocalFile, deleteLocalFile } from "@/lib/local-storage";
 import { sanitizeStorageFileName } from "@/lib/validation";
 import { validateFileContent, isAllowedUploadMime } from "@/lib/file-sniff";
+import { MAX_UPLOAD_BYTES } from "@/lib/upload-limits";
 
 export const POST = withActiveUser(async (req, authUser) => {
   const formData = await req.formData();
@@ -20,8 +21,8 @@ export const POST = withActiveUser(async (req, authUser) => {
   if (!isAllowedUploadMime(file.type)) {
     return apiError("File type not allowed", 400, "INVALID_FILE_TYPE");
   }
-  if (file.size > 10 * 1024 * 1024) {
-    return apiError("File too large (max 10MB)", 400, "FILE_TOO_LARGE");
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return apiError(`File too large (max ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB)`, 400, "FILE_TOO_LARGE");
   }
 
   const fileBytes = await file.arrayBuffer();
@@ -34,50 +35,59 @@ export const POST = withActiveUser(async (req, authUser) => {
     ? docType
     : "OTHER";
 
-  await ensureInternalUser({
-    supabaseId: authUser.supabaseId,
-    email: authUser.email,
-    provider: "supabase_email",
-  });
+  await ensureInternalUser(
+    {
+      email: authUser.email,
+      provider: "clerk",
+    },
+    authUser.accessToken
+  );
 
   const safeName = sanitizeStorageFileName(file.name);
   const storagePath = `${authUser.userId}/${crypto.randomUUID()}-${safeName}`;
 
-  if (isLocalDatabaseEnabled()) {
+  let storageId: string | undefined;
+  const useLocal = process.env.USE_LOCAL_FILE_STORAGE === "true";
+
+  if (useLocal) {
     await saveLocalFile(storagePath, fileBytes);
   } else {
-    const supabase = createSupabaseAdmin();
-    const { error: uploadError } = await supabase.storage
-      .from("documents")
-      .upload(storagePath, fileBytes, { contentType: file.type, upsert: false });
-
-    if (uploadError && !uploadError.message?.includes("Bucket not found")) {
-      throw new Error(uploadError.message);
+    if (!authUser.accessToken) {
+      return apiError("Missing access token for storage upload", 401, "UNAUTHORIZED");
     }
-    if (uploadError?.message?.includes("Bucket not found")) {
-      console.warn("Storage bucket 'documents' not found — recording metadata only");
+    const uploadUrl = await convexMutation(
+      api.documents.generateUploadUrl,
+      {},
+      authUser.accessToken
+    );
+    const uploadRes = await fetch(uploadUrl, {
+      method: "POST",
+      headers: { "Content-Type": file.type },
+      body: fileBytes,
+    });
+    if (!uploadRes.ok) {
+      return apiError("Failed to upload file to storage", 503, "STORAGE_UPLOAD_FAILED");
     }
+    const uploadJson = (await uploadRes.json()) as { storageId: string };
+    storageId = uploadJson.storageId;
   }
 
   let documentId: string;
   try {
     documentId = await insertDocument(
       {
-        userId: authUser.userId,
         fileName: file.name,
         mimeType: file.type,
         sizeBytes: file.size,
         storageKey: storagePath,
         docType: normalizedDocType,
+        storageId,
       },
       authUser.accessToken
     );
   } catch (dbErr) {
-    if (isLocalDatabaseEnabled()) {
+    if (useLocal) {
       await deleteLocalFile(storagePath);
-    } else {
-      const supabase = createSupabaseAdmin();
-      await supabase.storage.from("documents").remove([storagePath]);
     }
     throw dbErr;
   }
@@ -87,16 +97,20 @@ export const POST = withActiveUser(async (req, authUser) => {
     action: "document_upload",
     entityType: "document",
     entityId: documentId,
-    metadata: { fileName: file.name, fileType: file.type, fileSize: file.size, docType: normalizedDocType },
+    metadata: {
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      docType: normalizedDocType,
+      storageId,
+    },
   });
 
   return apiSuccess(
     {
       documentId,
       fileName: file.name,
-      storageNote: isLocalDatabaseEnabled()
-        ? "local_filesystem"
-        : "supabase_storage_or_metadata",
+      storageNote: useLocal ? "local_filesystem" : "convex_storage",
     },
     201
   );

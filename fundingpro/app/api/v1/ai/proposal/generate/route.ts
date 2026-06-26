@@ -27,13 +27,12 @@ export const POST = withActiveUser(async (req, authUser) => {
   }
 
   await ensureInternalUser({
-    supabaseId: authUser.supabaseId,
     email: authUser.email,
-    provider: "supabase_email",
-  });
+    provider: "clerk",
+  }, authUser.accessToken);
 
   if (confirmSave !== false) {
-    const limitCheck = await checkProposalLimit(authUser.userId);
+    const limitCheck = await checkProposalLimit(authUser.accessToken);
     if (!limitCheck.allowed) {
       return apiError(limitCheck.message, 402, limitCheck.code);
     }
@@ -59,24 +58,28 @@ export const POST = withActiveUser(async (req, authUser) => {
     totalTokens += result.tokensUsed ?? 0;
   }
 
-  const aiRequestId = await logAiRequest({
-    userId: authUser.userId,
-    requestType: "proposal-generate",
-    model: lastProvider,
-    outputTokens: totalTokens,
-    redactionApplied: fieldsFound.length > 0,
-  });
+  const aiRequestId = await logAiRequest(
+    {
+      requestType: "proposal-generate",
+      model: lastProvider,
+      outputTokens: totalTokens,
+      redactionApplied: fieldsFound.length > 0,
+    },
+    authUser.accessToken
+  );
 
   let proposalId = crypto.randomUUID();
 
   if (confirmSave !== false) {
-    proposalId = await saveProposalProject({
-      userId: authUser.userId,
-      title: projectIdea.slice(0, 120),
-      grantId: grantId ?? null,
-      donorFormat,
-      sections: sectionContents,
-    });
+    proposalId = await saveProposalProject(
+      {
+        title: projectIdea.slice(0, 120),
+        grantId: grantId ?? undefined,
+        donorFormat,
+        sections: sectionContents,
+      },
+      authUser.accessToken
+    );
   }
 
   await writeAuditLog({

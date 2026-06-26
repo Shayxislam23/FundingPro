@@ -1,8 +1,12 @@
 import { COMPANY } from "@/lib/company-info";
-import { getUsdUzsRate } from "../documents";
+import { getUsdUzsRate } from "../rates";
 
 export function legalVars() {
   const rate = getUsdUzsRate();
+  const appUrl =
+    typeof process !== "undefined"
+      ? (process.env.NEXT_PUBLIC_APP_URL ?? "https://fundingpro.uz")
+      : "https://fundingpro.uz";
   return {
     companyRu: COMPANY.legalNameRu,
     companyUz: COMPANY.legalNameUz,
@@ -11,6 +15,6 @@ export function legalVars() {
     address: COMPANY.addressUz,
     dgu: COMPANY.dguNumber,
     rate: rate.toLocaleString("ru-RU"),
-    appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://fundingpro.uz",
+    appUrl,
   };
 }

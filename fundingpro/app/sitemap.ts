@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { LEGAL_DOCUMENTS } from "@/lib/legal/documents";
+import { LEGAL_DOCUMENTS } from "@/lib/legal/meta";
 
 const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(
   /\/$/,

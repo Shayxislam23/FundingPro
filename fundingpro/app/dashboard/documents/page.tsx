@@ -5,6 +5,7 @@ import { SectionLabel } from "@/components/design/SectionLabel";
 import { EmptyState } from "@/components/design/EmptyState";
 import { FolderOpen, Upload, File, Lock, Trash2, Loader2, Download } from "lucide-react";
 import { getAuthHeaders, getAuthHeadersForUpload } from "@/lib/client-auth";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
 type Doc = {
   id: string;
@@ -48,6 +49,8 @@ export default function DocumentsPage() {
   const [docs, setDocs] = useState<Doc[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState("");
   const [docType, setDocType] = useState("OTHER");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -73,6 +76,13 @@ export default function DocumentsPage() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploadError("");
+    setUploadSuccess("");
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setUploadError(`Файл слишком большой. Максимум ${MAX_UPLOAD_MB} MB.`);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
     setUploading(true);
     try {
       const headers = await getAuthHeadersForUpload();
@@ -84,7 +94,16 @@ export default function DocumentsPage() {
         headers,
         body: form,
       });
-      if (res.ok) await fetchDocs();
+      const data = await res.json();
+      if (!res.ok) {
+        setUploadError(data.error?.message ?? "Не удалось загрузить файл");
+        return;
+      }
+      setUploadSuccess(`«${file.name}» загружен в защищённое хранилище`);
+      await fetchDocs();
+      setTimeout(() => setUploadSuccess(""), 5000);
+    } catch {
+      setUploadError("Не удалось загрузить файл");
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -121,7 +140,9 @@ export default function DocumentsPage() {
         <div className="flex-1 min-w-0">
           <SectionLabel>Хранилище</SectionLabel>
           <h1 className="text-2xl font-black text-funding-black">Документы</h1>
-          <p className="text-sm text-gray-500 mt-1">Безопасное хранение документов. Прямые публичные ссылки отключены.</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Файлы хранятся в защищённом Convex Storage. Максимум {MAX_UPLOAD_MB} MB.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <select
@@ -151,6 +172,12 @@ export default function DocumentsPage() {
           onChange={handleUpload}
         />
       </div>
+
+      {(uploadError || uploadSuccess) && (
+        <div className={`p-4 rounded-xl mb-5 text-sm ${uploadError ? "bg-red-50 text-red-600" : "bg-green-50 text-funding-green"}`}>
+          {uploadError || uploadSuccess}
+        </div>
+      )}
 
       {/* Security note */}
       <div className="flex items-center gap-3 p-4 rounded-xl mb-5" style={{ background: "#D9F7DD" }}>

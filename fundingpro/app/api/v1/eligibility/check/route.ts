@@ -17,19 +17,18 @@ export const POST = withActiveUser(async (req, authUser) => {
   }
 
   await ensureInternalUser({
-    supabaseId: authUser.supabaseId,
     email: authUser.email,
-    provider: "supabase_email",
-  });
+    provider: "clerk",
+  }, authUser.accessToken);
 
-  const limitCheck = await checkEligibilityLimit(authUser.userId);
+  const limitCheck = await checkEligibilityLimit(authUser.accessToken);
   if (!limitCheck.allowed) {
     return apiError(limitCheck.message, 402, limitCheck.code);
   }
 
   let grant: { title: string; sectors: string[]; country_scope: string[] } | null = null;
   if (grantId) {
-    const data = await getGrantForEligibility(grantId);
+    const data = await getGrantForEligibility(grantId, authUser.accessToken);
     if (data) {
       grant = {
         title: String(data.title),
@@ -47,25 +46,29 @@ export const POST = withActiveUser(async (req, authUser) => {
   );
   const aiResult = await callAi(prompt, { module: "eligibility-review", userId: authUser.userId });
 
-  const aiRequestId = await logAiRequest({
-    userId: authUser.userId,
-    requestType: "eligibility-review",
-    model: aiResult.provider,
-    outputTokens: aiResult.tokensUsed,
-    redactionApplied: aiResult.redactionFields.length > 0,
-  });
+  const aiRequestId = await logAiRequest(
+    {
+      requestType: "eligibility-review",
+      model: aiResult.provider,
+      outputTokens: aiResult.tokensUsed,
+      redactionApplied: aiResult.redactionFields.length > 0,
+    },
+    authUser.accessToken
+  );
 
-  const checkId = await saveEligibilityCheck({
-    userId: authUser.userId,
-    grantId: grantId ?? null,
-    answers,
-    score,
-    status,
-    strengths,
-    gaps,
-    nextSteps,
-    aiRequestId,
-  });
+  const checkId = await saveEligibilityCheck(
+    {
+      grantId: grantId ?? null,
+      answers,
+      score,
+      status,
+      strengths,
+      gaps,
+      nextSteps,
+      aiRequestId,
+    },
+    authUser.accessToken
+  );
 
   return apiSuccess({
     checkId,

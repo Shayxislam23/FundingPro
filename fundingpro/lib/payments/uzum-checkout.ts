@@ -43,8 +43,12 @@ async function uzumCheckoutFetch<T>(path: string, body: Record<string, unknown>)
   return (await response.json()) as T;
 }
 
-export async function registerUzumCheckout(paymentId: string): Promise<CheckoutSessionResult> {
-  const payment = await getPaymentById(paymentId);
+export async function registerUzumCheckout(
+  paymentId: string,
+  accessToken: string,
+  options?: { returnUrl?: string }
+): Promise<CheckoutSessionResult> {
+  const payment = await getPaymentById(paymentId, accessToken);
   if (!payment) throw new Error("Payment not found");
 
   const amountTiyin =
@@ -52,11 +56,11 @@ export async function registerUzumCheckout(paymentId: string): Promise<CheckoutS
       ? payment.amountTiyin
       : Number(payment.metadata.amountTiyin ?? 0);
   const amountUzs = tiyinToUzs(amountTiyin);
-  const { returnUrl } = getUzumCheckoutConfig();
+  const baseReturnUrl = options?.returnUrl ?? getUzumCheckoutConfig().returnUrl;
   const checkoutOrderId = paymentId;
 
   if (!isUzumCheckoutConfigured()) {
-    const mockUrl = `${returnUrl}?paymentId=${paymentId}&mock=1&status=success`;
+    const mockUrl = `${baseReturnUrl}?paymentId=${paymentId}&mock=1&status=success`;
     await updatePaymentProviderRef(paymentId, checkoutOrderId, {
       checkoutOrderId,
       checkoutMock: true,
@@ -69,7 +73,7 @@ export async function registerUzumCheckout(paymentId: string): Promise<CheckoutS
     orderId: checkoutOrderId,
     amount: amountUzs,
     currency: "UZS",
-    returnUrl: `${returnUrl}?paymentId=${paymentId}`,
+    returnUrl: `${baseReturnUrl}?paymentId=${paymentId}`,
     description: `FundingPro subscription ${String(payment.metadata.planName ?? "")}`.trim(),
   };
 
@@ -86,12 +90,15 @@ export async function registerUzumCheckout(paymentId: string): Promise<CheckoutS
   return { paymentId, redirectUrl, checkoutOrderId: orderId };
 }
 
-export async function syncUzumCheckoutStatus(paymentId: string): Promise<{
+export async function syncUzumCheckoutStatus(
+  paymentId: string,
+  accessToken: string
+): Promise<{
   paymentId: string;
   status: string;
   activated: boolean;
 }> {
-  const payment = await getPaymentById(paymentId);
+  const payment = await getPaymentById(paymentId, accessToken);
   if (!payment) throw new Error("Payment not found");
 
   if (payment.status === "SUCCESS") {

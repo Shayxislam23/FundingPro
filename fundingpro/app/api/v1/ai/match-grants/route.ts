@@ -20,26 +20,30 @@ export const POST = withActiveUser(async (req, authUser) => {
     return apiError("organizationProfile required", 400, "MISSING_FIELDS");
   }
 
-  await ensureInternalUser({
-    supabaseId: authUser.supabaseId,
-    email: authUser.email,
-    provider: "supabase_email",
-  });
+  await ensureInternalUser(
+    {
+      email: authUser.email,
+      provider: "clerk",
+    },
+    authUser.accessToken
+  );
 
   const safeProfile = sanitizeProfile(organizationProfile);
-  const dbMatches = await matchGrantsFromDatabase(safeProfile, 10);
+  const dbMatches = await matchGrantsFromDatabase(safeProfile, authUser.accessToken, 10);
 
   const profileJson = JSON.stringify(safeProfile);
   const prompt = PROMPTS["match-grants"](profileJson);
   const aiResult = await callAi(prompt, { module: "match-grants", userId: authUser.userId });
 
-  const aiRequestId = await logAiRequest({
-    userId: authUser.userId,
-    requestType: "match-grants",
-    model: aiResult.provider,
-    outputTokens: aiResult.tokensUsed,
-    redactionApplied: aiResult.redactionFields.length > 0,
-  });
+  const aiRequestId = await logAiRequest(
+    {
+      requestType: "match-grants",
+      model: aiResult.provider,
+      outputTokens: aiResult.tokensUsed,
+      redactionApplied: aiResult.redactionFields.length > 0,
+    },
+    authUser.accessToken
+  );
 
   await writeAuditLog({
     userId: authUser.userId,

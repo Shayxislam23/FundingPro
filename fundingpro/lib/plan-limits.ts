@@ -1,4 +1,3 @@
-import { withDatabase } from "@/lib/db/runtime";
 import { getUserSubscription } from "@/lib/db/users";
 
 export type PlanUsageLimits = {
@@ -29,67 +28,30 @@ const PLAN_LIMITS: Record<string, PlanUsageLimits> = {
   "plan-enterprise": { eligibilityChecks: null, aiProposals: null },
 };
 
-function startOfCurrentMonth(): Date {
-  const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-}
-
 export function limitsForPlanId(planId: string | null | undefined): PlanUsageLimits {
   if (!planId) return FREE_LIMITS;
   return PLAN_LIMITS[planId] ?? FREE_LIMITS;
 }
 
-async function countMonthlyEligibilityChecks(userId: string): Promise<number> {
-  const since = startOfCurrentMonth().toISOString();
-  return withDatabase(
-    async (pool) => {
-      const result = await pool.query(
-        `SELECT COUNT(*)::int AS total FROM eligibility_checks
-         WHERE user_id = $1::uuid AND created_at >= $2::timestamptz`,
-        [userId, since]
-      );
-      return Number(result.rows[0]?.total ?? 0);
-    },
-    async (supabase) => {
-      const { count } = await supabase
-        .from("eligibility_checks")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("created_at", since);
-      return count ?? 0;
-    }
-  );
+async function countMonthlyEligibilityChecks(accessToken: string): Promise<number> {
+  const { convexQuery, api } = await import("@/lib/convex-server");
+  const usage = await convexQuery(api.planUsage.monthlyUsage, {}, accessToken);
+  return usage.eligibilityChecks;
 }
 
-async function countMonthlyAiProposals(userId: string): Promise<number> {
-  const since = startOfCurrentMonth().toISOString();
-  return withDatabase(
-    async (pool) => {
-      const result = await pool.query(
-        `SELECT COUNT(*)::int AS total FROM proposal_projects
-         WHERE user_id = $1::uuid AND created_at >= $2::timestamptz`,
-        [userId, since]
-      );
-      return Number(result.rows[0]?.total ?? 0);
-    },
-    async (supabase) => {
-      const { count } = await supabase
-        .from("proposal_projects")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("created_at", since);
-      return count ?? 0;
-    }
-  );
+async function countMonthlyAiProposals(accessToken: string): Promise<number> {
+  const { convexQuery, api } = await import("@/lib/convex-server");
+  const usage = await convexQuery(api.planUsage.monthlyUsage, {}, accessToken);
+  return usage.aiProposals;
 }
 
-export async function getPlanUsage(userId: string): Promise<PlanUsageSnapshot> {
-  const subscription = await getUserSubscription(userId);
+export async function getPlanUsage(accessToken: string): Promise<PlanUsageSnapshot> {
+  const subscription = await getUserSubscription(accessToken);
   const planId = subscription?.plan?.id ?? null;
   const limits = limitsForPlanId(planId);
   const [eligibilityChecks, aiProposals] = await Promise.all([
-    countMonthlyEligibilityChecks(userId),
-    countMonthlyAiProposals(userId),
+    countMonthlyEligibilityChecks(accessToken),
+    countMonthlyAiProposals(accessToken),
   ]);
 
   return {
@@ -103,8 +65,8 @@ export type LimitCheckResult =
   | { allowed: true }
   | { allowed: false; code: "PLAN_LIMIT_ELIGIBILITY" | "PLAN_LIMIT_PROPOSALS"; message: string };
 
-export async function checkEligibilityLimit(userId: string): Promise<LimitCheckResult> {
-  const usage = await getPlanUsage(userId);
+export async function checkEligibilityLimit(accessToken: string): Promise<LimitCheckResult> {
+  const usage = await getPlanUsage(accessToken);
   const max = usage.limits.eligibilityChecks;
   if (max !== null && usage.used.eligibilityChecks >= max) {
     return {
@@ -116,8 +78,8 @@ export async function checkEligibilityLimit(userId: string): Promise<LimitCheckR
   return { allowed: true };
 }
 
-export async function checkProposalLimit(userId: string): Promise<LimitCheckResult> {
-  const usage = await getPlanUsage(userId);
+export async function checkProposalLimit(accessToken: string): Promise<LimitCheckResult> {
+  const usage = await getPlanUsage(accessToken);
   const max = usage.limits.aiProposals;
   if (max !== null && usage.used.aiProposals >= max) {
     return {

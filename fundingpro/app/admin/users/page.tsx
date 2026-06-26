@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { Search, UserCheck, UserX, Loader2, RefreshCcw } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { getAuthHeaders } from "@/lib/client-auth";
 
 type AdminUser = {
   id: string;
@@ -15,9 +15,7 @@ type AdminUser = {
 };
 
 async function getAdminHeaders(): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return {};
-  return { Authorization: `Bearer ${session.access_token}` };
+  return getAuthHeaders();
 }
 
 export default function AdminUsersPage() {

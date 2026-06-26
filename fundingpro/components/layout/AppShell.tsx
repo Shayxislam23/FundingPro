@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { useClerk } from "@clerk/nextjs";
 
 export type AppNavItem = {
   label: string;
@@ -66,9 +66,10 @@ export function ShellLogoutButton({
   className?: string;
 }) {
   const router = useRouter();
+  const { signOut } = useClerk();
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    await signOut();
     router.push("/auth");
   }
 

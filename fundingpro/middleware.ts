@@ -1,72 +1,41 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
-import { canAccessAdminMiddleware } from "@/lib/auth/admin-access";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/admin"];
-const AUTH_PATHS = ["/auth"];
+const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/admin(.*)",
+]);
 
-function isProtected(pathname: string): boolean {
-  return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-}
+const isAuthRoute = createRouteMatcher(["/auth(.*)"]);
 
-function isAuthPath(pathname: string): boolean {
-  return AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-}
-
-function isAdminPath(pathname: string): boolean {
-  return pathname === "/admin" || pathname.startsWith("/admin/");
-}
-
-async function getSessionUser(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseKey) return null;
-
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll() {},
-    },
-  });
-
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
-}
-
-export async function middleware(request: NextRequest) {
+export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/api/") || pathname.startsWith("/_next/")) {
     return NextResponse.next();
   }
 
-  const user = await getSessionUser(request);
-  const authed = !!user;
+  const { userId, sessionClaims } = await auth();
 
-  if (isProtected(pathname) && !authed) {
+  if (isProtectedRoute(request) && !userId) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/auth";
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (
-    isAdminPath(pathname) &&
-    authed &&
-    user &&
-    !(await canAccessAdminMiddleware(user.id, user.email ?? null))
-  ) {
-    const dashUrl = request.nextUrl.clone();
-    dashUrl.pathname = "/dashboard";
-    dashUrl.search = "";
-    return NextResponse.redirect(dashUrl);
+  if (pathname.startsWith("/admin") && userId) {
+    const email = (sessionClaims?.email as string | undefined) ?? null;
+    const { canAccessAdminMiddleware } = await import("@/lib/auth/admin-access-edge");
+    if (!(await canAccessAdminMiddleware(userId, email))) {
+      const dashUrl = request.nextUrl.clone();
+      dashUrl.pathname = "/dashboard";
+      dashUrl.search = "";
+      return NextResponse.redirect(dashUrl);
+    }
   }
 
-  if (isAuthPath(pathname) && authed) {
+  if (isAuthRoute(request) && userId) {
     const dashboardUrl = request.nextUrl.clone();
     dashboardUrl.pathname = "/dashboard";
     dashboardUrl.search = "";
@@ -74,8 +43,8 @@ export async function middleware(request: NextRequest) {
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/auth/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/auth/:path*", "/dashboard", "/admin", "/auth"],
 };

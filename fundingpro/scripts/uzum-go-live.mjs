@@ -8,7 +8,6 @@
 import { readFileSync, existsSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import pg from "pg";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const APP_URL =
@@ -43,11 +42,11 @@ const MERCHANT_KEYS = [
   "UZUM_MERCHANT_PASSWORD",
 ];
 const CHECKOUT_KEYS = ["UZUM_CHECKOUT_TERMINAL_ID", "UZUM_CHECKOUT_SECRET"];
-const SUPABASE_KEYS = [
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "DATABASE_URL",
+const PLATFORM_KEYS = [
+  "NEXT_PUBLIC_CONVEX_URL",
+  "CONVEX_DEPLOY_KEY",
+  "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  "CLERK_SECRET_KEY",
 ];
 
 function isSet(key) {
@@ -98,40 +97,20 @@ if (!merchantOk && !checkoutOk) {
   fail("Нужен хотя бы один канал (Merchant или Checkout)");
 }
 
-section("2. Production БД — миграция uzum_transactions");
-const dbUrl = env.DATABASE_URL;
-if (!dbUrl || dbUrl.includes("[password]")) {
-  fail("DATABASE_URL не настроен — нельзя проверить миграцию");
+section("2. Convex — uzum_transactions table");
+if (!isSet("NEXT_PUBLIC_CONVEX_URL")) {
+  fail("NEXT_PUBLIC_CONVEX_URL не настроен");
 } else {
-  try {
-    const pool = new pg.Pool({ connectionString: dbUrl });
-    const { rows } = await pool.query(
-      `SELECT EXISTS (
-         SELECT 1 FROM information_schema.tables
-         WHERE table_schema = 'public' AND table_name = 'uzum_transactions'
-       ) AS exists`
-    );
-    const col = await pool.query(
-      `SELECT EXISTS (
-         SELECT 1 FROM information_schema.columns
-         WHERE table_name = 'plans' AND column_name = 'price_uzs'
-       ) AS exists`
-    );
-    await pool.end();
-    if (rows[0]?.exists) ok("Таблица uzum_transactions существует");
-    else {
-      fail("Таблица uzum_transactions отсутствует — выполните: supabase db push");
-      console.log("     или: npm run deploy:production (применит все миграции)");
-    }
-    if (col.rows[0]?.exists) ok("Колонка plans.price_uzs существует");
-    else fail("Колонка plans.price_uzs отсутствует");
-  } catch (e) {
-    fail(`Не удалось подключиться к БД: ${e instanceof Error ? e.message : e}`);
-  }
+  ok("NEXT_PUBLIC_CONVEX_URL настроен (uzum_transactions в Convex schema)");
+}
+if (!isSet("CONVEX_DEPLOY_KEY")) {
+  warn("CONVEX_DEPLOY_KEY не настроен — webhooks/audit могут не работать");
+} else {
+  ok("CONVEX_DEPLOY_KEY настроен");
 }
 
-section("3. Vercel / Supabase env");
-for (const k of SUPABASE_KEYS) {
+section("3. Vercel / Convex + Clerk env");
+for (const k of PLATFORM_KEYS) {
   if (isSet(k)) ok(k);
   else fail(`${k} не настроен`);
 }

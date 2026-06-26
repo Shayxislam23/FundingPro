@@ -6,27 +6,19 @@ on:
   pull_request:
     branches: [main]
 
-defaults:
-  run:
-    working-directory: fundingpro
-
 jobs:
-  check:
+  web:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: fundingpro
-          POSTGRES_PASSWORD: fundingpro_dev
-          POSTGRES_DB: fundingpro
-        ports:
-          - 5433:5432
-        options: >-
-          --health-cmd "pg_isready -U fundingpro"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    defaults:
+      run:
+        working-directory: fundingpro
+    env:
+      NEXT_PUBLIC_CONVEX_URL: "https://placeholder.convex.cloud"
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_placeholder"
+      CLERK_SECRET_KEY: "sk_test_placeholder"
+      RESEND_API_KEY: "re_placeholder"
+      RESEND_FROM_EMAIL: "info@fundingpro.uz"
+      ADMIN_EMAILS: "admin@fundingpro.uz"
 
     steps:
       - uses: actions/checkout@v4
@@ -35,16 +27,14 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          cache-dependency-path: fundingpro/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
+        working-directory: .
 
-      - name: Init database
-        env:
-          DATABASE_URL: postgresql://fundingpro:fundingpro_dev@localhost:5433/fundingpro
-          USE_LOCAL_DATABASE: "true"
-        run: npm run db:init
+      - name: Convex codegen
+        run: npm run convex:codegen
 
       - name: Typecheck and unit tests
         run: npm run check
@@ -53,51 +43,53 @@ jobs:
         run: npm run lint
 
       - name: Deploy readiness check
-        env:
-          DATABASE_URL: postgresql://fundingpro:fundingpro_dev@localhost:5433/fundingpro
-          USE_LOCAL_DATABASE: "true"
-          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
-          SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-key"
-          RESEND_API_KEY: "re_placeholder"
-          RESEND_FROM_EMAIL: "info@fundingpro.uz"
-          ADMIN_EMAILS: "admin@fundingpro.uz"
         run: npm run deploy:check
 
       - name: Build
-        env:
-          DATABASE_URL: postgresql://fundingpro:fundingpro_dev@localhost:5433/fundingpro
-          USE_LOCAL_DATABASE: "true"
-          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
-          SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-key"
-          RESEND_API_KEY: "re_placeholder"
-          RESEND_FROM_EMAIL: "info@fundingpro.uz"
-          ADMIN_EMAILS: "admin@fundingpro.uz"
         run: npm run build
 
-      - name: API auth integration
-        env:
-          DATABASE_URL: postgresql://fundingpro:fundingpro_dev@localhost:5433/fundingpro
-          USE_LOCAL_DATABASE: "true"
-          SKIP_INTEGRATION_BUILD: "true"
-          TEST_PORT: "3098"
-          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
-          SUPABASE_SERVICE_ROLE_KEY: "placeholder-service-key"
-          RESEND_API_KEY: "re_placeholder"
-          RESEND_FROM_EMAIL: "info@fundingpro.uz"
-          ADMIN_EMAILS: "admin@fundingpro.uz"
-        run: npm run test:integration
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Install Playwright
-        run: npx playwright install --with-deps chromium
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: E2E smoke
-        env:
-          DATABASE_URL: postgresql://fundingpro:fundingpro_dev@localhost:5433/fundingpro
-          USE_LOCAL_DATABASE: "true"
-          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key"
-          CI: "true"
-        run: npm run test:e2e
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck shared packages
+        run: |
+          npm run typecheck --workspace=@fundingpro/shared
+          npm run typecheck --workspace=@fundingpro/api-types
+
+      - name: Typecheck mobile
+        run: npm run typecheck --workspace=@fundingpro/mobile
+
+      - name: Lint mobile
+        run: npm run lint --workspace=@fundingpro/mobile
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Semgrep SAST
+        working-directory: fundingpro
+        run: npx --yes semgrep@1.96.0 --config .semgrep/fundingpro.yml --error --quiet ..
+
+      - name: npm audit (high+)
+        run: npm audit --audit-level=high

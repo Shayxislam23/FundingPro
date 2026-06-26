@@ -13,6 +13,8 @@ export const GET = withPublic(async (req) => {
   const sector = searchParams.get("sector") ?? "";
   const country = searchParams.get("country") ?? "";
   const featured = searchParams.get("featured") === "true";
+  const activeOnly = searchParams.get("activeOnly") === "true";
+  const deadlineAfter = searchParams.get("deadlineAfter") ?? "";
   const { page, limit } = parsePagination(searchParams);
 
   const safeSearch = search ? sanitizeLikePattern(search) : "";
@@ -23,6 +25,8 @@ export const GET = withPublic(async (req) => {
     country: country || undefined,
     donorId: donorId || undefined,
     deadlineBefore: deadlineBefore || undefined,
+    deadlineAfter: deadlineAfter || undefined,
+    activeOnly: activeOnly || undefined,
     featured,
     page,
     limit,

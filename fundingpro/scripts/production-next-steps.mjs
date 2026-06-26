@@ -3,21 +3,19 @@
  * Production deploy orchestration (steps after deploy:prep).
  * 1. Validate .env.production.local
  * 2. Push env to Vercel
- * 3. Optional: remote DB migrate + seed (DATABASE_URL)
+ * 3. Optional: Convex seed (CONVEX_DEPLOY_KEY)
  * 4. vercel --prod
  *
- * Usage: node scripts/production-next-steps.mjs [--skip-db] [--skip-deploy]
+ * Usage: node scripts/production-next-steps.mjs [--skip-seed] [--skip-deploy]
  */
 import { readFileSync, existsSync } from "fs";
 import { spawnSync } from "child_process";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
-import pg from "pg";
-import { applyMigrations } from "./lib/migrations.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
-const skipDb = args.includes("--skip-db");
+const skipSeed = args.includes("--skip-seed") || args.includes("--skip-db");
 const skipDeploy = args.includes("--skip-deploy");
 
 function run(cmd, cmdArgs, opts = {}) {
@@ -42,14 +40,13 @@ function parseEnv(path) {
 const prodEnvPath = join(root, ".env.production.local");
 if (!existsSync(prodEnvPath)) {
   console.error("Create .env.production.local from .env.production.example first.");
-  console.error("Supabase project ref: xgvwfnfifzsgscwvtcnz");
-  console.error("Dashboard: https://supabase.com/dashboard/project/xgvwfnfifzsgscwvtcnz");
+  console.error("Run: npm run deploy:setup-env");
   process.exit(1);
 }
 
 const env = parseEnv(prodEnvPath);
-if (env.NEXT_PUBLIC_SUPABASE_URL?.includes("127.0.0.1")) {
-  console.error("NEXT_PUBLIC_SUPABASE_URL must be the hosted Supabase URL, not localhost.");
+if (!env.NEXT_PUBLIC_CONVEX_URL) {
+  console.error("NEXT_PUBLIC_CONVEX_URL is required in .env.production.local");
   process.exit(1);
 }
 
@@ -59,24 +56,11 @@ run("npm", ["run", "deploy:prep"], {
 
 run("node", ["scripts/vercel-env-push.mjs"]);
 
-if (!skipDb && env.DATABASE_URL) {
-  console.log("\nApplying migrations to remote database...");
-  const pool = new pg.Pool({ connectionString: env.DATABASE_URL });
-  try {
-    await pool.query("SELECT 1");
-    await applyMigrations(pool, join(root, "supabase/migrations"));
-    const seedSql = readFileSync(join(root, "supabase/seed.sql"), "utf8");
-    console.log("  Seeding...");
-    await pool.query(seedSql);
-    const { rows } = await pool.query("SELECT COUNT(*)::int AS n FROM grants");
-    console.log(`  Grants in DB: ${rows[0]?.n ?? 0}`);
-  } catch (err) {
-    console.error("Remote DB step failed:", err instanceof Error ? err.message : err);
-    console.error("If project is paused, restore it in Supabase Dashboard, then retry.");
-    process.exit(1);
-  } finally {
-    await pool.end();
-  }
+if (!skipSeed && env.CONVEX_DEPLOY_KEY) {
+  console.log("\nSeeding Convex catalog (if needed)...");
+  run("npm", ["run", "convex:seed"], { env: { ...process.env, ...env } });
+} else if (!skipSeed) {
+  console.log("\nSkipping Convex seed — set CONVEX_DEPLOY_KEY to enable.");
 }
 
 if (!skipDeploy) {
@@ -84,4 +68,4 @@ if (!skipDeploy) {
 }
 
 console.log("\n✓ Production next steps completed.");
-console.log("Manual: Supabase Dashboard → Authentication → SMTP (Resend) if not configured.");
+console.log("Manual: verify Clerk production instance and Convex deployment in dashboards.");

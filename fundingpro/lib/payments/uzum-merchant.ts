@@ -1,5 +1,5 @@
 import {
-  getPaymentById,
+  getPaymentByIdInternal,
   getUzumTransaction,
   insertPaymentEvent,
   resolvePaymentIdFromParams,
@@ -35,7 +35,7 @@ function merchantError(serviceId: string, errorCode: string) {
 }
 
 async function loadPayablePayment(paymentId: string) {
-  const payment = await getPaymentById(paymentId);
+  const payment = await getPaymentByIdInternal(paymentId);
   if (!payment) {
     throw new UzumMerchantError("ErrorCheckingPaymentData");
   }

@@ -14,12 +14,12 @@ export const GET = withActiveUser(async (req, authUser) => {
   if (!paymentId) return apiError("paymentId required", 400, "MISSING_FIELDS");
 
   try {
-    const payment = await getPaymentById(paymentId);
+    const payment = await getPaymentById(paymentId, authUser.accessToken);
     if (!payment || payment.userId !== authUser.userId) {
       return apiError("Payment not found", 404, "NOT_FOUND");
     }
 
-    const result = await syncUzumCheckoutStatus(paymentId);
+    const result = await syncUzumCheckoutStatus(paymentId, authUser.accessToken);
     return apiSuccess(result);
   } catch (err) {
     console.error("GET /payments/checkout/return error:", err);

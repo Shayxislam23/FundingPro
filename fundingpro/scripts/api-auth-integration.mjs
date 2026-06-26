@@ -56,7 +56,6 @@ async function startServer() {
     env: {
       ...process.env,
       PORT: String(PORT),
-      USE_LOCAL_DATABASE: process.env.USE_LOCAL_DATABASE ?? "true",
     },
   });
 
@@ -128,11 +127,11 @@ try {
       shell: true,
       env: {
         ...process.env,
-        USE_LOCAL_DATABASE: process.env.USE_LOCAL_DATABASE ?? "true",
-        NEXT_PUBLIC_SUPABASE_URL:
-          process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder.supabase.co",
-        NEXT_PUBLIC_SUPABASE_ANON_KEY:
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder-anon-key",
+        NEXT_PUBLIC_CONVEX_URL:
+          process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://placeholder.convex.cloud",
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+          process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "pk_test_placeholder",
+        CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY ?? "sk_test_placeholder",
       },
     });
     await new Promise((resolve, reject) => {

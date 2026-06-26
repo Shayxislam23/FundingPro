@@ -8,13 +8,15 @@ import { getUserOrganizationDetails, createOrganizationForUser, updateOrganizati
 const ORG_TYPES = ["NGO", "BUSINESS", "ACADEMIC", "GOVERNMENT", "INDIVIDUAL"];
 
 export const GET = withActiveUser(async (_req, authUser) => {
-  await ensureInternalUser({
-    supabaseId: authUser.supabaseId,
-    email: authUser.email,
-    provider: "supabase_email",
-  });
+  await ensureInternalUser(
+    {
+      email: authUser.email,
+      provider: "clerk",
+    },
+    authUser.accessToken
+  );
 
-  const organization = await getUserOrganizationDetails(authUser.userId, authUser.accessToken);
+  const organization = await getUserOrganizationDetails(authUser.accessToken);
   return apiSuccess({ organization });
 });
 
@@ -33,14 +35,15 @@ export const POST = withActiveUser(async (req, authUser) => {
     return apiError("Invalid organization type", 400, "INVALID_TYPE");
   }
 
-  await ensureInternalUser({
-    supabaseId: authUser.supabaseId,
-    email: authUser.email,
-    provider: "supabase_email",
-  });
+  await ensureInternalUser(
+    {
+      email: authUser.email,
+      provider: "clerk",
+    },
+    authUser.accessToken
+  );
 
   const result = await createOrganizationForUser(
-    authUser.userId,
     {
       name,
       type,
@@ -83,7 +86,6 @@ export const PATCH = withActiveUser(async (req, authUser) => {
   }
 
   const organization = await updateOrganizationForUser(
-    authUser.userId,
     {
       name,
       type,

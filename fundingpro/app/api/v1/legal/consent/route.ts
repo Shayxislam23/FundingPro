@@ -32,7 +32,7 @@ export const POST = withActiveUser(async (req, authUser) => {
     locale,
   }));
 
-  await recordConsents(authUser.userId, toRecord);
+  await recordConsents(toRecord, authUser.accessToken);
 
   for (const c of toRecord) {
     await writeAuditLog({

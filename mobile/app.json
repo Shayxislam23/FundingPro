@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "uz.fundingpro.app"
+      "bundleIdentifier": "uz.fundingpro.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "uz.fundingpro.app",
@@ -36,7 +39,8 @@
           "icon": "./assets/icon.png",
           "color": "#008A2E"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true

@@ -149,6 +149,64 @@ maestro test mobile/maestro/
 - `@fundingpro/shared` — format-grant, sector-labels, validation
 - `@fundingpro/api-types` — Zod schemas для API
 
+## Каталог грантов и доноров (backend seed)
+
+Публичные экраны **Гранты** и **Доноры** читают `GET /api/v1/grants` и `GET /api/v1/donors`. Если Convex пуст, mobile показывает статический demo-каталог из `lib/public-fallback.ts` (last resort).
+
+Чтобы заполнить реальные данные локально:
+
+```bash
+cd fundingpro
+npx convex dev          # в отдельном терминале
+npm run convex:seed     # idempotent — пропускает, если donors уже есть
+```
+
+Seed создаёт **5 доноров** (UNDP, EU, GIZ, World Bank, Swiss Embassy), **30 активных грантов** с требованиями и **6 тарифных планов** (`SEED_PLANS` в `convex/seedData.ts`). Не используйте `npx convex deploy` для seed в dev — только `convex dev` + `convex:seed`.
+
+### Production seed (только с deploy key)
+
+**Не запускайте prod seed без `CONVEX_DEPLOY_KEY`** — без ключа команда не должна выполняться (нет доступа к production Convex).
+
+1. Добавьте `CONVEX_DEPLOY_KEY` в `fundingpro/.env.production.local` (ключ из Convex Dashboard → Settings → Deploy Key).
+2. Из `fundingpro/`:
+   ```bash
+   npm run convex:seed
+   ```
+   или `node scripts/production-next-steps.mjs`.
+3. Проверка: `curl https://www.fundingpro.uz/api/v1/plans` — ожидается 6 планов, не пустой массив.
+
+До seed prod API отдаёт пустые `plans`/`donors` — mobile показывает fallback из `lib/public-fallback.ts`.
+
+## Dev client vs Metro-only JS
+
+Expo Go и `npm run start` без dev client загружают только JavaScript через Metro. **Native-модули не подхватываются** без пересборки бинарника приложения.
+
+| Режим | Что работает | Native modules |
+|-------|----------------|----------------|
+| Expo Go / Metro-only | JS, большинство Expo SDK | ❌ `expo-linear-gradient`, `expo-haptics`, `expo-sharing` и др. |
+| Development build (dev client) | JS + скомпилированные native deps | ✅ |
+
+Premium UI (градиенты hero, haptic feedback на кнопках, share sheet) требует **development build**:
+
+```bash
+# Локально (simulator / подключённое устройство) — из ASCII-пути, напр. ~/Projects/FundingPro/mobile
+cd mobile
+npx expo run:ios
+# Android:
+npx expo run:android
+```
+
+Облачная сборка dev client (EAS):
+
+```bash
+cd mobile
+eas build --profile development --platform ios
+# или Android APK:
+eas build --profile development --platform android
+```
+
+После установки dev client на устройство/симулятор запускайте `npm run start` и открывайте приложение через dev client (не Expo Go).
+
 ## EAS profiles
 
 | Profile | Назначение |

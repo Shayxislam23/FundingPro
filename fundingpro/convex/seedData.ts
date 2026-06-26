@@ -1,5 +1,6 @@
-/** Static catalog seed data for Convex seed script. */
+/** Static catalog seed data for Convex seed script and mobile public-fallback.ts. */
 
+/** Donors referenced in public success stories (ПРООН, ЕС, GIZ, World Bank). */
 export const SEED_DONORS = [
   {
     key: "a1000001-0000-4000-8000-000000000001",
@@ -209,6 +210,13 @@ type GrantSeed = {
   sourceUrl: string;
   isFeatured: boolean;
 };
+
+/** Featured grants aligned with pilot stories in lib/public-stories.ts. */
+export const SEED_STORY_GRANT_KEYS = [
+  "b2000001-0000-4000-8000-000000000001", // ЭкоНКО — UNDP/EU climate
+  "b2000001-0000-4000-8000-000000000003", // АгроКонсалт — GIZ green economy
+  "b2000001-0000-4000-8000-000000000004", // Центр образования — World Bank education
+] as const;
 
 export const SEED_GRANTS: GrantSeed[] = [
   { key: "b2000001-0000-4000-8000-000000000001", title: "Climate Resilience for Central Asia", titleRu: "Устойчивость к изменению климата в Центральной Азии", description: "Support for climate adaptation projects in CA region.", descriptionRu: "Поддержка проектов адаптации к изменению климата в регионе ЦА.", donorKey: "a1000001-0000-4000-8000-000000000001", sectors: ["climate", "environment"], countryScope: ["Uzbekistan", "Kazakhstan", "Kyrgyzstan"], applicantTypes: ["NGO", "Government"], amountMin: 50000, amountMax: 250000, deadline: "2026-09-30", sourceUrl: "https://undp.org/grants/climate-ca", isFeatured: true },

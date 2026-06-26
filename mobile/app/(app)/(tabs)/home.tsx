@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { formatDeadlineDisplay } from "@fundingpro/shared";
+import { GrantCard } from "../../../components/design/GrantCard";
+import { SectionHeader } from "../../../components/design/SectionHeader";
 import { OnboardingChecklist } from "../../../components/onboarding/OnboardingChecklist";
 import { ReconsentBanner } from "../../../components/legal/ReconsentBanner";
 import { Card } from "../../../components/ui/Card";
@@ -20,16 +22,24 @@ function formatLimit(used: number | undefined, max: number | null | undefined): 
 }
 
 type StatCardProps = {
+  icon: keyof typeof Ionicons.glyphMap;
   title: string;
   value: string;
   subtitle: string;
 };
 
-function StatCard({ title, value, subtitle }: StatCardProps) {
+function StatCard({ icon, title, value, subtitle }: StatCardProps) {
   return (
     <Card className="flex-1 min-w-[46%] mb-3 p-3">
-      <Text className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{title}</Text>
-      <Text className="text-2xl font-black text-funding-black mt-1">{value}</Text>
+      <View className="flex-row items-center gap-2 mb-1">
+        <View className="w-7 h-7 rounded-lg bg-funding-light-green items-center justify-center">
+          <Ionicons name={icon} size={14} color="#008A2E" />
+        </View>
+        <Text className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 flex-1">
+          {title}
+        </Text>
+      </View>
+      <Text className="text-2xl font-black text-funding-black">{value}</Text>
       <Text className="text-xs text-gray-400 mt-0.5">{subtitle}</Text>
     </Card>
   );
@@ -45,7 +55,7 @@ function QuickAction({ label, href }: QuickActionProps) {
     <Link href={href as never} asChild>
       <Pressable className="flex-row items-center p-3 rounded-xl bg-white border border-gray-100 mb-2 active:opacity-80">
         <Text className="text-sm font-medium text-funding-black flex-1">{label}</Text>
-        <Text className="text-gray-400 text-sm">→</Text>
+        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
       </Pressable>
     </Link>
   );
@@ -101,6 +111,7 @@ export default function DashboardHome() {
 
   const orgName = org?.name ?? null;
   const onboarding = onboardingQuery.data;
+  const userName = meQuery.data?.email?.split("@")[0];
 
   return (
     <SafeAreaView className="flex-1 bg-funding-light">
@@ -111,7 +122,11 @@ export default function DashboardHome() {
         <View className="flex-row items-start justify-between mb-1">
           <View className="flex-1 pr-3">
             <Text className="text-2xl font-black text-funding-black">
-              {orgName ? `Добро пожаловать, ${orgName}` : "Главная"}
+              {orgName
+                ? `Добро пожаловать, ${orgName}`
+                : userName
+                  ? `Привет, ${userName}!`
+                  : "Главная"}
             </Text>
             <Text className="text-sm text-gray-500 mt-1">
               {totalGrants} грантов в базе
@@ -121,9 +136,6 @@ export default function DashboardHome() {
                   ? ` · ${savedGrantsCount} сохранённых`
                   : ""}
             </Text>
-            {meQuery.data?.email && !orgName && (
-              <Text className="text-sm text-gray-400 mt-0.5">{meQuery.data.email}</Text>
-            )}
           </View>
           <Link href="/(app)/(tabs)/ai-writer" asChild>
             <Pressable className="bg-funding-green px-3 py-2 rounded-xl active:opacity-80">
@@ -177,84 +189,67 @@ export default function DashboardHome() {
         )}
 
         <View className="flex-row flex-wrap justify-between mt-4">
+          <StatCard icon="document-text" title="Грантов" value={String(totalGrants)} subtitle="в базе" />
           <StatCard
-            title="Грантов в базе"
-            value={String(totalGrants)}
-            subtitle="актуальная база"
-          />
-          <StatCard
-            title="Мои заявки"
+            icon="folder-open"
+            title="Заявки"
             value={String(applicationsQuery.data?.total ?? applications.length)}
-            subtitle={
-              applications.length > 0
-                ? `${activeApplications.length} активных`
-                : "нет заявок"
-            }
+            subtitle={applications.length > 0 ? `${activeApplications.length} активных` : "нет заявок"}
           />
-          <StatCard title="AI-инструменты" value="3" subtitle="доступно" />
-          <StatCard title="Сохранено" value={String(savedGrantsCount)} subtitle="грантов" />
+          <StatCard icon="sparkles" title="AI" value="3" subtitle="инструмента" />
+          <StatCard icon="bookmark" title="Сохранено" value={String(savedGrantsCount)} subtitle="грантов" />
         </View>
 
         {org && matchQuery.data?.matches && matchQuery.data.matches.length > 0 && (
           <View className="mt-2 mb-4">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-lg font-bold text-funding-black">Рекомендованные гранты</Text>
-              <Link href="/(app)/(tabs)/ai-writer" asChild>
-                <Pressable>
-                  <Text className="text-sm font-semibold text-funding-green">Все →</Text>
-                </Pressable>
-              </Link>
-            </View>
-            {matchQuery.data.matches.slice(0, 2).map((match) => (
-              <Link key={match.grantId} href={`/(app)/grants/${match.grantId}` as never} asChild>
-                <Pressable className="mb-2 active:opacity-80">
-                  <Card className="p-3">
-                    <Text className="font-semibold text-funding-black">
-                      {match.title ?? match.grantId}
-                    </Text>
-                    {match.reason && (
-                      <Text className="text-xs text-gray-500 mt-1" numberOfLines={2}>
-                        {match.reason}
-                      </Text>
-                    )}
-                  </Card>
-                </Pressable>
-              </Link>
-            ))}
+            <SectionHeader title="Рекомендованные гранты" actionLabel="Все →" actionHref="/(app)/(tabs)/grants" />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-1">
+              {matchQuery.data.matches.slice(0, 3).map((match) => {
+                const grant = grantsQuery.data?.grants.find((g) => g.id === match.grantId);
+                if (grant) {
+                  return (
+                    <View key={match.grantId} className="w-72 mr-3">
+                      <Link href={`/(app)/grants/${match.grantId}` as never} asChild>
+                        <GrantCard grant={grant} compact />
+                      </Link>
+                    </View>
+                  );
+                }
+                return (
+                  <Link key={match.grantId} href={`/(app)/grants/${match.grantId}` as never} asChild>
+                    <Pressable className="w-72 mr-3 mb-2 active:opacity-80">
+                      <Card className="p-3">
+                        <Text className="font-semibold text-funding-black">
+                          {match.title ?? match.grantId}
+                        </Text>
+                        {match.reason && (
+                          <Text className="text-xs text-gray-500 mt-1" numberOfLines={2}>
+                            {match.reason}
+                          </Text>
+                        )}
+                      </Card>
+                    </Pressable>
+                  </Link>
+                );
+              })}
+            </ScrollView>
           </View>
         )}
 
-        <View className="flex-row items-center justify-between mt-2 mb-3">
-          <Text className="text-lg font-bold text-funding-black">Последние гранты</Text>
-          <Link href="/(app)/(tabs)/grants" asChild>
-            <Pressable>
-              <Text className="text-sm font-semibold text-funding-green">Все →</Text>
-            </Pressable>
-          </Link>
-        </View>
+        <SectionHeader title="Последние гранты" actionLabel="Все →" actionHref="/(app)/(tabs)/grants" />
         {grantsQuery.isError && <ErrorState message={grantsQuery.error.message} />}
-        {grantsQuery.data?.grants.map((grant) => (
-          <Link key={grant.id} href={`/(app)/grants/${grant.id}` as never} asChild>
-            <Pressable className="mb-3 active:opacity-80">
-              <Card>
-                <Text className="font-semibold text-funding-black">{grant.title_ru ?? grant.title}</Text>
-                <Text className="text-sm text-gray-500 mt-1">
-                  Дедлайн: {formatDeadlineDisplay(grant.deadline)}
-                </Text>
-              </Card>
-            </Pressable>
-          </Link>
-        ))}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-1 mb-4">
+          {grantsQuery.data?.grants.map((grant) => (
+            <View key={grant.id} className="w-72 mr-3">
+              <Link href={`/(app)/grants/${grant.id}` as never} asChild>
+                <GrantCard grant={grant} compact />
+              </Link>
+            </View>
+          ))}
+        </ScrollView>
 
-        <View className="mt-4 mb-3">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-lg font-bold text-funding-black">Мои заявки</Text>
-            <Link href="/(app)/tracker" asChild>
-              <Pressable>
-                <Text className="text-sm font-semibold text-funding-green">Все →</Text>
-              </Pressable>
-            </Link>
-          </View>
+        <View className="mt-2 mb-3">
+          <SectionHeader title="Мои заявки" actionLabel="Все →" actionHref="/(app)/tracker" />
           {applicationsQuery.isError && <ErrorState message={applicationsQuery.error.message} />}
           {applications.length === 0 ? (
             <Card className="items-center py-5">

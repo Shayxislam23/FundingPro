@@ -10,17 +10,13 @@ import {
   Text,
   View,
 } from "react-native";
-import {
-  formatDeadlineDisplay,
-  formatGrantAmount,
-  getDeadlineUrgency,
-  isDeadlineExpired,
-  translateSector,
-} from "@fundingpro/shared";
+import { isDeadlineExpired } from "@fundingpro/shared";
 import type { GrantListItem } from "@fundingpro/api-types";
+import { GrantCard } from "../../../components/design/GrantCard";
+import { SearchBar } from "../../../components/design/SearchBar";
+import { GrantListSkeleton } from "../../../components/design/Skeleton";
 import { Screen } from "../../../components/ui/Screen";
-import { ErrorState, LoadingState } from "../../../components/ui/States";
-import { Input } from "../../../components/ui/Input";
+import { ErrorState } from "../../../components/ui/States";
 import { Button } from "../../../components/ui/Button";
 import { api } from "../../../lib/api/client";
 import { queryKeys } from "../../../lib/query-keys";
@@ -59,52 +55,6 @@ const SECTOR_SLUGS: Record<SectorFilter, string | undefined> = {
 };
 
 type ListMode = "active" | "all";
-
-function getSector(sectors: string[]): string {
-  if (!sectors.length) return "—";
-  return translateSector(sectors[0] ?? "");
-}
-
-function GrantRow({ item, dimmed }: { item: GrantListItem; dimmed?: boolean }) {
-  const expired = isDeadlineExpired(item.deadline);
-  const urgency = getDeadlineUrgency(item.deadline);
-
-  return (
-    <Link href={`/(app)/grants/${item.id}` as never} asChild>
-      <Pressable
-        className={`mx-4 mb-3 rounded-xl border border-gray-200 bg-white p-4 ${dimmed ? "opacity-60" : ""}`}
-      >
-        <View className="flex-row items-start justify-between gap-2">
-          <Text className="font-semibold text-funding-black flex-1">{item.title_ru ?? item.title}</Text>
-          {expired ? (
-            <Text className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-              Дедлайн истёк
-            </Text>
-          ) : urgency === "soon" ? (
-            <Text className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-              Скоро закрывается
-            </Text>
-          ) : null}
-        </View>
-        <Text className="text-sm text-gray-500 mt-1">
-          {item.donor.name_ru ?? item.donor.name ?? "—"}
-        </Text>
-        <View className="flex-row flex-wrap gap-x-3 mt-2">
-          <Text className="text-xs text-gray-500">
-            Дедлайн: {formatDeadlineDisplay(item.deadline)}
-          </Text>
-          <Text className="text-xs text-gray-500">
-            Сумма: {formatGrantAmount(item.amount_min, item.amount_max)}
-          </Text>
-        </View>
-        <Text className="text-xs text-gray-400 mt-1">
-          {getSector(item.sectors)}
-          {item.country_scope.length > 0 ? ` · ${item.country_scope.join(", ")}` : ""}
-        </Text>
-      </Pressable>
-    </Link>
-  );
-}
 
 export default function GrantsTab() {
   const [searchInput, setSearchInput] = useState("");
@@ -164,7 +114,14 @@ export default function GrantsTab() {
   const expiredCount = grants.length - activeCount;
 
   if (grantsQuery.isLoading && !grantsQuery.data) {
-    return <LoadingState />;
+    return (
+      <Screen title="Гранты">
+        <View className="px-4 pt-3 pb-2 bg-funding-light border-b border-gray-100">
+          <SearchBar value={searchInput} onChangeText={setSearchInput} placeholder="Поиск…" />
+        </View>
+        <GrantListSkeleton count={6} />
+      </Screen>
+    );
   }
 
   if (grantsQuery.isError) {
@@ -173,9 +130,9 @@ export default function GrantsTab() {
     );
   }
 
-  const listHeader = (
-    <View className="px-4 pb-3">
-      <View className="rounded-2xl border border-gray-100 bg-white p-4 mb-3">
+  const stickyHeader = (
+    <View className="px-4 pb-3 pt-1 bg-funding-light border-b border-gray-100">
+      <View className="rounded-2xl border border-gray-100 bg-white p-4 mb-0">
         <View className="flex-row gap-2 mb-4">
           {(["active", "all"] as const).map((mode) => (
             <Pressable
@@ -201,32 +158,27 @@ export default function GrantsTab() {
           ))}
         </View>
 
-        <View className="flex-row gap-2 mb-4">
-          <Input
-            className="flex-1 bg-funding-light border-gray-200"
-            value={searchInput}
-            onChangeText={setSearchInput}
-            placeholder="Поиск по названию или донору..."
-            returnKeyType="search"
-            autoCorrect={false}
-          />
-          {listMode === "all" ? (
-            <Pressable
-              onPress={() => setShowExpired((value) => !value)}
-              className={`px-3 py-2.5 rounded-xl border ${
-                showExpired ? "bg-amber-50 border-amber-200" : "bg-funding-light border-gray-200"
-              }`}
-            >
-              <Text
-                className={`text-xs font-medium ${showExpired ? "text-amber-700" : "text-gray-500"}`}
-              >
-                {showExpired ? "Все дедлайны" : `Скрыть истёкшие (${expiredCount})`}
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <SearchBar
+          value={searchInput}
+          onChangeText={setSearchInput}
+          placeholder="Поиск по названию или донору..."
+          className="mb-3"
+        />
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-1">
+        {listMode === "all" ? (
+          <Pressable
+            onPress={() => setShowExpired((value) => !value)}
+            className={`self-start px-3 py-2 rounded-xl border mb-3 ${
+              showExpired ? "bg-amber-50 border-amber-200" : "bg-funding-light border-gray-200"
+            }`}
+          >
+            <Text className={`text-xs font-medium ${showExpired ? "text-amber-700" : "text-gray-500"}`}>
+              {showExpired ? "Все дедлайны" : `Скрыть истёкшие (${expiredCount})`}
+            </Text>
+          </Pressable>
+        ) : null}
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View className="flex-row gap-2">
             {sectorFilters.map((sector) => (
               <Pressable
@@ -251,7 +203,7 @@ export default function GrantsTab() {
         </ScrollView>
       </View>
 
-      <Text className="text-sm text-gray-500 mb-2">
+      <Text className="text-sm text-gray-500 mt-3 mb-1">
         {listMode === "active" ? (
           <>
             Активных: <Text className="font-semibold text-funding-black">{total}</Text>
@@ -259,7 +211,7 @@ export default function GrantsTab() {
         ) : (
           <>
             Показано: <Text className="font-semibold text-funding-black">{filteredGrants.length}</Text>{" "}
-            из <Text className="font-semibold text-funding-black">{total}</Text> грантов
+            из <Text className="font-semibold text-funding-black">{total}</Text>
             {!showExpired && expiredCount > 0 ? (
               <Text className="text-gray-400"> · {activeCount} с действующим дедлайном</Text>
             ) : null}
@@ -285,10 +237,11 @@ export default function GrantsTab() {
 
   return (
     <Screen title="Гранты">
-      <FlashList
+      <FlashList<GrantListItem>
         data={filteredGrants}
         keyExtractor={(item) => item.id}
-        ListHeaderComponent={listHeader}
+        ListHeaderComponent={stickyHeader}
+        stickyHeaderIndices={[0]}
         ListFooterComponent={listFooter}
         ListEmptyComponent={
           grantsQuery.isFetching ? (
@@ -302,8 +255,8 @@ export default function GrantsTab() {
               </Text>
               <Text className="text-gray-400 text-xs text-center max-w-sm">
                 {listMode === "active"
-                  ? "Сейчас нет открытых грантов по выбранным фильтрам. Попробуйте другой сектор или переключитесь на «Все гранты»."
-                  : "Попробуйте изменить поиск, сектор или включите показ истёкших дедлайнов."}
+                  ? "Сейчас нет открытых грантов по выбранным фильтрам."
+                  : "Попробуйте изменить поиск или сектор."}
               </Text>
             </View>
           )
@@ -315,10 +268,11 @@ export default function GrantsTab() {
           />
         }
         renderItem={({ item }) => (
-          <GrantRow
-            item={item}
-            dimmed={listMode === "all" && isDeadlineExpired(item.deadline)}
-          />
+          <View className={`mx-4 mb-3 ${listMode === "all" && isDeadlineExpired(item.deadline) ? "opacity-60" : ""}`}>
+            <Link href={`/(app)/grants/${item.id}` as never} asChild>
+              <GrantCard grant={item} />
+            </Link>
+          </View>
         )}
       />
     </Screen>

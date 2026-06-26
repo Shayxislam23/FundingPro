@@ -4,6 +4,8 @@ export type GrantsQueryKeyParams = GrantsListParams & {
   tab?: boolean;
   home?: boolean;
   public?: boolean;
+  landing?: boolean;
+  stats?: boolean;
   eligibility?: boolean;
   aiWriter?: boolean;
 };

@@ -3,6 +3,8 @@ import { router } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { FundingProLogo } from "../../components/design/FundingProLogo";
+import { GradientHero } from "../../components/design/GradientHero";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 
@@ -36,7 +38,7 @@ export default function ForgotPasswordScreen() {
         (factor) => factor.strategy === "reset_password_email_code"
       );
       if (!resetFactor || !("emailAddressId" in resetFactor)) {
-        throw new Error("Сброс пароля не настроен в Clerk");
+        throw new Error("Сброс пароля недоступен для этого аккаунта");
       }
       await signIn.prepareFirstFactor({
         strategy: "reset_password_email_code",
@@ -52,11 +54,20 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-funding-light px-5">
-      <View className="flex-1 justify-center">
-        <Text className="text-2xl font-black text-funding-black">Сброс пароля</Text>
+    <SafeAreaView className="flex-1 bg-funding-light">
+      <GradientHero variant="strip" />
+      <View className="flex-1 px-5 justify-center">
+        <View className="items-center mb-6">
+          <FundingProLogo size="lg" />
+        </View>
+        <Text className="text-2xl font-black text-funding-black text-center">Сброс пароля</Text>
+        <Text className="mt-2 text-gray-600 text-center text-sm">
+          Доступен только для аккаунтов с паролем
+        </Text>
         {sent ? (
-          <Text className="mt-4 text-gray-600">Проверьте email — код для сброса отправлен.</Text>
+          <Text className="mt-6 text-gray-600 text-center">
+            Проверьте email — код для сброса отправлен.
+          </Text>
         ) : (
           <>
             <Input
@@ -67,10 +78,10 @@ export default function ForgotPasswordScreen() {
               value={email}
               onChangeText={setEmail}
             />
-            <Button title="Отправить код" className="mt-4" onPress={sendReset} loading={loading} />
+            <Button title="Отправить код" className="mt-4" onPress={sendReset} loading={loading} haptic />
           </>
         )}
-        {error && <Text className="mt-4 text-sm text-red-600">{error}</Text>}
+        {error && <Text className="mt-4 text-sm text-red-600 text-center">{error}</Text>}
         <Button title="Назад" variant="ghost" className="mt-6" onPress={() => router.back()} />
       </View>
     </SafeAreaView>

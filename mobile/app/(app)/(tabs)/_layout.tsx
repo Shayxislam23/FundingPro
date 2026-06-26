@@ -1,12 +1,14 @@
 import { Tabs } from "expo-router";
-import { Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Platform } from "react-native";
 
-function TabLabel({ label, focused }: { label: string; focused: boolean }) {
-  return (
-    <Text className={`text-xs ${focused ? "text-funding-green font-semibold" : "text-gray-500"}`}>
-      {label}
-    </Text>
-  );
+type TabIconProps = {
+  name: keyof typeof Ionicons.glyphMap;
+  focused: boolean;
+};
+
+function TabIcon({ name, focused }: TabIconProps) {
+  return <Ionicons name={name} size={22} color={focused ? "#008A2E" : "#6B7280"} />;
 }
 
 export default function TabsLayout() {
@@ -16,41 +18,70 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: "#008A2E",
         tabBarInactiveTintColor: "#6B7280",
+        tabBarStyle: {
+          backgroundColor: "#FFFFFF",
+          borderTopColor: "#F3F4F6",
+          borderTopWidth: 1,
+          paddingTop: 4,
+          height: Platform.OS === "ios" ? 88 : 64,
+          elevation: 8,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "600",
+        },
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
           title: "Главная",
-          tabBarLabel: ({ focused }) => <TabLabel label="Главная" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? "home" : "home-outline"} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="grants"
         options={{
           title: "Гранты",
-          tabBarLabel: ({ focused }) => <TabLabel label="Гранты" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? "search" : "search-outline"} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="eligibility"
         options={{
           title: "Проверка",
-          tabBarLabel: ({ focused }) => <TabLabel label="Проверка" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              name={focused ? "checkmark-circle" : "checkmark-circle-outline"}
+              focused={focused}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="ai-writer"
         options={{
           title: "AI",
-          tabBarLabel: ({ focused }) => <TabLabel label="AI" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? "sparkles" : "sparkles-outline"} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
           title: "Ещё",
-          tabBarLabel: ({ focused }) => <TabLabel label="Ещё" focused={focused} />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name={focused ? "menu" : "menu-outline"} focused={focused} />
+          ),
         }}
       />
     </Tabs>

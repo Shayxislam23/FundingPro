@@ -1,10 +1,14 @@
 import { useSignIn, useSignUp } from "@clerk/clerk-expo";
 import { Link, router } from "expo-router";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { FundingProLogo } from "../../components/design/FundingProLogo";
+import { OtpInput } from "../../components/design/OtpInput";
+import { StepProgress } from "../../components/design/StepProgress";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
+import { safeNotificationSuccess } from "../../lib/haptics";
 
 function clerkErrorMessage(err: unknown): string {
   if (err && typeof err === "object" && "errors" in err) {
@@ -25,6 +29,8 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [usingSignUp, setUsingSignUp] = useState(false);
 
+  const stepNumber = step === "email" ? 1 : 2;
+
   async function sendOtp() {
     if (!signInLoaded || !signUpLoaded || !signIn || !signUp) return;
     setLoading(true);
@@ -37,7 +43,7 @@ export default function LoginScreen() {
         (factor) => factor.strategy === "email_code"
       );
       if (!emailCodeFactor || !("emailAddressId" in emailCodeFactor)) {
-        throw new Error("Email-код не настроен в Clerk");
+        throw new Error("Email-код не настроен");
       }
       await signIn.prepareFirstFactor({
         strategy: "email_code",
@@ -70,6 +76,7 @@ export default function LoginScreen() {
         const result = await signUp.attemptEmailAddressVerification({ code });
         if (result.status === "complete" && result.createdSessionId) {
           await setSignUpActive({ session: result.createdSessionId });
+          await safeNotificationSuccess();
           router.replace("/(app)/(tabs)/home");
           return;
         }
@@ -80,6 +87,7 @@ export default function LoginScreen() {
       const result = await signIn.attemptFirstFactor({ strategy: "email_code", code });
       if (result.status === "complete" && result.createdSessionId && setSignInActive) {
         await setSignInActive({ session: result.createdSessionId });
+        await safeNotificationSuccess();
         router.replace("/(app)/(tabs)/home");
         return;
       }
@@ -92,62 +100,73 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-funding-light px-5">
-      <View className="flex-1 justify-center">
-        <Text className="text-2xl font-black text-funding-black">Вход</Text>
-        <Text className="mt-2 text-gray-600">Код на email — через Clerk</Text>
+    <SafeAreaView className="flex-1 bg-funding-light-bg">
+      <ScrollView
+        className="flex-1 px-5"
+        contentContainerClassName="flex-grow justify-center py-8"
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="rounded-3xl bg-white p-6 shadow-card">
+          <View className="items-center mb-6">
+            <FundingProLogo size="lg" />
+          </View>
 
-        {step === "email" ? (
-          <>
-            <Input
-              className="mt-6"
-              placeholder="email@example.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            />
-            <Button
-              title="Получить код"
-              className="mt-4"
-              onPress={sendOtp}
-              disabled={loading || !email.trim()}
-              loading={loading}
-            />
-          </>
-        ) : (
-          <>
-            <Input
-              className="mt-6"
-              placeholder="6-значный код"
-              keyboardType="number-pad"
-              value={otp}
-              onChangeText={setOtp}
-            />
-            <Button
-              title="Подтвердить"
-              className="mt-4"
-              onPress={verifyOtp}
-              disabled={loading || otp.length < 6}
-              loading={loading}
-            />
-          </>
-        )}
+          <StepProgress current={stepNumber} total={2} className="mb-6" />
 
-        {error && <Text className="mt-4 text-sm text-red-600">{error}</Text>}
+          <Text className="text-title text-funding-black text-center">Вход</Text>
+          <Text className="mt-2 text-sm text-gray-600 text-center">
+            {step === "email" ? "Мы отправим код на email" : `Код отправлен на ${email}`}
+          </Text>
 
-        <Link href="/(auth)/forgot-password" asChild>
-          <Pressable className="mt-6">
-            <Text className="text-center text-funding-green">Забыли пароль?</Text>
-          </Pressable>
-        </Link>
+          {step === "email" ? (
+            <>
+              <Input
+                className="mt-5"
+                placeholder="email@example.com"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+              />
+              <Button
+                title="Получить код"
+                className="mt-4"
+                onPress={sendOtp}
+                disabled={loading || !email.trim()}
+                loading={loading}
+                haptic
+              />
+            </>
+          ) : (
+            <>
+              <OtpInput value={otp} onChange={setOtp} className="mt-5" autoFocus />
+              <Button
+                title="Подтвердить"
+                className="mt-4"
+                onPress={verifyOtp}
+                disabled={loading || otp.length < 6}
+                loading={loading}
+                haptic
+              />
+              <Button
+                title="Изменить email"
+                variant="ghost"
+                className="mt-2"
+                onPress={() => {
+                  setStep("email");
+                  setOtp("");
+                }}
+              />
+            </>
+          )}
+
+          {error ? <Text className="mt-4 text-sm text-red-600 text-center">{error}</Text> : null}
+        </View>
 
         <Link href="/(public)" asChild>
-          <Pressable className="mt-4">
-            <Text className="text-center text-gray-500">На главную</Text>
-          </Pressable>
+          <Button title="На главную" variant="ghost" className="mt-6" />
         </Link>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

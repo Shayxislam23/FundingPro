@@ -46,8 +46,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "REPLACE_AFTER_eas_init"
+        "projectId": "57edb446-5583-4f1a-9540-6b812beb5467"
       }
-    }
+    },
+    "owner": "shayxislam"
   }
 }

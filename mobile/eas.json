@@ -1,5 +1,4 @@
 {
-  "//": "Do NOT commit EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY. Set it per profile via EAS secrets: eas secret:create --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value pk_live_... --scope project",
   "cli": {
     "version": ">= 16.0.0",
     "appVersionSource": "remote"

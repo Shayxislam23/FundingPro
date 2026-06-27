@@ -59,10 +59,37 @@ Reload the mobile app — DemoBanner «Примеры из каталога» sh
 
 ## App Links (web)
 
-Set on Vercel production (bundle id defaults from `mobile/app.json`):
+Set on **Vercel production** (bundle id defaults from `mobile/app.json`):
 
 | Variable | Purpose |
 |----------|---------|
-| `APPLE_TEAM_ID` | iOS Universal Links — AASA `appIDs` |
+| `APPLE_TEAM_ID` | iOS Universal Links — AASA `appIDs` (10-char Apple Developer Team ID) |
 | `ANDROID_RELEASE_SHA256` | Android App Links — release signing cert fingerprint(s), comma-separated |
 | `IOS_BUNDLE_ID` | Optional override (default `uz.fundingpro.app`) |
+| `ANDROID_PACKAGE` | Optional override (default `uz.fundingpro.app`) |
+
+Routes: `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json` read these env vars at runtime. Until set, responses include header `X-App-Links-Config: incomplete`.
+
+Validate locally before Vercel deploy:
+
+```bash
+cd fundingpro
+npm run app-links:check
+SMOKE_BASE_URL=https://www.fundingpro.uz npm run app-links:check -- --live
+```
+
+See also: [`mobile/docs/EAS-SMOKE.md`](../../mobile/docs/EAS-SMOKE.md), [`SECURITY-ROADMAP.md`](./SECURITY-ROADMAP.md) (M-02).
+
+## Payments gate (before enabling checkout)
+
+Keep **`PAYMENTS_ENABLED=false`** on Vercel until PSP sandbox E2E passes. Full checklist: [`PAYMENTS-OVERVIEW.md`](./PAYMENTS-OVERVIEW.md).
+
+After prod seed succeeds:
+
+```bash
+cd fundingpro
+npm run payments:golive-check    # env only
+npm run deploy:check             # warns on missing PSP / App Links vars
+```
+
+Only then set `PAYMENTS_ENABLED=true` on production (see PAYMENTS-OVERVIEW Phase 3).

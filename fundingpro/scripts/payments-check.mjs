@@ -5,11 +5,16 @@
  * Usage: npm run payments:check
  */
 import { loadEnvFiles } from "./lib/convex-run.mjs";
+import {
+  ALL_PROVIDERS,
+  getEnabledProviders,
+  isProviderConfigured,
+  uzumConfigDetail,
+  validatePaymentsEnv,
+} from "./lib/payments-env.mjs";
 
 const env = loadEnvFiles();
-const BASE = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
-
-const PROVIDERS = ["uzum", "payme", "click"];
+const BASE = process.env.SMOKE_BASE_URL ?? env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 function check(name, ok, detail = "") {
   const mark = ok ? "✓" : "✗";
@@ -21,35 +26,40 @@ let allOk = true;
 
 console.log("Payments check\n");
 
-allOk = check("PAYMENTS_ENABLED", env.PAYMENTS_ENABLED === "true", env.PAYMENTS_ENABLED ?? "false") && allOk;
+const paymentsEnabled = env.PAYMENTS_ENABLED === "true";
+allOk =
+  check("PAYMENTS_ENABLED", true, paymentsEnabled ? "true" : "false (expected before go-live)") && allOk;
 allOk =
   check("NEXT_PUBLIC_CONVEX_URL", !!env.NEXT_PUBLIC_CONVEX_URL, env.NEXT_PUBLIC_CONVEX_URL ?? "missing") && allOk;
 
-const enabledRaw = env.PAYMENT_PROVIDERS ?? env.PAYMENT_PROVIDER ?? "uzum";
-const enabled = enabledRaw.split(",").map((s) => s.trim());
-allOk = check("PAYMENT_PROVIDERS", enabled.length > 0, enabled.join(", ")) && allOk;
+const enabled = paymentsEnabled ? getEnabledProviders(env) : ALL_PROVIDERS;
+const providersLabel = paymentsEnabled
+  ? enabled.join(", ")
+  : (env.PAYMENT_PROVIDERS ?? env.PAYMENT_PROVIDER ?? "uzum,payme,click");
+allOk = check("PAYMENT_PROVIDERS", enabled.length > 0, providersLabel) && allOk;
 
-for (const p of PROVIDERS) {
-  if (!enabled.includes(p)) continue;
-  if (p === "uzum") {
-    const merchant = !!(env.UZUM_MERCHANT_SERVICE_ID && env.UZUM_MERCHANT_LOGIN && env.UZUM_MERCHANT_PASSWORD);
-    const checkout = !!(env.UZUM_CHECKOUT_TERMINAL_ID && env.UZUM_CHECKOUT_SECRET);
-    allOk = check("uzum configured", merchant || checkout, merchant ? "merchant" : checkout ? "checkout" : "none") && allOk;
-  }
-  if (p === "payme") {
-    allOk = check("payme configured", !!(env.PAYME_MERCHANT_ID && env.PAYME_MERCHANT_KEY)) && allOk;
-  }
-  if (p === "click") {
-    allOk =
-      check(
-        "click configured",
-        !!(env.CLICK_MERCHANT_ID && env.CLICK_SERVICE_ID && env.CLICK_SECRET_KEY)
-      ) && allOk;
-  }
+console.log("\n  Provider env:");
+for (const p of ALL_PROVIDERS) {
+  const configured = isProviderConfigured(p, env);
+  const mustConfigure = paymentsEnabled && enabled.includes(p);
+  let detail = configured ? "configured" : "missing";
+  if (p === "uzum" && configured) detail = uzumConfigDetail(env);
+  if (mustConfigure && !configured) allOk = false;
+  const mark = mustConfigure ? (configured ? "✓" : "✗") : configured ? "○" : "·";
+  console.log(`  ${mark} ${p}${mustConfigure ? " (enabled)" : ""}: ${detail}`);
+}
+
+const validation = validatePaymentsEnv(env, { requireEnabled: paymentsEnabled });
+if (validation.warnings.length) {
+  console.log("\n  Warnings:");
+  for (const w of validation.warnings) console.log(`    ⚠ ${w}`);
+}
+if (validation.issues.length && paymentsEnabled) {
+  for (const issue of validation.issues) allOk = check(issue, false) && allOk;
 }
 
 try {
-  const res = await fetch(`${BASE}/api/v1/payments/status`);
+  const res = await fetch(`${BASE.replace(/\/$/, "")}/api/v1/payments/status`);
   const json = await res.json();
   allOk = check("GET /payments/status", res.ok && json.success === true) && allOk;
   if (json.data?.providers) {
@@ -62,4 +72,5 @@ try {
 }
 
 console.log(allOk ? "\nAll checks passed" : "\nSome checks failed");
+console.log("Next: npm run payments:golive-check -- --sandbox (after credentials in .env.local)");
 process.exit(allOk ? 0 : 1);

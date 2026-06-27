@@ -21,6 +21,8 @@ const recommended = [
   "CLERK_JWT_ISSUER_DOMAIN",
   "CONVEX_DEPLOY_KEY",
   "CONVEX_SYSTEM_SECRET",
+  "APPLE_TEAM_ID",
+  "ANDROID_RELEASE_SHA256",
 ];
 
 const growthOptional = [
@@ -73,17 +75,20 @@ if (process.env.NODE_ENV === "production" && !process.env.CONVEX_SYSTEM_SECRET) 
 }
 
 if (process.env.PAYMENTS_ENABLED === "true") {
+  const enabledRaw = process.env.PAYMENT_PROVIDERS ?? process.env.PAYMENT_PROVIDER ?? "uzum";
+  const enabled = enabledRaw.split(",").map((s) => s.trim().toLowerCase());
+
   const uzumMerchant =
     process.env.UZUM_MERCHANT_SERVICE_ID &&
     process.env.UZUM_MERCHANT_LOGIN &&
     process.env.UZUM_MERCHANT_PASSWORD;
   const uzumCheckout =
     process.env.UZUM_CHECKOUT_TERMINAL_ID && process.env.UZUM_CHECKOUT_SECRET;
-  if (!uzumMerchant && !uzumCheckout) {
+  if (enabled.includes("uzum") && !uzumMerchant && !uzumCheckout) {
     warnings.push(
       "WARN PAYMENTS_ENABLED=true but Uzum credentials missing (Merchant and/or Checkout)"
     );
-  } else {
+  } else if (enabled.includes("uzum")) {
     if (!uzumMerchant) {
       warnings.push("WARN PAYMENTS_ENABLED=true — Uzum Merchant credentials incomplete");
     }
@@ -91,6 +96,32 @@ if (process.env.PAYMENTS_ENABLED === "true") {
       warnings.push("WARN PAYMENTS_ENABLED=true — Uzum Checkout credentials incomplete");
     }
   }
+
+  if (enabled.includes("payme") && !(process.env.PAYME_MERCHANT_ID && process.env.PAYME_MERCHANT_KEY)) {
+    warnings.push("WARN PAYMENTS_ENABLED=true — Payme credentials incomplete (PAYME_MERCHANT_ID, PAYME_MERCHANT_KEY)");
+  }
+  if (
+    enabled.includes("click") &&
+    !(process.env.CLICK_MERCHANT_ID && process.env.CLICK_SERVICE_ID && process.env.CLICK_SECRET_KEY)
+  ) {
+    warnings.push(
+      "WARN PAYMENTS_ENABLED=true — Click credentials incomplete (CLICK_MERCHANT_ID, CLICK_SERVICE_ID, CLICK_SECRET_KEY)"
+    );
+  }
+
+  warnings.push(
+    "WARN payments go-live: run npm run payments:golive-check and sandbox scripts (uzum:sandbox, payme:sandbox, click:sandbox) before production"
+  );
+} else {
+  warnings.push(
+    "WARN payments: keep PAYMENTS_ENABLED=false until sandbox E2E passes — see docs/PAYMENTS-OVERVIEW.md"
+  );
+}
+
+if (!process.env.APPLE_TEAM_ID?.trim() || !process.env.ANDROID_RELEASE_SHA256?.trim()) {
+  warnings.push(
+    "WARN App Links: set APPLE_TEAM_ID + ANDROID_RELEASE_SHA256 on Vercel — npm run app-links:check"
+  );
 }
 
 if (warnings.some((w) => w.startsWith("MISSING"))) {

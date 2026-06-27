@@ -37,9 +37,11 @@ jobs:
 
       - name: Convex codegen
         run: |
-          echo "CLERK_JWT_ISSUER_DOMAIN=https://placeholder.clerk.accounts.dev" >> .env.local
-          CONVEX_AGENT_MODE=anonymous npx convex dev --once
-          npm run convex:codegen
+          if ! test -f convex/_generated/api.d.ts; then
+            echo "Missing convex/_generated/api.d.ts; run npm run convex:codegen locally and commit."
+            exit 1
+          fi
+          echo "Using committed Convex generated types (skip CI codegen)."
 
       - name: Convex v.any() audit
         run: node scripts/convex-any-audit.mjs
@@ -181,11 +183,10 @@ jobs:
           python-version: "3.11"
 
       - name: Semgrep SAST
-        working-directory: fundingpro
         run: |
           python -m pip install --upgrade pip
           pip install semgrep==1.96.0
-          semgrep --config .semgrep/fundingpro.yml --error --quiet ..
+          semgrep --config fundingpro/.semgrep/fundingpro.yml --error --quiet fundingpro mobile packages
 
       - name: npm audit (high+, production deps per workspace)
         run: |

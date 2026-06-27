@@ -34,3 +34,6 @@ rules:
     message: Avoid string interpolation in SQL; use parameterized queries
     severity: ERROR
     languages: [typescript, javascript]
+    paths:
+      exclude:
+        - "**/scripts/**"

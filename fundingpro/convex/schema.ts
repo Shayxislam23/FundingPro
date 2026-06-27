@@ -95,7 +95,8 @@ export default defineSchema({
     .index("by_donor", ["donorId"])
     .index("by_active", ["isActive"])
     .index("by_deadline", ["deadline"])
-    .index("by_featured", ["isFeatured"]),
+    .index("by_featured", ["isFeatured"])
+    .index("by_active_status_deadline", ["isActive", "status", "deadline"]),
 
   grantRequirements: defineTable({
     grantId: v.id("grants"),
@@ -237,7 +238,7 @@ export default defineSchema({
     payload: v.any(),
     source: v.string(),
     createdAt: v.number(),
-  }).index("by_payment", ["paymentId"]),
+  }).index("by_payment", ["paymentId"]).index("by_payment_event", ["paymentId", "eventType"]),
 
   uzumTransactions: defineTable({
     transId: v.string(),

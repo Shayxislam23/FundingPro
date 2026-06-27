@@ -120,6 +120,26 @@ jobs:
       - name: API types unit tests
         run: npm test --workspace=@fundingpro/api-types
 
+      - name: Maestro smoke (optional)
+        continue-on-error: true
+        run: |
+          if ! command -v maestro >/dev/null 2>&1; then
+            if command -v brew >/dev/null 2>&1; then
+              brew install mobile-dev-inc/tap/maestro || true
+            fi
+          fi
+          if command -v maestro >/dev/null 2>&1; then
+            maestro --version || true
+            if [ -n "${MAESTRO_APP_PATH:-}" ] && [ -e "$MAESTRO_APP_PATH" ]; then
+              maestro test mobile/maestro/ --format junit --output mobile/maestro-results.xml
+            else
+              echo "Maestro CLI ready; set MAESTRO_APP_PATH to a simulator .app to run flows in CI."
+              ls -1 mobile/maestro/*.yaml
+            fi
+          else
+            echo "Maestro not installed; skipping mobile UI smoke."
+          fi
+
   security:
     runs-on: ubuntu-latest
     steps:

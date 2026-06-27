@@ -163,6 +163,8 @@ export const meResponseSchema = z.object({
   organization: organizationSchema.nullable(),
   subscription: subscriptionSchema.nullable(),
   savedGrantIds: z.array(z.string()),
+  paymentPendingIntegration: z.boolean().optional(),
+  paymentIntegrationStatus: z.string().optional(),
 });
 
 export type MeResponse = z.infer<typeof meResponseSchema>;

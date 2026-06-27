@@ -16,4 +16,6 @@ export {
   verifyWebhookSignature,
 } from "./payments/service";
 
+export { isPaymentIntegrationPending } from "./payments/integration-status";
+
 export type { PaymentRequestResult } from "./payments/types";

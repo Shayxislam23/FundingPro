@@ -89,7 +89,7 @@ export const getSubscription = authedQuery({
         : null,
       plan: plan
         ? {
-            id: plan._id,
+            id: plan.slug || plan._id,
             name: plan.name,
             nameRu: plan.nameRu ?? null,
             priceUsd: plan.priceUsd,

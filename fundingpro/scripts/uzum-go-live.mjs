@@ -117,6 +117,11 @@ for (const k of PLATFORM_KEYS) {
 
 if (env.PAYMENTS_ENABLED === "true") {
   warn("PAYMENTS_ENABLED=true — убедитесь, что sandbox пройден");
+  if (isSet("UZUM_WEBHOOK_SECRET") || isSet("PAYMENT_WEBHOOK_SECRET")) {
+    ok("Webhook HMAC secret configured");
+  } else {
+    fail("UZUM_WEBHOOK_SECRET required when PAYMENTS_ENABLED=true");
+  }
 } else {
   ok("PAYMENTS_ENABLED=false (безопасно до go-live)");
 }

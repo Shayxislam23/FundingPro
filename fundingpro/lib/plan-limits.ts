@@ -23,6 +23,8 @@ const PLAN_LIMITS: Record<string, PlanUsageLimits> = {
   "plan-ngo-basic": { eligibilityChecks: 5, aiProposals: 2 },
   "plan-ngo-pro": { eligibilityChecks: null, aiProposals: 10 },
   "plan-ngo-consulting": { eligibilityChecks: null, aiProposals: null },
+  /** Legacy slug from pre-seed migrations */
+  "plan-consulting": { eligibilityChecks: null, aiProposals: null },
   "plan-business-starter": { eligibilityChecks: null, aiProposals: null },
   "plan-business-pro": { eligibilityChecks: null, aiProposals: null },
   "plan-enterprise": { eligibilityChecks: null, aiProposals: null },

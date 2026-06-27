@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UzumAuthError, validateUzumBasicAuth } from "@/lib/payments/uzum-auth";
-import { getUzumMerchantConfig, getUzumWebhookSecret } from "@/lib/payments/config";
+import {
+  getUzumMerchantConfig,
+  getUzumWebhookSecret,
+  isPaymentsEnabled,
+} from "@/lib/payments/config";
 import { verifyWebhookSignature } from "@/lib/payments/service";
 
 type Handler<T> = (body: T) => Promise<Record<string, unknown>>;
@@ -22,6 +26,18 @@ export async function withUzumMerchant<T extends Record<string, unknown>>(
     validateUzumBasicAuth(req.headers.get("authorization"));
     const rawBody = await req.text();
     const webhookSecret = getUzumWebhookSecret();
+    if (isPaymentsEnabled() && !webhookSecret) {
+      const { serviceId } = getUzumMerchantConfig();
+      return NextResponse.json(
+        {
+          serviceId,
+          timestamp: String(Date.now()),
+          status: "FAILED",
+          errorCode: "WebhookSecretMissing",
+        },
+        { status: 503 }
+      );
+    }
     if (webhookSecret) {
       const signature = readWebhookSignature(req);
       if (!verifyWebhookSignature(rawBody, signature, webhookSecret)) {

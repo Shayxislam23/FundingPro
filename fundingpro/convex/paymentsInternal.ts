@@ -6,6 +6,8 @@ import {
   mapPayment,
   paymentRecordValidator,
   uzumTransactionValidator,
+  paymeTransactionValidator,
+  clickTransactionValidator,
 } from "./lib/paymentHelpers";
 
 function readTransId(payload: unknown): string | null {
@@ -133,6 +135,120 @@ export const upsertUzumTransaction = internalMutation({
       await ctx.db.patch("uzumTransactions", existing._id, data);
     } else {
       await ctx.db.insert("uzumTransactions", { ...data, createdAt: now });
+    }
+    return null;
+  },
+});
+
+export const getPaymeTransaction = internalQuery({
+  args: { paymeTransId: v.string() },
+  returns: paymeTransactionValidator,
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("paymeTransactions")
+      .withIndex("by_paymeTransId", (q) => q.eq("paymeTransId", args.paymeTransId))
+      .unique();
+    if (!row) return null;
+    return {
+      paymeTransId: row.paymeTransId,
+      paymentId: row.paymentId,
+      state: row.state,
+      amountTiyin: row.amountTiyin,
+      createTime: row.createTime ?? null,
+      performTime: row.performTime ?? null,
+      cancelTime: row.cancelTime ?? null,
+      cancelReason: row.cancelReason ?? null,
+    };
+  },
+});
+
+export const upsertPaymeTransaction = internalMutation({
+  args: {
+    paymeTransId: v.string(),
+    paymentId: v.string(),
+    state: v.number(),
+    amountTiyin: v.number(),
+    createTime: v.optional(v.number()),
+    performTime: v.optional(v.number()),
+    cancelTime: v.optional(v.number()),
+    cancelReason: v.optional(v.number()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("paymeTransactions")
+      .withIndex("by_paymeTransId", (q) => q.eq("paymeTransId", args.paymeTransId))
+      .unique();
+    const now = Date.now();
+    const data = {
+      paymeTransId: args.paymeTransId,
+      paymentId: args.paymentId as Id<"payments">,
+      state: args.state,
+      amountTiyin: args.amountTiyin,
+      createTime: args.createTime,
+      performTime: args.performTime,
+      cancelTime: args.cancelTime,
+      cancelReason: args.cancelReason,
+      updatedAt: now,
+    };
+    if (existing) {
+      await ctx.db.patch("paymeTransactions", existing._id, data);
+    } else {
+      await ctx.db.insert("paymeTransactions", { ...data, createdAt: now });
+    }
+    return null;
+  },
+});
+
+export const getClickTransaction = internalQuery({
+  args: { clickTransId: v.string() },
+  returns: clickTransactionValidator,
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("clickTransactions")
+      .withIndex("by_clickTransId", (q) => q.eq("clickTransId", args.clickTransId))
+      .unique();
+    if (!row) return null;
+    return {
+      clickTransId: row.clickTransId,
+      paymentId: row.paymentId,
+      state: row.state,
+      amountTiyin: row.amountTiyin,
+      merchantPrepareId: row.merchantPrepareId ?? null,
+      merchantConfirmId: row.merchantConfirmId ?? null,
+    };
+  },
+});
+
+export const upsertClickTransaction = internalMutation({
+  args: {
+    clickTransId: v.string(),
+    paymentId: v.string(),
+    state: v.string(),
+    amountTiyin: v.number(),
+    merchantPrepareId: v.optional(v.string()),
+    merchantConfirmId: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("clickTransactions")
+      .withIndex("by_clickTransId", (q) => q.eq("clickTransId", args.clickTransId))
+      .unique();
+    const now = Date.now();
+    const data = {
+      clickTransId: args.clickTransId,
+      paymentId: args.paymentId as Id<"payments">,
+      state: args.state,
+      amountTiyin: args.amountTiyin,
+      merchantPrepareId: args.merchantPrepareId,
+      merchantConfirmId: args.merchantConfirmId,
+      updatedAt: now,
+    };
+    if (existing) {
+      await ctx.db.patch("clickTransactions", existing._id, data);
+    } else {
+      await ctx.db.insert("clickTransactions", { ...data, createdAt: now });
     }
     return null;
   },

@@ -60,3 +60,29 @@ export const uzumTransactionValidator = v.union(
   }),
   v.null()
 );
+
+export const paymeTransactionValidator = v.union(
+  v.object({
+    paymeTransId: v.string(),
+    paymentId: v.string(),
+    state: v.number(),
+    amountTiyin: v.number(),
+    createTime: v.union(v.number(), v.null()),
+    performTime: v.union(v.number(), v.null()),
+    cancelTime: v.union(v.number(), v.null()),
+    cancelReason: v.union(v.number(), v.null()),
+  }),
+  v.null()
+);
+
+export const clickTransactionValidator = v.union(
+  v.object({
+    clickTransId: v.string(),
+    paymentId: v.string(),
+    state: v.string(),
+    amountTiyin: v.number(),
+    merchantPrepareId: v.union(v.string(), v.null()),
+    merchantConfirmId: v.union(v.string(), v.null()),
+  }),
+  v.null()
+);

@@ -252,6 +252,28 @@ export default defineSchema({
     ...timestamps,
   }).index("by_transId", ["transId"]),
 
+  paymeTransactions: defineTable({
+    paymeTransId: v.string(),
+    paymentId: v.id("payments"),
+    state: v.number(),
+    amountTiyin: v.number(),
+    createTime: v.optional(v.number()),
+    performTime: v.optional(v.number()),
+    cancelTime: v.optional(v.number()),
+    cancelReason: v.optional(v.number()),
+    ...timestamps,
+  }).index("by_paymeTransId", ["paymeTransId"]),
+
+  clickTransactions: defineTable({
+    clickTransId: v.string(),
+    paymentId: v.id("payments"),
+    state: v.string(),
+    amountTiyin: v.number(),
+    merchantPrepareId: v.optional(v.string()),
+    merchantConfirmId: v.optional(v.string()),
+    ...timestamps,
+  }).index("by_clickTransId", ["clickTransId"]),
+
   aiRequests: defineTable({
     userId: v.id("users"),
     requestType: v.string(),

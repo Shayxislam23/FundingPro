@@ -6,8 +6,10 @@ import { getUserPlatformRole } from "@/lib/db/user-roles";
 import { ensureInternalUser } from "@/lib/db/users";
 import { getUserOrganizationDetails } from "@/lib/db/organizations";
 import { getPaymentIntegrationStatus } from "@/lib/payments";
+import { isPaymentIntegrationPending } from "@/lib/payments/integration-status";
 import { getUserSubscription } from "@/lib/db/users";
 import { listSavedGrantIds } from "@/lib/db/saved-grants";
+import { handleAccountDeletionRequest } from "@/lib/account-deletion";
 
 export const GET = withActiveUser(async (_req, authUser) => {
   const internalUser = await ensureInternalUser(
@@ -28,13 +30,14 @@ export const GET = withActiveUser(async (_req, authUser) => {
     });
   }
 
-  const [organization, subscription, savedGrantIds, platformRole, isAdmin] =
+  const [organization, subscription, savedGrantIds, platformRole, isAdmin, paymentPendingIntegration] =
     await Promise.all([
       getUserOrganizationDetails(authUser.accessToken),
       getUserSubscription(authUser.accessToken),
       listSavedGrantIds(authUser.accessToken).catch(() => [] as string[]),
       getUserPlatformRole(authUser.accessToken),
       isAdminUser(authUser.accessToken, internalUser.email),
+      isPaymentIntegrationPending(),
     ]);
 
   return apiSuccess({
@@ -49,6 +52,8 @@ export const GET = withActiveUser(async (_req, authUser) => {
     subscription,
     savedGrantIds,
     paymentIntegrationStatus: getPaymentIntegrationStatus(),
-    paymentPendingIntegration: true,
+    paymentPendingIntegration,
   });
 });
+
+export const DELETE = withActiveUser(async (_req, authUser) => handleAccountDeletionRequest(authUser));

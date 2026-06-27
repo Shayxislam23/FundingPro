@@ -1,5 +1,21 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
+
+function verifyWebhookSignature(payload, signature, secret) {
+  if (!secret || !signature) return false;
+  const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  } catch {
+    return false;
+  }
+}
+
+function isPendingIntegrationStatus(status) {
+  if (!status) return true;
+  return !["active", "enabled"].includes(status.toLowerCase());
+}
 
 function isPaymentsEnabled() {
   return process.env.PAYMENTS_ENABLED === "true";
@@ -72,5 +88,33 @@ describe("payments config", () => {
   it("legacy webhook endpoint is deprecated (410)", () => {
     const LEGACY_WEBHOOK_STATUS = 410;
     assert.equal(LEGACY_WEBHOOK_STATUS, 410);
+  });
+});
+
+describe("verifyWebhookSignature", () => {
+  it("accepts valid HMAC-SHA256 hex signature", () => {
+    const secret = "test-webhook-secret";
+    const payload = JSON.stringify({ transId: "tx-1", amount: 100 });
+    const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+    assert.equal(verifyWebhookSignature(payload, signature, secret), true);
+  });
+
+  it("rejects invalid signature when secret is set", () => {
+    const payload = JSON.stringify({ transId: "tx-1" });
+    assert.equal(verifyWebhookSignature(payload, "bad-signature", "secret"), false);
+  });
+
+  it("rejects missing signature when secret is set", () => {
+    assert.equal(verifyWebhookSignature("{}", "", "secret"), false);
+  });
+});
+
+describe("payment integration pending status", () => {
+  it("pending when Convex setting is pending_integration", () => {
+    assert.equal(isPendingIntegrationStatus("pending_integration"), true);
+  });
+
+  it("not pending when Convex setting is active", () => {
+    assert.equal(isPendingIntegrationStatus("active"), false);
   });
 });

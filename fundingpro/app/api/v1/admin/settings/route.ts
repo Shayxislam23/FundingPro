@@ -6,7 +6,9 @@ import { COMPANY } from "@/lib/company-info";
 export const GET = withAdmin(async () => {
   const aiProvider = process.env.AI_PROVIDER ?? "mock";
   const paymentsEnabled = process.env.PAYMENTS_ENABLED === "true";
-  const hasWebhookSecret = !!(process.env.PAYMENT_WEBHOOK_SECRET);
+  const hasWebhookSecret = !!(
+    process.env.UZUM_WEBHOOK_SECRET ?? process.env.PAYMENT_WEBHOOK_SECRET
+  );
   const hasResendKey = !!(process.env.RESEND_API_KEY);
   const hasConvexUrl = !!(process.env.NEXT_PUBLIC_CONVEX_URL);
   const hasClerkKeys = !!(

@@ -37,6 +37,7 @@ import type * as pushTokens from "../pushTokens.js";
 import type * as savedGrants from "../savedGrants.js";
 import type * as seed from "../seed.js";
 import type * as seedData from "../seedData.js";
+import type * as settings from "../settings.js";
 import type * as subscriptionRequests from "../subscriptionRequests.js";
 import type * as support from "../support.js";
 import type * as users from "../users.js";
@@ -77,6 +78,7 @@ declare const fullApi: ApiFromModules<{
   savedGrants: typeof savedGrants;
   seed: typeof seed;
   seedData: typeof seedData;
+  settings: typeof settings;
   subscriptionRequests: typeof subscriptionRequests;
   support: typeof support;
   users: typeof users;

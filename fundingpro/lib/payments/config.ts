@@ -54,6 +54,10 @@ export function getUsdUzsRate(): number {
   return Number.isFinite(n) && n > 0 ? n : 12800;
 }
 
+export function getUzumWebhookSecret(): string {
+  return process.env.UZUM_WEBHOOK_SECRET ?? process.env.PAYMENT_WEBHOOK_SECRET ?? "";
+}
+
 export function buildUzumAppDeepLink(paymentId: string, amountTiyin: number): string | null {
   const { serviceId } = getUzumMerchantConfig();
   if (!serviceId) return null;

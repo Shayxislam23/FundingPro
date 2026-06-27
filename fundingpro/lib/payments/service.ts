@@ -1,3 +1,4 @@
+import { verifyPaymentWebhook } from "@/lib/api";
 import { createPaymentIntent, getPlanPricing } from "@/lib/db/payments";
 import {
   buildUzumAppDeepLink,
@@ -47,12 +48,11 @@ export function handlePaymentWebhook(): PaymentRequestResult {
 }
 
 export function verifyWebhookSignature(
-  _payload: string,
-  _signature: string,
+  payload: string,
+  signature: string,
   secret: string
 ): boolean {
-  if (!secret) return false;
-  return false;
+  return verifyPaymentWebhook(payload, signature, secret);
 }
 
 export async function createSubscriptionPaymentIntent(input: {

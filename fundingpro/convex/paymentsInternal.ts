@@ -1,11 +1,45 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
+import type { MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import {
   mapPayment,
   paymentRecordValidator,
   uzumTransactionValidator,
 } from "./lib/paymentHelpers";
+
+function readTransId(payload: unknown): string | null {
+  if (payload && typeof payload === "object" && "transId" in payload) {
+    const transId = (payload as { transId?: unknown }).transId;
+    if (typeof transId === "string" && transId.length > 0) {
+      return transId;
+    }
+  }
+  return null;
+}
+
+async function hasDuplicatePaymentEvent(
+  ctx: MutationCtx,
+  paymentId: Id<"payments">,
+  eventType: string,
+  payload: unknown,
+  source: string
+): Promise<boolean> {
+  const events = await ctx.db
+    .query("paymentEvents")
+    .withIndex("by_payment_event", (q) =>
+      q.eq("paymentId", paymentId).eq("eventType", eventType)
+    )
+    .collect();
+
+  const transId = readTransId(payload);
+  return events.some((event) => {
+    if (transId) {
+      return readTransId(event.payload) === transId;
+    }
+    return event.source === source;
+  });
+}
 
 export const getById = internalQuery({
   args: { paymentId: v.string() },
@@ -27,11 +61,17 @@ export const insertEvent = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const paymentId = args.paymentId as Id<"payments">;
+    const source = args.source ?? "uzum_webhook";
+    if (await hasDuplicatePaymentEvent(ctx, paymentId, args.eventType, args.payload, source)) {
+      return null;
+    }
+
     await ctx.db.insert("paymentEvents", {
-      paymentId: args.paymentId as Id<"payments">,
+      paymentId,
       eventType: args.eventType,
       payload: args.payload,
-      source: args.source ?? "uzum_webhook",
+      source,
       createdAt: Date.now(),
     });
     return null;
@@ -144,6 +184,8 @@ export const activateSubscription = internalMutation({
   handler: async (ctx, args) => {
     const payment = await ctx.db.get("payments", args.paymentId as Id<"payments">);
     if (!payment?.subscriptionId) return null;
+    if (payment.status === "SUCCESS") return null;
+
     const now = Date.now();
     await ctx.db.patch("subscriptions", payment.subscriptionId, {
       status: "ACTIVE",
@@ -165,6 +207,8 @@ export const reverseSubscription = internalMutation({
   handler: async (ctx, args) => {
     const payment = await ctx.db.get("payments", args.paymentId as Id<"payments">);
     if (!payment?.subscriptionId) return null;
+    if (payment.status === "REFUNDED") return null;
+
     const now = Date.now();
     await ctx.db.patch("subscriptions", payment.subscriptionId, {
       status: "CANCELLED",

@@ -14,11 +14,11 @@ Last updated: 2026-06-27
 
 ## Track 6 deliverables (this sprint)
 
-### 6.2 Rate limiting — **Partial**
+### 6.2 Rate limiting — **Resolved (Convex-backed)**
 
-- Middleware IP buckets on `/api/v1/ai/*` and `/api/v1/auth/*` via `lib/api-rate-limit.ts` (in-memory, `X-RateLimit-*` + `Retry-After` on 429).
-- Per-user AI limits remain on AI route handlers (`lib/ai-rate-limit.ts`).
-- **Remaining:** DB-backed `rate_limit_buckets` for multi-instance serverless (closes `AI-RATE-LIMIT-MEMORY` audit finding).
+- Middleware IP buckets on `/api/v1/ai/*` and `/api/v1/auth/*` via `lib/api-rate-limit.ts` (`X-RateLimit-*` + `Retry-After` on 429).
+- Per-user AI limits on AI route handlers (`lib/ai-rate-limit.ts`).
+- **Production:** `rateLimitBuckets` Convex table + `convex/rateLimits.ts` internal mutations; Next.js routes call Convex via `CONVEX_DEPLOY_KEY`. Dev falls back to in-memory buckets when deploy key is unset.
 
 ### 6.3 Account erasure API — **Partial**
 
@@ -33,7 +33,7 @@ Last updated: 2026-06-27
 | Audit ID | Remediation status |
 |----------|-------------------|
 | EDGE-API-BYPASS | Mitigated for AI/auth paths via middleware rate limit; full edge auth pre-check still optional |
-| AI-RATE-LIMIT-MEMORY | Partial — middleware + route limits; production should use Convex/DB buckets only |
+| AI-RATE-LIMIT-MEMORY | **Resolved** — Convex `rateLimitBuckets` + internal `rateLimits.checkRateLimit`; memory fallback dev-only |
 
 ## Next steps (Track 6 backlog)
 

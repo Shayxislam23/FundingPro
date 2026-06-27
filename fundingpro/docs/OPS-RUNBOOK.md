@@ -11,7 +11,7 @@ Last updated: 2026-06-27
 | App Links (M-02) | `npm run app-links:check` · `-- --live` | [M-02 App Links](#m-02-app-links-vercel-env--live-check) |
 | Convex deploy | `npx convex deploy` | [Convex production deploy](#convex-production-deploy) |
 | Account erasure cron | ships in `convex/crons.ts` | [Account erasure cron](#account-erasure-cron-l-02) |
-| Payments go-live | `npm run payments:golive-check` | [Payments sandbox → production](#payments-sandbox--production) |
+| Payments go-live | `npm run payments:golive` (alias: `payments:golive-check`) | [Payments sandbox → production](#payments-sandbox--production) |
 
 Run all `npm` commands from **`fundingpro/`** unless noted (monorepo root for `npm run convex:seed:prod`).
 

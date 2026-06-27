@@ -1,23 +1,52 @@
 import { verifyPaymentWebhook } from "@/lib/api";
-import { createPaymentIntent, getPlanPricing } from "@/lib/db/payments";
 import {
-  buildUzumAppDeepLink,
   getPaymentIntegrationStatus,
+  getPaymentProvider,
   isPaymentsEnabled,
+  isPaymeConfigured,
+  isClickConfigured,
+  isUzumConfigured,
   isUzumCheckoutConfigured,
   isUzumMerchantConfigured,
 } from "./config";
-import { usdToTiyin, usdToUzs } from "./pricing";
-import { registerUzumCheckout } from "./uzum-checkout";
-import type { CheckoutSessionResult, PaymentIntentResult, PaymentRequestResult } from "./types";
+import {
+  createIntent as registryCreateIntent,
+  getDefaultProvider,
+  getLegacyUzumFlags,
+  getProviderStatus,
+  parsePaymentProviderId,
+  startCheckout as registryStartCheckout,
+} from "./providers/registry";
+import { registerUzumCheckout, syncUzumCheckoutStatus } from "./providers/uzum/checkout";
+import type {
+  CheckoutSessionResult,
+  PaymentIntentResult,
+  PaymentProviderId,
+  PaymentRequestResult,
+  PublicPaymentConfig,
+} from "./types";
 
 export {
   isPaymentsEnabled,
   getPaymentIntegrationStatus,
+  getPaymentProvider,
+  getEnabledPaymentProviders,
   isUzumConfigured,
   isUzumMerchantConfigured,
   isUzumCheckoutConfigured,
+  isPaymeConfigured,
+  isClickConfigured,
+  isProviderConfigured,
 } from "./config";
+
+export {
+  createIntent,
+  getProviderStatus,
+  parsePaymentProviderId,
+  parsePaymentProviderId as parsePaymentProvider,
+  assertProviderEnabled,
+  getDefaultProvider,
+} from "./providers/registry";
 
 export function createPaymentRequest(_params: {
   userId: string;
@@ -34,7 +63,7 @@ export function createPaymentRequest(_params: {
   }
   return {
     status: "ready",
-    message: "Online payment is available via Uzum Bank.",
+    message: "Online payment is available via Uzum Bank, Payme, or Click.",
   };
 }
 
@@ -42,7 +71,7 @@ export function handlePaymentWebhook(): PaymentRequestResult {
   return {
     status: isPaymentsEnabled() ? "ready" : "pending_integration",
     message: isPaymentsEnabled()
-      ? "Use /api/v1/payments/uzum/* merchant endpoints."
+      ? "Use /api/v1/payments/{uzum,payme,click} merchant endpoints."
       : "Payment webhook handler is not enabled yet.",
   };
 }
@@ -58,62 +87,62 @@ export function verifyWebhookSignature(
 export async function createSubscriptionPaymentIntent(input: {
   planId: string;
   accessToken: string;
+  provider?: PaymentProviderId;
+  returnUrl?: string;
 }): Promise<PaymentIntentResult> {
   if (!isPaymentsEnabled()) {
     throw new Error("Payments are not enabled");
   }
 
-  const plan = await getPlanPricing(input.planId);
-  if (!plan) throw new Error("Plan not found");
-
-  const amountUzs = plan.priceUzs > 0 ? plan.priceUzs : usdToUzs(plan.priceUsd);
-  const amountTiyin = usdToTiyin(plan.priceUsd);
-
-  const { paymentId, subscriptionId } = await createPaymentIntent(
-    {
-      planId: input.planId,
-      planName: plan.nameRu,
-      amountUsd: plan.priceUsd,
-      amountUzs,
-      amountTiyin,
-    },
-    input.accessToken
-  );
-
-  return {
-    paymentId,
-    subscriptionId,
+  const provider = input.provider ?? getDefaultProvider();
+  return registryCreateIntent(provider, {
     planId: input.planId,
-    planName: plan.nameRu,
-    amountUsd: plan.priceUsd,
-    amountUzs,
-    amountTiyin,
-    currency: "UZS",
-    provider: "uzum",
-    uzumAppUrl: buildUzumAppDeepLink(paymentId, amountTiyin),
-  };
+    accessToken: input.accessToken,
+    returnUrl: input.returnUrl,
+  });
 }
 
 export async function startCheckoutSession(
   paymentId: string,
   accessToken: string,
-  options?: { returnUrl?: string; platform?: string }
+  options?: { returnUrl?: string; platform?: string; provider?: PaymentProviderId }
 ): Promise<CheckoutSessionResult> {
   if (!isPaymentsEnabled()) {
     throw new Error("Payments are not enabled");
   }
-  return registerUzumCheckout(paymentId, accessToken, { returnUrl: options?.returnUrl });
+
+  let provider = options?.provider;
+  if (!provider) {
+    const payment = await import("@/lib/db/payments").then((m) =>
+      m.getPaymentById(paymentId, accessToken)
+    );
+    provider = parsePaymentProviderId(payment?.provider) ?? getDefaultProvider();
+  }
+
+  return registryStartCheckout(provider, paymentId, accessToken, {
+    returnUrl: options?.returnUrl,
+  });
 }
 
-export function getPublicPaymentConfig() {
+export function getPublicPaymentConfig(): PublicPaymentConfig {
+  const providers = getProviderStatus();
+  const legacy = getLegacyUzumFlags();
+  const anyConfigured = providers.some((p) => p.enabled && p.configured);
+
   return {
     paymentsEnabled: isPaymentsEnabled(),
     integrationStatus: getPaymentIntegrationStatus(),
-    provider: "uzum",
-    merchantConfigured: isUzumMerchantConfigured(),
-    checkoutConfigured: isUzumCheckoutConfigured(),
+    provider: getDefaultProvider(),
+    providers,
+    merchantConfigured: legacy.merchantConfigured,
+    checkoutConfigured: legacy.checkoutConfigured,
     message: isPaymentsEnabled()
-      ? "Оплата подписки через Uzum Bank (приложение или карта на сайте)."
+      ? anyConfigured
+        ? "Оплата подписки через Uzum Bank, Payme или Click."
+        : "Платёжные провайдеры включены, но credentials не настроены."
       : "Онлайн-оплата временно недоступна. Вы можете отправить запрос на подключение тарифа.",
   };
 }
+
+// Backward-compatible re-exports for Uzum checkout
+export { registerUzumCheckout, syncUzumCheckoutStatus };

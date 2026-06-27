@@ -4,7 +4,7 @@ import { withActiveUser } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
 import { assertPaymentConsents, recordConsents } from "@/lib/db/consents";
 import { ensureInternalUser } from "@/lib/db/users";
-import { createSubscriptionPaymentIntent, isPaymentsEnabled } from "@/lib/payments";
+import { createSubscriptionPaymentIntent, getDefaultProvider, isPaymentsEnabled, parsePaymentProvider } from "@/lib/payments";
 import { getConsentVersion } from "@/lib/legal/documents";
 
 export const POST = withActiveUser(async (req, authUser) => {
@@ -16,6 +16,8 @@ export const POST = withActiveUser(async (req, authUser) => {
     const body = await req.json();
     const planId = String(body.planId ?? "").trim();
     if (!planId) return apiError("planId required", 400, "MISSING_FIELDS");
+
+    const provider = parsePaymentProvider(body.provider) ?? getDefaultProvider();
 
     if (body.acceptedPaymentTerms !== true) {
       return apiError("Accept offer and refund policy before payment", 400, "PAYMENT_TERMS_REQUIRED");
@@ -51,6 +53,7 @@ export const POST = withActiveUser(async (req, authUser) => {
     const intent = await createSubscriptionPaymentIntent({
       planId,
       accessToken: authUser.accessToken,
+      provider,
     });
 
     await writeAuditLog({
@@ -58,7 +61,7 @@ export const POST = withActiveUser(async (req, authUser) => {
       action: "payment_intent_created",
       entityType: "payment",
       entityId: intent.paymentId,
-      metadata: { planId, amountTiyin: intent.amountTiyin, platform },
+      metadata: { planId, amountTiyin: intent.amountTiyin, platform, provider },
     });
 
     return apiSuccess(intent, 201);

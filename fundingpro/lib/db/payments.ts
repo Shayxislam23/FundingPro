@@ -7,7 +7,7 @@ import {
   convexInternalQuery,
   internal,
 } from "@/lib/convex-server";
-import type { UzumTransactionState } from "@/lib/payments/types";
+import type { PaymentProviderId, UzumTransactionState } from "@/lib/payments/types";
 
 export type PaymentRecord = {
   id: string;
@@ -35,6 +35,26 @@ export type UzumTransactionRecord = {
   reverseTime: string | null;
 };
 
+export type PaymeTransactionRecord = {
+  paymeTransId: string;
+  paymentId: string;
+  state: number;
+  amountTiyin: number;
+  createTime: number | null;
+  performTime: number | null;
+  cancelTime: number | null;
+  cancelReason: number | null;
+};
+
+export type ClickTransactionRecord = {
+  clickTransId: string;
+  paymentId: string;
+  state: string;
+  amountTiyin: number;
+  merchantPrepareId: string | null;
+  merchantConfirmId: string | null;
+};
+
 export async function getPlanPricing(planId: string) {
   return convexPublicQuery(api.plans.getPricing, { planId });
 }
@@ -46,6 +66,7 @@ export async function createPaymentIntent(
     amountUsd: number;
     amountUzs: number;
     amountTiyin: number;
+    provider: PaymentProviderId;
   },
   accessToken: string
 ) {
@@ -143,4 +164,44 @@ export async function activateSubscriptionForPayment(paymentId: string) {
 
 export async function reverseSubscriptionForPayment(paymentId: string) {
   return convexInternalMutation(internal.paymentsInternal.reverseSubscription, { paymentId });
+}
+
+export async function getPaymeTransaction(
+  paymeTransId: string
+): Promise<PaymeTransactionRecord | null> {
+  return convexInternalQuery(internal.paymentsInternal.getPaymeTransaction, {
+    paymeTransId,
+  }) as Promise<PaymeTransactionRecord | null>;
+}
+
+export async function upsertPaymeTransaction(input: {
+  paymeTransId: string;
+  paymentId: string;
+  state: number;
+  amountTiyin: number;
+  createTime?: number;
+  performTime?: number;
+  cancelTime?: number;
+  cancelReason?: number;
+}) {
+  return convexInternalMutation(internal.paymentsInternal.upsertPaymeTransaction, input);
+}
+
+export async function getClickTransaction(
+  clickTransId: string
+): Promise<ClickTransactionRecord | null> {
+  return convexInternalQuery(internal.paymentsInternal.getClickTransaction, {
+    clickTransId,
+  }) as Promise<ClickTransactionRecord | null>;
+}
+
+export async function upsertClickTransaction(input: {
+  clickTransId: string;
+  paymentId: string;
+  state: string;
+  amountTiyin: number;
+  merchantPrepareId?: string;
+  merchantConfirmId?: string;
+}) {
+  return convexInternalMutation(internal.paymentsInternal.upsertClickTransaction, input);
 }

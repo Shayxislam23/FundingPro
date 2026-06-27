@@ -2,6 +2,7 @@ export * from "./types";
 export * from "./config";
 export * from "./pricing";
 export * from "./service";
+export * from "./providers/registry";
 export * from "./uzum-auth";
 export * from "./uzum-merchant";
 export * from "./uzum-checkout";

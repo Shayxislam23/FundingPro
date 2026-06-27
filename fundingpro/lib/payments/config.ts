@@ -1,3 +1,7 @@
+import type { PaymentProviderId } from "./types";
+
+const ALL_PROVIDERS: PaymentProviderId[] = ["uzum", "payme", "click"];
+
 export function isPaymentsEnabled(): boolean {
   return process.env.PAYMENTS_ENABLED === "true";
 }
@@ -6,14 +10,38 @@ export function getPaymentProvider(): string {
   return process.env.PAYMENT_PROVIDER ?? "uzum";
 }
 
+export function getEnabledPaymentProviders(): PaymentProviderId[] {
+  if (!isPaymentsEnabled()) return [];
+  const raw = process.env.PAYMENT_PROVIDERS ?? process.env.PAYMENT_PROVIDER ?? "uzum";
+  const ids = raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter((s): s is PaymentProviderId => ALL_PROVIDERS.includes(s as PaymentProviderId));
+  return ids.length > 0 ? ids : ["uzum"];
+}
+
 export function getPaymentIntegrationStatus(): string {
   if (!isPaymentsEnabled()) {
     return process.env.PAYMENT_INTEGRATION_STATUS ?? "pending_integration";
   }
-  if (!isUzumConfigured()) {
-    return "configured_partial";
-  }
+  const enabled = getEnabledPaymentProviders();
+  const configured = enabled.filter((id) => isProviderConfigured(id));
+  if (configured.length === 0) return "configured_partial";
+  if (configured.length < enabled.length) return "configured_partial";
   return "active";
+}
+
+export function isProviderConfigured(provider: PaymentProviderId): boolean {
+  switch (provider) {
+    case "uzum":
+      return isUzumConfigured();
+    case "payme":
+      return isPaymeConfigured();
+    case "click":
+      return isClickConfigured();
+    default:
+      return false;
+  }
 }
 
 export function getUzumMerchantConfig() {
@@ -35,6 +63,28 @@ export function getUzumCheckoutConfig() {
   };
 }
 
+export function getPaymeConfig() {
+  return {
+    merchantId: process.env.PAYME_MERCHANT_ID ?? "",
+    merchantKey: process.env.PAYME_MERCHANT_KEY ?? "",
+    testMode: process.env.PAYME_TEST_MODE !== "false",
+    checkoutBaseUrl:
+      process.env.PAYME_CHECKOUT_BASE_URL ??
+      (process.env.PAYME_TEST_MODE === "false"
+        ? "https://checkout.paycom.uz"
+        : "https://checkout.test.paycom.uz"),
+  };
+}
+
+export function getClickConfig() {
+  return {
+    merchantId: process.env.CLICK_MERCHANT_ID ?? "",
+    serviceId: process.env.CLICK_SERVICE_ID ?? "",
+    secretKey: process.env.CLICK_SECRET_KEY ?? "",
+    merchantUserId: process.env.CLICK_MERCHANT_USER_ID ?? "",
+  };
+}
+
 export function isUzumMerchantConfigured(): boolean {
   const c = getUzumMerchantConfig();
   return !!(c.serviceId && c.login && c.password);
@@ -47,6 +97,16 @@ export function isUzumCheckoutConfigured(): boolean {
 
 export function isUzumConfigured(): boolean {
   return isUzumMerchantConfigured() || isUzumCheckoutConfigured();
+}
+
+export function isPaymeConfigured(): boolean {
+  const c = getPaymeConfig();
+  return !!(c.merchantId && c.merchantKey);
+}
+
+export function isClickConfigured(): boolean {
+  const c = getClickConfig();
+  return !!(c.merchantId && c.serviceId && c.secretKey);
 }
 
 export function getUsdUzsRate(): number {

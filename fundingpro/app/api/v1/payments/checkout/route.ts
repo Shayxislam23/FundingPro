@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
 import { withActiveUser } from "@/lib/api-route";
 import { getPaymentById } from "@/lib/db/payments";
-import { isPaymentsEnabled, startCheckoutSession } from "@/lib/payments";
+import { isPaymentsEnabled, parsePaymentProvider, startCheckoutSession } from "@/lib/payments";
 import { resolveCheckoutReturnUrl } from "@/lib/payments/return-url";
 
 export const POST = withActiveUser(async (req, authUser) => {
@@ -22,10 +22,12 @@ export const POST = withActiveUser(async (req, authUser) => {
 
     const platform = typeof body.platform === "string" ? body.platform : "web";
     const returnUrl = resolveCheckoutReturnUrl(platform);
+    const provider = parsePaymentProvider(body.provider) ?? undefined;
 
     const session = await startCheckoutSession(paymentId, authUser.accessToken, {
       returnUrl,
       platform,
+      provider,
     });
     return apiSuccess(session);
   } catch (err) {

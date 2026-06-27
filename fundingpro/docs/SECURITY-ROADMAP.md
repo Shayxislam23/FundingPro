@@ -44,6 +44,21 @@ Last updated: 2026-06-27
 5. **6.6** — External pen-test after payments + App Links live.
 6. **6.7** — Enforce `CORS_ALLOWED_ORIGINS` on public API routes.
 
+## Dependency baseline (Codex audit P1 — 2026-06-27)
+
+Patch-level bumps within **Next 14.x** and **Clerk 5.x** (no `npm audit fix --force`):
+
+| Package | Version | Notes |
+|---------|---------|-------|
+| `next` | 14.2.35 | Latest 14.2.x patch; pairs with `@next/swc-*@14.2.33` (no 14.2.35 SWC publish on npm) |
+| `@clerk/nextjs` | 5.7.6 | Latest 5.x; pinned exact in `fundingpro/package.json` |
+| `eslint-config-next` | 14.2.35 | Aligned with `next` |
+| `postcss` (dev) | ^8.5.10 | Root override + devDep bump for GHSA-qx2v-qp2m-jg93 |
+
+**Regression (2026-06-27):** `npm run typecheck --workspace=fundingpro`, `npm test --workspace=fundingpro` (81 tests), `NEXT_PUBLIC_CONVEX_URL=https://placeholder.convex.cloud npm run build --workspace=fundingpro`.
+
+**Remaining npm audit (high):** Clerk auth bypass chain (GHSA-w24r-5266-9c3c) and Next 14 advisories require **Next 15+ / Clerk 7+** — deferred; tracked for major upgrade sprint.
+
 ## References
 
 - Mobile security doc: [`mobile/docs/SECURITY.md`](../../mobile/docs/SECURITY.md)

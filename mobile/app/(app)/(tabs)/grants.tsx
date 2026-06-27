@@ -57,10 +57,19 @@ const SECTOR_SLUGS: Record<SectorFilter, string | undefined> = {
 
 type ListMode = "active" | "all";
 
+const countryFilters = [
+  { label: "Узбекистан", value: "Uzbekistan" },
+  { label: "Казахстан", value: "Kazakhstan" },
+  { label: "Все страны", value: "" },
+] as const;
+
+type CountryFilter = (typeof countryFilters)[number]["label"];
+
 export default function GrantsTab() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeSector, setActiveSector] = useState<SectorFilter>("Все");
+  const [activeCountry, setActiveCountry] = useState<CountryFilter>("Узбекистан");
   const [listMode, setListMode] = useState<ListMode>("active");
   const [showExpired, setShowExpired] = useState(false);
 
@@ -70,12 +79,14 @@ export default function GrantsTab() {
   }, [searchInput]);
 
   const sectorSlug = SECTOR_SLUGS[activeSector];
+  const countrySlug = countryFilters.find((item) => item.label === activeCountry)?.value;
 
   const grantsQuery = useInfiniteQuery({
     queryKey: queryKeys.grants({
       tab: true,
       search: debouncedSearch || undefined,
       sector: sectorSlug,
+      country: countrySlug || undefined,
       activeOnly: listMode === "active" ? true : undefined,
     }),
     queryFn: async ({ pageParam }) => {
@@ -84,6 +95,7 @@ export default function GrantsTab() {
         limit: PAGE_SIZE,
         search: debouncedSearch || undefined,
         sector: sectorSlug,
+        country: countrySlug || undefined,
         activeOnly: listMode === "active" ? true : undefined,
       });
       if (pageParam === 1) {
@@ -165,6 +177,30 @@ export default function GrantsTab() {
           placeholder="Поиск по названию или донору..."
           className="mb-3"
         />
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
+          <View className="flex-row gap-2">
+            {countryFilters.map((country) => (
+              <Pressable
+                key={country.label}
+                onPress={() => setActiveCountry(country.label)}
+                className={`px-3 py-1.5 rounded-full ${
+                  activeCountry === country.label
+                    ? "bg-funding-green"
+                    : "bg-clay-surface border border-clay-inset/60"
+                }`}
+              >
+                <Text
+                  className={`text-xs font-medium ${
+                    activeCountry === country.label ? "text-white" : "text-gray-600"
+                  }`}
+                >
+                  {country.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
 
         {listMode === "all" ? (
           <Pressable

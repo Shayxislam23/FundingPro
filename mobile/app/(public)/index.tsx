@@ -1,11 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { useState } from "react";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { Alert, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ClaySurface } from "../../components/clay/ClaySurface";
 import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
 import { DemoBanner } from "../../components/design/DemoBanner";
 import { FundingProLogo } from "../../components/design/FundingProLogo";
 import { GradientHero } from "../../components/design/GradientHero";
@@ -29,6 +30,20 @@ const QUICK_LINKS = [
 ] as const;
 
 export default function PublicLanding() {
+  const [email, setEmail] = useState("");
+  const [leadDone, setLeadDone] = useState(false);
+
+  const leadMutation = useMutation({
+    mutationFn: () => api.submitLeadMagnet(email.trim(), "mobile_landing"),
+    onSuccess: () => {
+      setLeadDone(true);
+      setEmail("");
+    },
+    onError: (error: Error) => {
+      Alert.alert("Не удалось подписаться", error.message);
+    },
+  });
+
   const grantsQuery = useQuery({
     queryKey: queryKeys.grants({ landing: true }),
     queryFn: () => api.grants({ limit: 3, featured: true }),
@@ -85,6 +100,36 @@ export default function PublicLanding() {
           <Link href="/(public)/grants" asChild>
             <Button title="Найти грант" className="mt-6" haptic />
           </Link>
+
+          <ClaySurface variant="raised" className="mt-8 rounded-[24px] p-5">
+            <Text className="text-base font-bold text-funding-black">Подборка грантов на email</Text>
+            <Text className="text-sm text-gray-500 mt-1 leading-5">
+              Получите актуальные возможности финансирования для НКО Узбекистана.
+            </Text>
+            {leadDone ? (
+              <Text className="text-sm text-funding-green font-medium mt-4">
+                Спасибо! Мы отправим подборку на ваш email.
+              </Text>
+            ) : (
+              <>
+                <Input
+                  className="mt-4"
+                  placeholder="Email для подборки грантов"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <Button
+                  title="Получить подборку"
+                  className="mt-3"
+                  loading={leadMutation.isPending}
+                  onPress={() => leadMutation.mutate()}
+                />
+              </>
+            )}
+          </ClaySurface>
 
           {featured.length > 0 && (
             <View className="mt-8">

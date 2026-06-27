@@ -1,17 +1,26 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { Alert, Linking, ScrollView, Text } from "react-native";
+import { useEffect, useState } from "react";
+import { Alert, Linking, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { Screen } from "../../components/ui/Screen";
 import { LoadingState } from "../../components/ui/States";
+import { ClaySurface } from "../../components/clay/ClaySurface";
 import { api } from "../../lib/api/client";
 import { queryKeys } from "../../lib/query-keys";
 
 const DELETE_SUBJECT = "Запрос на удаление аккаунта";
 const DELETE_MESSAGE =
   "Прошу удалить мой аккаунт FundingPro и связанные персональные данные в соответствии с политикой конфиденциальности.";
+
+const ORG_TYPES = [
+  { value: "NGO", label: "НКО" },
+  { value: "BUSINESS", label: "Бизнес" },
+  { value: "ACADEMIC", label: "Университет / школа" },
+  { value: "GOVERNMENT", label: "Государственная организация" },
+  { value: "INDIVIDUAL", label: "Частное лицо" },
+] as const;
 
 export default function ProfileScreen() {
   const orgQuery = useQuery({
@@ -20,10 +29,31 @@ export default function ProfileScreen() {
   });
 
   const [name, setName] = useState("");
+  const [type, setType] = useState("NGO");
+  const [country, setCountry] = useState("Uzbekistan");
   const [sector, setSector] = useState("");
+  const [description, setDescription] = useState("");
+
+  const org = orgQuery.data?.organization;
+
+  useEffect(() => {
+    if (!org) return;
+    setName(org.name);
+    setType(org.type || "NGO");
+    setCountry(org.country ?? "Uzbekistan");
+    setSector(org.sector ?? "");
+    setDescription(org.description ?? "");
+  }, [org]);
 
   const updateMutation = useMutation({
-    mutationFn: () => api.updateOrganization({ name, sector }),
+    mutationFn: () =>
+      api.updateOrganization({
+        name,
+        type,
+        country,
+        sector,
+        description,
+      }),
     onSuccess: () => orgQuery.refetch(),
   });
 
@@ -42,8 +72,6 @@ export default function ProfileScreen() {
       );
     },
   });
-
-  const org = orgQuery.data?.organization;
 
   if (orgQuery.isLoading) return <LoadingState />;
 
@@ -70,15 +98,55 @@ export default function ProfileScreen() {
           <Input
             className="mt-2"
             placeholder="Название"
-            defaultValue={org?.name ?? ""}
+            value={name}
             onChangeText={setName}
+          />
+          <Text className="text-xs text-gray-400 uppercase mt-4">Тип организации</Text>
+          <View className="flex-row flex-wrap gap-2 mt-2">
+            {ORG_TYPES.map((orgType) => (
+              <Pressable
+                key={orgType.value}
+                onPress={() => setType(orgType.value)}
+                className={`px-3 py-1.5 rounded-full ${
+                  type === orgType.value
+                    ? "bg-funding-green"
+                    : "bg-clay-surface border border-clay-inset/60"
+                }`}
+              >
+                <Text
+                  className={`text-xs font-medium ${
+                    type === orgType.value ? "text-white" : "text-gray-600"
+                  }`}
+                >
+                  {orgType.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <Input
+            className="mt-3"
+            placeholder="Страна"
+            value={country}
+            onChangeText={setCountry}
           />
           <Input
             className="mt-3"
             placeholder="Сектор"
-            defaultValue={org?.sector ?? ""}
+            value={sector}
             onChangeText={setSector}
           />
+          <Text className="text-xs text-gray-400 uppercase mt-4">Описание</Text>
+          <ClaySurface variant="inset" radius="input" className="mt-2 overflow-hidden">
+            <TextInput
+              className="px-4 py-3 text-funding-black bg-transparent min-h-[88px]"
+              placeholder="Кратко опишите миссию и опыт организации"
+              placeholderTextColor="#6B7F70"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              textAlignVertical="top"
+            />
+          </ClaySurface>
           <Button
             title="Сохранить"
             className="mt-4"

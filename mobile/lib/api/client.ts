@@ -57,10 +57,17 @@ const pushTokenResultSchema = z.object({
   platform: z.enum(["ios", "android"]),
   updatedAt: z.string(),
 });
+const leadMagnetResultSchema = z.object({ ok: z.boolean() });
 const matchGrantsResultSchema = z.object({
   matches: z.array(matchGrantItemSchema),
   source: z.string().optional(),
   isMockAi: z.boolean().optional(),
+}).passthrough();
+const accountDeletionResultSchema = z.object({
+  status: z.literal("pending"),
+  requestedAt: z.string(),
+  userId: z.string(),
+  message: z.string().optional(),
 }).passthrough();
 const proposalGenerateResultSchema = z.object({
   proposalId: z.string(),
@@ -393,6 +400,23 @@ export const api = {
         body: JSON.stringify({ token, platform }),
       }),
       pushTokenResultSchema
+    );
+  },
+
+  async submitLeadMagnet(email: string, source = "mobile_landing") {
+    return parseResponse(
+      await apiFetch("/lead-magnet", {
+        method: "POST",
+        body: JSON.stringify({ email, source }),
+      }),
+      leadMagnetResultSchema
+    );
+  },
+
+  async requestAccountDeletion() {
+    return parseResponse(
+      await apiFetch("/me/delete-request", { method: "POST" }),
+      accountDeletionResultSchema
     );
   },
 

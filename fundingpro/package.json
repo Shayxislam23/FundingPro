@@ -44,8 +44,19 @@
     "security:probe:prod": "SMOKE_BASE_URL=https://www.fundingpro.uz node scripts/security-api-probe.mjs",
     "contract:mobile-api": "node --import tsx scripts/mobile-api-contract.mjs"
   },
+  "optionalDependencies": {
+    "@next/swc-darwin-arm64": "15.5.19",
+    "@next/swc-darwin-x64": "15.5.19",
+    "@next/swc-linux-arm64-gnu": "15.5.19",
+    "@next/swc-linux-arm64-musl": "15.5.19",
+    "@next/swc-linux-x64-gnu": "15.5.19",
+    "@next/swc-linux-x64-musl": "15.5.19",
+    "@next/swc-win32-arm64-msvc": "15.5.19",
+    "@next/swc-win32-ia32-msvc": "15.5.19",
+    "@next/swc-win32-x64-msvc": "15.5.19"
+  },
   "dependencies": {
-    "@clerk/nextjs": "5.7.6",
+    "@clerk/nextjs": "7.5.9",
     "@fundingpro/api-types": "^0.1.0",
     "@fundingpro/shared": "^0.1.0",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -65,7 +76,7 @@
     "convex": "^1.42.0",
     "convex-helpers": "^0.1.120",
     "lucide-react": "^1.16.0",
-    "next": "14.2.35",
+    "next": "15.5.19",
     "nodemailer": "^9.0.1",
     "pg": "^8.20.0",
     "react": "^18",

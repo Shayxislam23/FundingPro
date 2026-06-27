@@ -16,11 +16,12 @@ import {
 } from "@/lib/seo/site";
 import { ArrowLeft, Calendar, MapPin, DollarSign, ExternalLink } from "lucide-react";
 
-type PageProps = { params: { id: string } };
+type PageProps = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
   try {
-    const grant = await getPublicGrantById(params.id);
+    const grant = await getPublicGrantById(id);
     if (!grant) return { title: "Грант не найден" };
 
     const title = grant.title_ru ?? grant.title;
@@ -28,7 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       (grant.description_ru ?? grant.description)?.slice(0, 160) ??
       `Грант от ${grant.donor.name_ru ?? grant.donor.name}`;
 
-    const grantPath = `/grants/${params.id}`;
+    const grantPath = `/grants/${id}`;
 
     return {
       title,
@@ -51,10 +52,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function PublicGrantDetailPage({ params }: PageProps) {
+  const { id } = await params;
   let grant: Awaited<ReturnType<typeof getPublicGrantById>> = null;
 
   try {
-    grant = await getPublicGrantById(params.id);
+    grant = await getPublicGrantById(id);
   } catch {
     notFound();
   }

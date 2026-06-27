@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { CheckCircle2, Calendar, MapPin, DollarSign, FileText, ArrowLeft, Loader2, Plus, AlertTriangle } from "lucide-react";
 import { translateSector } from "@fundingpro/shared";
@@ -39,7 +39,8 @@ function formatDeadline(d: string | null) {
   };
 }
 
-export default function GrantDetailPage({ params }: { params: { id: string } }) {
+export default function GrantDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [grant, setGrant] = useState<Grant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -47,7 +48,7 @@ export default function GrantDetailPage({ params }: { params: { id: string } }) 
   const [applying, setApplying] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/v1/grants/${params.id}`)
+    fetch(`/api/v1/grants/${id}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.success) setGrant(d.data);
@@ -55,7 +56,7 @@ export default function GrantDetailPage({ params }: { params: { id: string } }) 
       })
       .catch(() => setError("Ошибка загрузки"))
       .finally(() => setLoading(false));
-  }, [params.id]);
+  }, [id]);
 
   const handleApply = async () => {
     setApplying(true);
@@ -64,7 +65,7 @@ export default function GrantDetailPage({ params }: { params: { id: string } }) 
       const res = await fetch("/api/v1/applications", {
         method: "POST",
         headers,
-        body: JSON.stringify({ grantId: params.id }),
+        body: JSON.stringify({ grantId: id }),
       });
       if (res.ok) setApplied(true);
     } finally {

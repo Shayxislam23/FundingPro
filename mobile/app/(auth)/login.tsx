@@ -7,6 +7,7 @@ import { FundingProLogo } from "../../components/design/FundingProLogo";
 import { OtpInput } from "../../components/design/OtpInput";
 import { StepProgress } from "../../components/design/StepProgress";
 import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { safeNotificationSuccess } from "../../lib/haptics";
 
@@ -100,13 +101,13 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-funding-light-bg">
+    <SafeAreaView className="flex-1 bg-clay-canvas">
       <ScrollView
         className="flex-1 px-5"
         contentContainerClassName="flex-grow justify-center py-8"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="rounded-3xl bg-white p-6 shadow-card">
+        <Card className="p-6">
           <View className="items-center mb-6">
             <FundingProLogo size="lg" />
           </View>
@@ -161,7 +162,7 @@ export default function LoginScreen() {
           )}
 
           {error ? <Text className="mt-4 text-sm text-red-600 text-center">{error}</Text> : null}
-        </View>
+        </Card>
 
         <Link href="/(public)" asChild>
           <Button title="На главную" variant="ghost" className="mt-6" />

@@ -25,6 +25,12 @@
       "skillPath": "skills/acquiring-disk-image-with-dd-and-dcfldd/SKILL.md",
       "computedHash": "9296abb6763a46eaf659cde9d4e889e9982ca0d5fe56440e488222d97dbe2d7a"
     },
+    "alert-manager": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "monitor/alert-manager/SKILL.md",
+      "computedHash": "7ae44bfe552a5a49d27a5607529b41c11c82a23008a36e9c34224c8bb12dfbd6"
+    },
     "analyzing-active-directory-acl-abuse": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
       "sourceType": "github",
@@ -577,6 +583,12 @@
       "skillPath": "skills/automating-ioc-enrichment/SKILL.md",
       "computedHash": "9bc4a7b13b4a985e90327517059cff80aefb2e7c03c315637fd07795d9816cab"
     },
+    "backlink-analyzer": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "monitor/backlink-analyzer/SKILL.md",
+      "computedHash": "db9bcb170da30683d8edbb28dcec16dd45f07ad24c2f728c0f9ad97cf372d02d"
+    },
     "benchmarking-kubernetes-with-kube-bench": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
       "sourceType": "github",
@@ -835,6 +847,12 @@
       "skillPath": "skills/collecting-volatile-evidence-from-compromised-host/SKILL.md",
       "computedHash": "8401466617d492dae0f20c2afcd2b3e7153436c7fbe3a1051ea656641cd13243"
     },
+    "competitor-analysis": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "research/competitor-analysis/SKILL.md",
+      "computedHash": "ee00b7003c585de5655f6026f20dc14a76a1d1c91087af2bb5fc02f8592be608"
+    },
     "conducting-api-security-testing": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
       "sourceType": "github",
@@ -1074,6 +1092,24 @@
       "sourceType": "github",
       "skillPath": "skills/containing-active-breach/SKILL.md",
       "computedHash": "3ed0a304c4a5b08642f4658580ca41e2001cf109941dc16ef7c8ddcfeccdf4e9"
+    },
+    "content-gap-analysis": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "research/content-gap-analysis/SKILL.md",
+      "computedHash": "89da7d194feafdd5b626f1165041904ee607efdef89eab30a3de1b9249d496a8"
+    },
+    "content-quality-auditor": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "cross-cutting/content-quality-auditor/SKILL.md",
+      "computedHash": "720a73c17aff1cd88507fdbad9c5b61fa5a48eb55d867a9bc28f6e81af9de1c1"
+    },
+    "content-refresher": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "optimize/content-refresher/SKILL.md",
+      "computedHash": "5d4556d4d97ea074d084d47ef5677c4f9265d93e24c69206d8e342a5d3c4bab1"
     },
     "continuous-llm-red-teaming-with-promptfoo": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
@@ -1759,11 +1795,23 @@
       "skillPath": "skills/detecting-wmi-persistence/SKILL.md",
       "computedHash": "3950d536711d2bb5e06294bd0d11390bb748ace6642c6a0bc9379dea1fb9a209"
     },
+    "domain-authority-auditor": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "cross-cutting/domain-authority-auditor/SKILL.md",
+      "computedHash": "981d0157c5d26fdc4ccaaccfe63c7ea85c53670e61558910d90fbaafe1d136c7"
+    },
     "emulating-cloud-attacks-with-stratus-red-team": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
       "sourceType": "github",
       "skillPath": "skills/emulating-cloud-attacks-with-stratus-red-team/SKILL.md",
       "computedHash": "44cae606b723927fc83e96c1f692dcee65b9833190282647a6f86e427cc14cfc"
+    },
+    "entity-optimizer": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "cross-cutting/entity-optimizer/SKILL.md",
+      "computedHash": "7d2f9877a8c43ac3e5e0a2c36653cb5fbe65dc00bb8dd8e8d2fcaa7a29cbe6d8"
     },
     "enumerating-cloud-with-cloudfox": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
@@ -2082,6 +2130,12 @@
       "sourceType": "github",
       "skillPath": "skills/generating-threat-intelligence-reports/SKILL.md",
       "computedHash": "d5adbbe3f30dd2e17ddcf731ea1e4a1e903597ef501bd80ba724f57d4ebf9ccb"
+    },
+    "geo-content-optimizer": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "build/geo-content-optimizer/SKILL.md",
+      "computedHash": "8c1d49569c79fbb9dfbd35304e752a48057964eee0bafc358118328ebceb5575"
     },
     "hardening-docker-containers-for-production": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
@@ -3355,6 +3409,12 @@
       "skillPath": "skills/intercepting-mobile-traffic-with-burpsuite/SKILL.md",
       "computedHash": "a9c81e474152bc9d8fe6ae2a5fc240b4f153d3a99ef14aa2cb1f6c7a33bd310b"
     },
+    "internal-linking-optimizer": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "optimize/internal-linking-optimizer/SKILL.md",
+      "computedHash": "5924b55f4003473ad33ce5c169c9149cbeae7853e0312c51902820664089f386"
+    },
     "investigating-insider-threat-indicators": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
       "sourceType": "github",
@@ -3372,6 +3432,12 @@
       "sourceType": "github",
       "skillPath": "skills/investigating-ransomware-attack-artifacts/SKILL.md",
       "computedHash": "de82a1922ff2fa35886a521d3347310ea18734ac53497e27fccb4d88d0415b81"
+    },
+    "keyword-research": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "research/keyword-research/SKILL.md",
+      "computedHash": "0c5e6f102810834247bc9f6e0f82cd783c1bca4d47070003f2e5bbe1193f9c37"
     },
     "managing-cloud-identity-with-okta": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
@@ -3403,6 +3469,18 @@
       "skillPath": "skills/mapping-mitre-attack-techniques/SKILL.md",
       "computedHash": "7e139b5849a2355a083b8cab797c140414feec2604456d0fb40fe7f7b7f42df7"
     },
+    "memory-management": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "cross-cutting/memory-management/SKILL.md",
+      "computedHash": "b7d8a42dd755f4892ed78d4c58eaa00f994d1ff376a354d23ed8cb5d56ab74c6"
+    },
+    "meta-tags-optimizer": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "build/meta-tags-optimizer/SKILL.md",
+      "computedHash": "529f8318f95c60a08c2b45a8a207e98097b4554b24152f5a1d1d9c81c8cd0352"
+    },
     "migrating-to-post-quantum-cryptography": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
       "sourceType": "github",
@@ -3433,6 +3511,12 @@
       "skillPath": "skills/moving-laterally-with-netexec/SKILL.md",
       "computedHash": "992db178f948c638af6243550e2a0b13d30e903d811b73b5d536cc2a5b0c1f80"
     },
+    "on-page-seo-auditor": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "optimize/on-page-seo-auditor/SKILL.md",
+      "computedHash": "e7c3bf078b6c9084684f1b81674219ea664a14a5bb1155db9a66487818db4399"
+    },
     "operating-havoc-c2": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
       "sourceType": "github",
@@ -3462,6 +3546,12 @@
       "sourceType": "github",
       "skillPath": "skills/parsing-artifacts-with-eric-zimmerman-tools/SKILL.md",
       "computedHash": "bebbf343238956cd547fdf7aed82e529fb878a5d9525be850ba03df7dfd38efa"
+    },
+    "performance-reporter": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "monitor/performance-reporter/SKILL.md",
+      "computedHash": "b771f99ad15dd20317119a3260a561bb72907592bf33a400d8147ae544396413"
     },
     "performing-access-recertification-with-saviynt": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
@@ -4519,6 +4609,12 @@
       "skillPath": "skills/profiling-threat-actor-groups/SKILL.md",
       "computedHash": "160902e48ee84782b33a3d1524ba11cf6dce20420522160ea081eb6666b7569d"
     },
+    "rank-tracker": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "monitor/rank-tracker/SKILL.md",
+      "computedHash": "720525f309877d869efda50eba8606e9998bb7999c6ad7d57d611ef0da6d0f91"
+    },
     "recovering-deleted-files-with-photorec": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
       "sourceType": "github",
@@ -4627,6 +4723,12 @@
       "skillPath": "skills/scanning-network-with-nmap-advanced/SKILL.md",
       "computedHash": "6f35a9d4318639975821405f1fb5e1dbfddc5cc44bd65cf388f5c6216d01f86b"
     },
+    "schema-markup-generator": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "build/schema-markup-generator/SKILL.md",
+      "computedHash": "c75c56c6dea1eae3da931b24c61fabdbcfe493afd5b5cb2c824499b3dbf30984"
+    },
     "securing-agentic-ai-tool-invocation": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",
       "sourceType": "github",
@@ -4704,6 +4806,24 @@
       "sourceType": "github",
       "skillPath": "skills/securing-serverless-functions/SKILL.md",
       "computedHash": "4bbcb50518030c7b103199dcad5536d0af73400d4007c56169ba3c6bb529f4c7"
+    },
+    "seo-content-writer": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "build/seo-content-writer/SKILL.md",
+      "computedHash": "1b4a4be167dec5e2c6a47e9c228d3ec0b85a29f4e96cc48aafef8c18c40d66a5"
+    },
+    "serp-analysis": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "research/serp-analysis/SKILL.md",
+      "computedHash": "d80623d2aa4855c5f8dc0a201a89ceb9d47d92777cc65f7a3183a42869a93214"
+    },
+    "technical-seo-checker": {
+      "source": "aaron-he-zhu/seo-geo-claude-skills",
+      "sourceType": "github",
+      "skillPath": "optimize/technical-seo-checker/SKILL.md",
+      "computedHash": "caf47b099c6f356b2ed2caaac4c74aa1c640442c63890f77d6512d5d9d6d7eb5"
     },
     "testing-android-intents-for-vulnerabilities": {
       "source": "mukul975/Anthropic-Cybersecurity-Skills",

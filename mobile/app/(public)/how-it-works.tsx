@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, Text, View } from "react-native";
 import { GradientHero } from "../../components/design/GradientHero";
 import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
 import { Screen } from "../../components/ui/Screen";
 
 const STEPS = [
@@ -57,13 +58,13 @@ export default function HowItWorksScreen() {
               ) : null}
             </View>
             <Link href={step.href as never} asChild>
-              <View className="flex-1 rounded-2xl border border-gray-100 bg-white p-4 shadow-card active:opacity-80">
+              <Card className="flex-1 active:opacity-80">
                 <Text className="text-overline font-bold text-funding-green mb-1 uppercase">
                   Шаг {i + 1}
                 </Text>
                 <Text className="font-semibold text-headline text-funding-black">{step.title}</Text>
                 <Text className="text-sm text-gray-500 mt-1 leading-5">{step.description}</Text>
-              </View>
+              </Card>
             </Link>
           </View>
         ))}

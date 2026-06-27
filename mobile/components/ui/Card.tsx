@@ -1,10 +1,17 @@
-import { View, type ViewProps } from "react-native";
+import { type ViewProps } from "react-native";
+import { ClaySurface } from "../clay/ClaySurface";
 import { cn } from "../cn";
 
-export function Card({ className, children, ...props }: ViewProps & { className?: string }) {
+export function Card({ className, children, style, ...props }: ViewProps & { className?: string }) {
   return (
-    <View className={cn("rounded-2xl border border-gray-200 bg-white p-4", className)} {...props}>
+    <ClaySurface
+      variant="raised"
+      radius="card"
+      className={cn("p-4", className)}
+      style={style}
+      {...props}
+    >
       {children}
-    </View>
+    </ClaySurface>
   );
 }

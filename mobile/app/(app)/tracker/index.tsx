@@ -3,6 +3,7 @@ import { Link } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
 import { Pressable, RefreshControl, Text, View } from "react-native";
 import { formatDeadlineDisplay, formatGrantAmount } from "@fundingpro/shared";
+import { Card } from "../../../components/ui/Card";
 import { Screen } from "../../../components/ui/Screen";
 import { EmptyState, ErrorState, LoadingState } from "../../../components/ui/States";
 import { api } from "../../../lib/api/client";
@@ -44,7 +45,8 @@ export default function TrackerScreen() {
 
           return (
             <Link href={`/(app)/tracker/${item.id}` as never} asChild>
-              <Pressable className="mx-4 mb-3 rounded-2xl border border-gray-200 bg-white p-4">
+              <Pressable className="mx-4 mb-3 active:opacity-90">
+                <Card>
                 <Text className="font-semibold text-funding-black">
                   {grant?.title_ru ?? grant?.title ?? item.grantId}
                 </Text>
@@ -69,6 +71,7 @@ export default function TrackerScreen() {
                     {getStatusLabel(item.status)}
                   </Text>
                 </View>
+                </Card>
               </Pressable>
             </Link>
           );

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { Badge } from "../../components/design/Badge";
+import { ClaySurface } from "../../components/clay/ClaySurface";
 import { Screen } from "../../components/ui/Screen";
 import { Card } from "../../components/ui/Card";
 import { EmptyState, ErrorState, LoadingState } from "../../components/ui/States";
@@ -55,29 +56,40 @@ export default function StoriesScreen() {
         {sectors.length > 1 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5 -mx-1">
             <View className="flex-row gap-2 px-1">
-              <Pressable
-                onPress={() => setSectorFilter(null)}
-                className={`px-3 py-1.5 rounded-full ${!sectorFilter ? "bg-funding-green" : "bg-white border border-gray-200"}`}
-              >
-                <Text className={`text-xs font-medium ${!sectorFilter ? "text-white" : "text-gray-600"}`}>
-                  Все
-                </Text>
+              <Pressable onPress={() => setSectorFilter(null)}>
+                <ClaySurface
+                  variant={!sectorFilter ? "pressed" : "raised"}
+                  style={
+                    !sectorFilter ? { backgroundColor: "#008A2E", borderColor: "#008A2E" } : undefined
+                  }
+                  radius="pill"
+                  className="px-3 py-1.5"
+                >
+                  <Text className={`text-xs font-medium ${!sectorFilter ? "text-white" : "text-gray-600"}`}>
+                    Все
+                  </Text>
+                </ClaySurface>
               </Pressable>
               {sectors.map((sector) => (
-                <Pressable
-                  key={sector}
-                  onPress={() => setSectorFilter(sector)}
-                  className={`px-3 py-1.5 rounded-full ${
-                    sectorFilter === sector ? "bg-funding-green" : "bg-white border border-gray-200"
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-medium ${
-                      sectorFilter === sector ? "text-white" : "text-gray-600"
-                    }`}
+                <Pressable key={sector} onPress={() => setSectorFilter(sector)}>
+                  <ClaySurface
+                    variant={sectorFilter === sector ? "pressed" : "raised"}
+                    style={
+                      sectorFilter === sector
+                        ? { backgroundColor: "#008A2E", borderColor: "#008A2E" }
+                        : undefined
+                    }
+                    radius="pill"
+                    className="px-3 py-1.5"
                   >
-                    {translateSector(sector)}
-                  </Text>
+                    <Text
+                      className={`text-xs font-medium ${
+                        sectorFilter === sector ? "text-white" : "text-gray-600"
+                      }`}
+                    >
+                      {translateSector(sector)}
+                    </Text>
+                  </ClaySurface>
                 </Pressable>
               ))}
             </View>

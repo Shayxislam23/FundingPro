@@ -7,6 +7,7 @@ import { GrantCard } from "../../../components/design/GrantCard";
 import { SectionHeader } from "../../../components/design/SectionHeader";
 import { OnboardingChecklist } from "../../../components/onboarding/OnboardingChecklist";
 import { ReconsentBanner } from "../../../components/legal/ReconsentBanner";
+import { ClaySurface } from "../../../components/clay/ClaySurface";
 import { Card } from "../../../components/ui/Card";
 import { LoadingState, ErrorState } from "../../../components/ui/States";
 import { api } from "../../../lib/api/client";
@@ -53,9 +54,11 @@ type QuickActionProps = {
 function QuickAction({ label, href }: QuickActionProps) {
   return (
     <Link href={href as never} asChild>
-      <Pressable className="flex-row items-center p-3 rounded-xl bg-white border border-gray-100 mb-2 active:opacity-80">
-        <Text className="text-sm font-medium text-funding-black flex-1">{label}</Text>
-        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+      <Pressable className="active:opacity-80">
+        <ClaySurface variant="raised" className="flex-row items-center p-3 rounded-[18px] mb-2">
+          <Text className="text-sm font-medium text-funding-black flex-1">{label}</Text>
+          <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+        </ClaySurface>
       </Pressable>
     </Link>
   );
@@ -114,9 +117,9 @@ export default function DashboardHome() {
   const userName = meQuery.data?.email?.split("@")[0];
 
   return (
-    <SafeAreaView className="flex-1 bg-funding-light">
+    <SafeAreaView className="flex-1 bg-clay-canvas">
       <ScrollView
-        className="px-4 py-4"
+        className="flex-1 px-4 py-4 pb-28"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refetchAll} />}
       >
         <View className="flex-row items-start justify-between mb-1">

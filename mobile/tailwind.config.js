@@ -5,6 +5,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        clay: {
+          canvas: "#E8F0EA",
+          surface: "#F4FAF5",
+          inset: "#DCE8DE",
+        },
         funding: {
           green: "#008A2E",
           accent: "#12B94F",

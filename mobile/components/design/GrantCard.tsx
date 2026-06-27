@@ -8,6 +8,7 @@ import {
   translateSector,
 } from "@fundingpro/shared";
 import type { GrantListItem } from "@fundingpro/api-types";
+import { ClaySurface } from "../clay/ClaySurface";
 import { cn } from "../cn";
 import { Badge } from "./Badge";
 
@@ -33,13 +34,7 @@ export function GrantCard({ grant, onPress, compact, className }: GrantCardProps
   const country = grant.country_scope[0] ? translateCountry(grant.country_scope[0]) : undefined;
 
   const content = (
-    <View
-      className={cn(
-        "rounded-2xl border border-gray-100 bg-white shadow-card",
-        compact ? "p-3" : "p-5",
-        className
-      )}
-    >
+    <ClaySurface variant="raised" radius="card" className={cn(compact ? "p-3" : "p-5", className)}>
       <View className="flex-row items-start justify-between gap-2 mb-3">
         <View className="flex-1 min-w-0">
           <View className="flex-row items-start gap-2 flex-wrap">
@@ -85,7 +80,7 @@ export function GrantCard({ grant, onPress, compact, className }: GrantCardProps
           <Badge label={sector} variant="sector" />
         </View>
       ) : null}
-    </View>
+    </ClaySurface>
   );
 
   if (onPress) {

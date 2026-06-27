@@ -14,7 +14,7 @@ function StepIcon({ done }: { done: boolean }) {
   return (
     <View
       className={`h-5 w-5 rounded-full border items-center justify-center ${
-        done ? "bg-funding-green border-funding-green" : "border-gray-300"
+        done ? "bg-funding-green border-funding-green" : "border-clay-inset"
       }`}
     >
       {done ? <Text className="text-white text-xs font-bold">✓</Text> : null}
@@ -38,7 +38,7 @@ export function OnboardingChecklist({ steps, completedCount, totalSteps }: Onboa
             {nextStep ? ` · далее: ${nextStep.label.toLowerCase()}` : ""}
           </Text>
         </View>
-        <View className="rounded-full border border-funding-green/20 bg-white px-2.5 py-1">
+        <View className="rounded-full border border-funding-green/20 bg-clay-surface px-2.5 py-1">
           <Text className="text-xs font-bold text-funding-green">{percent}%</Text>
         </View>
       </View>
@@ -50,7 +50,7 @@ export function OnboardingChecklist({ steps, completedCount, totalSteps }: Onboa
             <Link key={step.id} href={step.href as never} asChild>
               <Pressable
                 className={`flex-row items-center gap-3 rounded-xl border p-3 ${
-                  done ? "border-gray-100 bg-white/60 opacity-70" : "border-funding-green/30 bg-white"
+                  done ? "border-clay-inset/60 bg-clay-surface/60 opacity-70" : "border-funding-green/30 bg-clay-surface"
                 }`}
               >
                 <StepIcon done={done} />

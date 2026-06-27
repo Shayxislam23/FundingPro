@@ -98,7 +98,7 @@ export function ReconsentBanner() {
 
       <Modal visible={open} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/40">
-          <View className="bg-white rounded-t-3xl p-6">
+          <View className="bg-clay-surface rounded-t-3xl p-6">
             <Text className="text-lg font-bold text-funding-black mb-4">Обновление документов</Text>
             <ConsentCheckboxes value={consent} onChange={setConsent} />
             {error ? <Text className="text-red-600 text-sm mt-3">{error}</Text> : null}

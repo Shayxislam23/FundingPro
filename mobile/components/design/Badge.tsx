@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { Text } from "react-native";
+import { ClaySurface } from "../clay/ClaySurface";
 import { cn } from "../cn";
 
 type BadgeVariant = "default" | "pilot" | "sector" | "urgent" | "soon";
@@ -10,27 +11,25 @@ type BadgeProps = {
 };
 
 const variantStyles: Record<BadgeVariant, { container: string; text: string }> = {
-  default: { container: "bg-funding-light-green", text: "text-funding-green" },
-  pilot: { container: "bg-amber-50 border border-amber-200", text: "text-amber-700" },
-  sector: { container: "bg-funding-light-green", text: "text-funding-green" },
-  urgent: { container: "bg-red-50 border border-red-200", text: "text-red-600" },
-  soon: { container: "bg-amber-50 border border-amber-200", text: "text-amber-700" },
+  default: { container: "bg-clay-inset", text: "text-funding-green" },
+  pilot: { container: "bg-clay-inset", text: "text-amber-700" },
+  sector: { container: "bg-clay-inset", text: "text-funding-green" },
+  urgent: { container: "bg-clay-inset", text: "text-red-600" },
+  soon: { container: "bg-clay-inset", text: "text-amber-700" },
 };
 
 export function Badge({ label, variant = "default", className }: BadgeProps) {
   const styles = variantStyles[variant];
 
   return (
-    <View
-      className={cn(
-        "self-start max-w-full px-2 py-0.5 rounded-full",
-        styles.container,
-        className
-      )}
+    <ClaySurface
+      variant="inset"
+      radius="pill"
+      className={cn("self-start max-w-full px-2 py-0.5", styles.container, className)}
     >
       <Text className={cn("text-[10px] font-semibold uppercase", styles.text)} numberOfLines={1}>
         {label}
       </Text>
-    </View>
+    </ClaySurface>
   );
 }

@@ -17,7 +17,7 @@ type ScreenHeaderProps = {
 
 export function ScreenHeader({ title, showBack = true, onBack, rightAction }: ScreenHeaderProps) {
   return (
-    <View className="flex-row items-center px-5 py-3 border-b border-gray-100 bg-white">
+    <View className="flex-row items-center px-5 py-3 border-b border-clay-inset/40 bg-clay-canvas">
       {showBack ? (
         <Pressable
           onPress={onBack ?? (() => router.back())}
@@ -58,7 +58,7 @@ function LargeTitleHeader({
   onBack?: () => void;
 }) {
   return (
-    <View className="px-5 pt-2 pb-4 bg-white border-b border-gray-100">
+    <View className="px-5 pt-2 pb-4 bg-clay-canvas border-b border-clay-inset/40">
       {showBack ? (
         <Pressable
           onPress={onBack ?? (() => router.back())}
@@ -108,7 +108,7 @@ export function Screen({
   );
 
   return (
-    <SafeAreaView className={cn("flex-1 bg-funding-light", className)} edges={["top"]}>
+    <SafeAreaView className={cn("flex-1 bg-clay-canvas", className)} edges={["top"]}>
       {header}
       {body}
     </SafeAreaView>

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, View } from "react-native";
+import { ClaySurface } from "../clay/ClaySurface";
 import { cn } from "../cn";
 
 type SkeletonProps = {
@@ -26,21 +27,21 @@ export function Skeleton({ className, width = "100%", height = 16, style }: Skel
   return (
     <Animated.View
       style={{ opacity, width: style?.width ?? width, height }}
-      className={cn("rounded-lg bg-gray-200", className)}
+      className={cn("rounded-lg bg-clay-inset/80", className)}
     />
   );
 }
 
 export function GrantCardSkeleton() {
   return (
-    <View className="mx-4 mb-3 rounded-2xl border border-gray-100 bg-white p-4">
+    <ClaySurface variant="raised" className="mx-4 mb-3 rounded-[24px] p-4">
       <Skeleton height={20} className="mb-2" style={{ width: "75%" }} />
       <Skeleton height={14} className="mb-3" style={{ width: "50%" }} />
       <View className="flex-row gap-3">
         <Skeleton height={12} width={80} />
         <Skeleton height={12} width={100} />
       </View>
-    </View>
+    </ClaySurface>
   );
 }
 

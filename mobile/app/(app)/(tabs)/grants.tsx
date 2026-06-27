@@ -15,6 +15,7 @@ import type { GrantListItem } from "@fundingpro/api-types";
 import { GrantCard } from "../../../components/design/GrantCard";
 import { SearchBar } from "../../../components/design/SearchBar";
 import { GrantListSkeleton } from "../../../components/design/Skeleton";
+import { Card } from "../../../components/ui/Card";
 import { Screen } from "../../../components/ui/Screen";
 import { ErrorState } from "../../../components/ui/States";
 import { Button } from "../../../components/ui/Button";
@@ -116,7 +117,7 @@ export default function GrantsTab() {
   if (grantsQuery.isLoading && !grantsQuery.data) {
     return (
       <Screen title="Гранты">
-        <View className="px-4 pt-3 pb-2 bg-funding-light border-b border-gray-100">
+        <View className="px-4 pt-3 pb-2 bg-clay-canvas border-b border-clay-inset/40">
           <SearchBar value={searchInput} onChangeText={setSearchInput} placeholder="Поиск…" />
         </View>
         <GrantListSkeleton count={6} />
@@ -131,8 +132,8 @@ export default function GrantsTab() {
   }
 
   const stickyHeader = (
-    <View className="px-4 pb-3 pt-1 bg-funding-light border-b border-gray-100">
-      <View className="rounded-2xl border border-gray-100 bg-white p-4 mb-0">
+    <View className="px-4 pb-3 pt-1 bg-clay-canvas border-b border-clay-inset/40">
+      <Card className="p-4 mb-0">
         <View className="flex-row gap-2 mb-4">
           {(["active", "all"] as const).map((mode) => (
             <Pressable
@@ -144,7 +145,7 @@ export default function GrantsTab() {
               className={`px-4 py-2 rounded-xl border ${
                 listMode === mode
                   ? "bg-funding-green border-funding-green"
-                  : "bg-funding-light border-gray-200"
+                  : "bg-clay-surface border-clay-inset/60"
               }`}
             >
               <Text
@@ -169,7 +170,7 @@ export default function GrantsTab() {
           <Pressable
             onPress={() => setShowExpired((value) => !value)}
             className={`self-start px-3 py-2 rounded-xl border mb-3 ${
-              showExpired ? "bg-amber-50 border-amber-200" : "bg-funding-light border-gray-200"
+              showExpired ? "bg-amber-50 border-amber-200" : "bg-clay-surface border-clay-inset/60"
             }`}
           >
             <Text className={`text-xs font-medium ${showExpired ? "text-amber-700" : "text-gray-500"}`}>
@@ -187,7 +188,7 @@ export default function GrantsTab() {
                 className={`px-3 py-1.5 rounded-full ${
                   activeSector === sector
                     ? "bg-funding-green"
-                    : "bg-funding-light border border-gray-200"
+                    : "bg-clay-surface border border-clay-inset/60"
                 }`}
               >
                 <Text
@@ -201,7 +202,7 @@ export default function GrantsTab() {
             ))}
           </View>
         </ScrollView>
-      </View>
+      </Card>
 
       <Text className="text-sm text-gray-500 mt-3 mb-1">
         {listMode === "active" ? (

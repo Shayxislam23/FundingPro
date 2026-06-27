@@ -17,12 +17,12 @@ export default function MoreTab() {
   const { signOut } = useAuth();
 
   return (
-    <SafeAreaView className="flex-1 bg-funding-light">
-      <ScrollView className="p-4">
+    <SafeAreaView className="flex-1 bg-clay-canvas">
+      <ScrollView className="p-4" contentContainerClassName="pb-28">
         <Text className="text-2xl font-black text-funding-black mb-4">Ещё</Text>
         {MENU.map((item) => (
           <Link key={item.href} href={item.href as never} asChild>
-            <Pressable className="py-4 border-b border-gray-100">
+            <Pressable className="py-4 border-b border-clay-inset/40">
               <Text className="text-base text-funding-black">{item.label}</Text>
             </Pressable>
           </Link>

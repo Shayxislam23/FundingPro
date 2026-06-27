@@ -42,7 +42,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (isLoading || !carouselChecked) {
     return (
-      <View className="flex-1 items-center justify-center bg-funding-light">
+      <View className="flex-1 items-center justify-center bg-clay-canvas">
         <ActivityIndicator color="#008A2E" size="large" />
       </View>
     );

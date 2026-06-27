@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, TextInput, View } from "react-native";
+import { ClaySurface } from "../clay/ClaySurface";
 import { cn } from "../cn";
 
 type SearchBarProps = {
@@ -18,28 +19,30 @@ export function SearchBar({
   className,
 }: SearchBarProps) {
   return (
-    <View className={cn("flex-row items-center rounded-xl border border-gray-200 bg-white px-3", className)}>
-      <Ionicons name="search" size={18} color="#9CA3AF" />
-      <TextInput
-        className="flex-1 py-3 px-2 text-funding-black"
-        placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
-        value={value}
-        onChangeText={onChangeText}
-        autoCorrect={false}
-        returnKeyType="search"
-      />
-      {value.length > 0 && (
-        <Pressable
-          onPress={() => {
-            onChangeText("");
-            onClear?.();
-          }}
-          hitSlop={8}
-        >
-          <Ionicons name="close-circle" size={18} color="#9CA3AF" />
-        </Pressable>
-      )}
-    </View>
+    <ClaySurface variant="inset" radius="input" className={cn("overflow-hidden", className)}>
+      <View className="flex-row items-center px-3">
+        <Ionicons name="search" size={18} color="#6B7F70" />
+        <TextInput
+          className="flex-1 py-3 px-2 text-funding-black bg-transparent"
+          placeholder={placeholder}
+          placeholderTextColor="#6B7F70"
+          value={value}
+          onChangeText={onChangeText}
+          autoCorrect={false}
+          returnKeyType="search"
+        />
+        {value.length > 0 && (
+          <Pressable
+            onPress={() => {
+              onChangeText("");
+              onClear?.();
+            }}
+            hitSlop={8}
+          >
+            <Ionicons name="close-circle" size={18} color="#6B7F70" />
+          </Pressable>
+        )}
+      </View>
+    </ClaySurface>
   );
 }

@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
+import { ClaySurface } from "../clay/ClaySurface";
 import { cn } from "../cn";
 
 type OtpInputProps = {
@@ -38,16 +39,18 @@ export function OtpInput({ value, onChange, length = 6, autoFocus, className }: 
         className="flex-row justify-between gap-2"
       >
         {digits.map((digit, index) => (
-          <View
+          <ClaySurface
             key={index}
+            variant="inset"
+            radius="input"
+            active={index === value.length}
             className={cn(
-              "flex-1 aspect-square max-w-[48px] rounded-xl border-2 items-center justify-center bg-white",
-              digit.trim() ? "border-funding-green" : "border-gray-200",
-              index === value.length && "border-funding-accent"
+              "flex-1 aspect-square max-w-[48px] items-center justify-center",
+              digit.trim() && "border border-funding-green/40"
             )}
           >
             <Text className="text-xl font-bold text-funding-black">{digit.trim() || ""}</Text>
-          </View>
+          </ClaySurface>
         ))}
       </Pressable>
     </View>

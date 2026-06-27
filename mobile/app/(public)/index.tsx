@@ -4,13 +4,14 @@ import { Link } from "expo-router";
 import { useState } from "react";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ClaySurface } from "../../components/clay/ClaySurface";
+import { Button } from "../../components/ui/Button";
 import { DemoBanner } from "../../components/design/DemoBanner";
 import { FundingProLogo } from "../../components/design/FundingProLogo";
 import { GradientHero } from "../../components/design/GradientHero";
 import { GrantCard } from "../../components/design/GrantCard";
 import { SectionHeader } from "../../components/design/SectionHeader";
 import { StatPill } from "../../components/design/StatPill";
-import { Button } from "../../components/ui/Button";
 import { api } from "../../lib/api/client";
 import {
   getLandingDonorStats,
@@ -52,7 +53,7 @@ export default function PublicLanding() {
   const refreshing = grantsQuery.isRefetching || donorsQuery.isRefetching || statsQuery.isRefetching;
 
   return (
-    <SafeAreaView className="flex-1 bg-funding-light">
+    <SafeAreaView className="flex-1 bg-clay-canvas">
       <ScrollView
         className="flex-1"
         refreshControl={
@@ -114,7 +115,7 @@ export default function PublicLanding() {
                     <View
                       key={grant.id}
                       className={`h-1.5 rounded-full ${
-                        index === featuredIndex ? "w-4 bg-funding-green" : "w-1.5 bg-gray-300"
+                        index === featuredIndex ? "w-4 bg-funding-green" : "w-1.5 bg-clay-inset"
                       }`}
                     />
                   ))}
@@ -127,24 +128,30 @@ export default function PublicLanding() {
           <View className="flex-row flex-wrap gap-3">
             {QUICK_LINKS.map((link) => (
               <Link key={link.href} href={link.href as never} asChild>
-                <View className="w-[47%] rounded-2xl border border-gray-100 bg-white p-4 shadow-card active:opacity-80">
+                <ClaySurface
+                  variant="raised"
+                  className="w-[47%] rounded-[24px] p-4 active:opacity-80"
+                >
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-2 flex-1">
-                      <View className="w-8 h-8 rounded-lg bg-funding-light-green items-center justify-center">
+                      <ClaySurface
+                        variant="inset"
+                        className="w-8 h-8 rounded-lg items-center justify-center"
+                      >
                         <Ionicons name={link.icon} size={16} color="#008A2E" />
-                      </View>
+                      </ClaySurface>
                       <Text className="font-semibold text-funding-black text-sm flex-1" numberOfLines={2}>
                         {link.label}
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
                   </View>
-                </View>
+                </ClaySurface>
               </Link>
             ))}
           </View>
 
-          <View className="mt-10 mb-8 pt-6 border-t border-gray-200">
+          <View className="mt-10 mb-8 pt-6 border-t border-clay-inset/60">
             <View className="flex-row flex-wrap gap-x-4 gap-y-2 justify-center">
               <Link href="/(public)/about">
                 <Text className="text-sm text-gray-500">О платформе</Text>

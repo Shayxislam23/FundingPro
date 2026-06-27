@@ -8,6 +8,7 @@ import { DemoBanner } from "../../../components/design/DemoBanner";
 import { GrantCard } from "../../../components/design/GrantCard";
 import { SearchBar } from "../../../components/design/SearchBar";
 import { GrantListSkeleton } from "../../../components/design/Skeleton";
+import { ClaySurface } from "../../../components/clay/ClaySurface";
 import { Button } from "../../../components/ui/Button";
 import { Screen } from "../../../components/ui/Screen";
 import { EmptyState, ErrorState } from "../../../components/ui/States";
@@ -85,15 +86,17 @@ export default function PublicGrantsScreen() {
     <View className="px-5 pb-3 pt-1">
       {fromFallback ? <DemoBanner className="mb-3" /> : null}
       <SearchBar value={search} onChangeText={setSearch} placeholder="Поиск грантов…" />
-      <Pressable
-        onPress={() => setUzOnly((v) => !v)}
-        className={`mt-3 self-start px-3 py-1.5 rounded-full border ${
-          uzOnly ? "bg-funding-green border-funding-green" : "bg-white border-gray-200"
-        }`}
-      >
-        <Text className={`text-xs font-medium ${uzOnly ? "text-white" : "text-gray-600"}`}>
-          🇺🇿 Узбекистан
-        </Text>
+      <Pressable onPress={() => setUzOnly((v) => !v)}>
+        <ClaySurface
+          variant={uzOnly ? "pressed" : "raised"}
+          style={uzOnly ? { backgroundColor: "#008A2E", borderColor: "#008A2E" } : undefined}
+          radius="pill"
+          className="mt-3 self-start px-3 py-1.5"
+        >
+          <Text className={`text-xs font-medium ${uzOnly ? "text-white" : "text-gray-600"}`}>
+            🇺🇿 Узбекистан
+          </Text>
+        </ClaySurface>
       </Pressable>
     </View>
   );

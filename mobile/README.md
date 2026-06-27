@@ -106,17 +106,29 @@ eas build --profile development --platform ios
 |---------|----------|
 | `npm run start` | Expo dev server |
 | `npm run typecheck` | TypeScript check |
-| `npm run lint` | TypeScript check (alias) |
+| `npm run lint` | ESLint |
 | `npm run android` | Android emulator |
 | `npm run ios` | iOS simulator |
 
 Из корня monorepo:
 
 ```bash
-npm run mobile:start
+npm run mobile:dev              # Metro --dev-client --clear (Projects path)
+npm run mobile:rebuild-ios      # expo run:ios dev client rebuild
+npm run convex:seed:prod        # prod Convex seed + verify (needs CONVEX_DEPLOY_KEY)
+npm run mobile:start            # обычный expo start
 npm run mobile:typecheck
-npm run contract:mobile-api   # требует запущенный fundingpro dev server
+npm run contract:mobile-api     # требует запущенный fundingpro dev server
 ```
+
+### Dev workflow (Metro → Reload → seed → rebuild)
+
+1. **Metro:** `npm run mobile:dev` — поднимает dev server для development build (не Expo Go).
+2. **Reload:** в dev client на устройстве/симуляторе — Reload JS (⌘R в iOS simulator).
+3. **Prod seed (опционально):** `npm run convex:seed:prod` — только с `CONVEX_DEPLOY_KEY` в `fundingpro/.env.production.local`.
+4. **Native rebuild (опционально):** `npm run mobile:rebuild-ios` — после добавления native-модулей (`expo-linear-gradient`, `expo-haptics`, …).
+
+Скрипты `mobile:dev` и `mobile:rebuild-ios` предпочитают ASCII-путь `~/Projects/FundingPro/mobile` (rsync из основного репозитория). Переопределение: `FUNDINGPRO_MOBILE_DIR=/path/to/mobile`.
 
 ## Deep links
 
@@ -176,6 +188,30 @@ Seed создаёт **5 доноров** (UNDP, EU, GIZ, World Bank, Swiss Embas
 3. Проверка: `curl https://www.fundingpro.uz/api/v1/plans` — ожидается 6 планов, не пустой массив.
 
 До seed prod API отдаёт пустые `plans`/`donors` — mobile показывает fallback из `lib/public-fallback.ts`.
+
+## Daily dev workflow (monorepo)
+
+From the **repository root** (recommended order):
+
+1. **Metro (dev client)** — `npm run mobile:dev`  
+   Runs `expo start --dev-client --clear`. Uses `~/Projects/FundingPro/mobile` when that directory exists (ASCII path for native tooling); otherwise the repo `mobile/` folder.
+
+2. **Reload JS** — open the installed dev client on simulator/device and reload (shake menu → Reload, or `r` in the Metro terminal).
+
+3. **Optional: production catalog seed** — `npm run convex:seed:prod`  
+   Requires `CONVEX_DEPLOY_KEY` in `fundingpro/.env.production.local`. Seeds Convex and verifies `https://www.fundingpro.uz/api/v1/plans`.
+
+4. **Optional: rebuild iOS dev client** — `npm run mobile:rebuild-ios`  
+   Needed after adding/updating native modules (`expo-linear-gradient`, haptics, sharing, etc.). Same Projects-path fallback as Metro.
+
+| Root script | Script file |
+|-------------|-------------|
+| `npm run mobile:dev` | `mobile/scripts/dev-client.sh` |
+| `npm run mobile:rebuild-ios` | `mobile/scripts/rebuild-ios-dev-client.sh` |
+| `npm run convex:seed:prod` | `fundingpro/scripts/seed-production-safe.mjs` |
+
+Override Projects copy: `PROJECTS_MOBILE=/path/to/mobile npm run mobile:dev`.
+
 
 ## Dev client vs Metro-only JS
 

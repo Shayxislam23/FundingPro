@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { Text } from "react-native";
+import { ClaySurface } from "../clay/ClaySurface";
 import { cn } from "../cn";
 
 type DonorAvatarProps = {
@@ -18,9 +19,9 @@ const AVATAR_COLORS = [
 ] as const;
 
 const SIZES = {
-  sm: { box: "w-10 h-10 rounded-lg", text: "text-sm" },
-  md: { box: "w-12 h-12 rounded-xl", text: "text-base" },
-  lg: { box: "w-14 h-14 rounded-2xl", text: "text-lg" },
+  sm: { box: "w-10 h-10", radius: 12, text: "text-sm" },
+  md: { box: "w-12 h-12", radius: 14, text: "text-base" },
+  lg: { box: "w-14 h-14", radius: 16, text: "text-lg" },
 } as const;
 
 function hashString(value: string): number {
@@ -45,15 +46,12 @@ export function DonorAvatar({ name, nameRu, size = "md", className }: DonorAvata
   const initial = getInitial(name, nameRu);
 
   return (
-    <View
-      className={cn(
-        sizing.box,
-        palette.bg,
-        "items-center justify-center shrink-0",
-        className
-      )}
+    <ClaySurface
+      variant="raised"
+      radius={sizing.radius}
+      className={cn(sizing.box, palette.bg, "items-center justify-center shrink-0", className)}
     >
       <Text className={cn(sizing.text, palette.text, "font-bold")}>{initial}</Text>
-    </View>
+    </ClaySurface>
   );
 }

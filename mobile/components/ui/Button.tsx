@@ -1,5 +1,7 @@
 import { Pressable, Text, type PressableProps } from "react-native";
+import { getClayStyle, getPrimaryButtonClayStyle } from "../../lib/clay-styles";
 import { safeImpactAsync } from "../../lib/haptics";
+import { ClaySurface } from "../clay/ClaySurface";
 import { cn } from "../cn";
 
 type ButtonProps = PressableProps & {
@@ -20,13 +22,7 @@ export function Button({
   onPress,
   ...props
 }: ButtonProps) {
-  const base = "min-h-[48px] rounded-xl px-4 py-3 items-center justify-center active:scale-[0.98]";
-  const variants = {
-    primary: "bg-funding-green shadow-button",
-    secondary: "border border-funding-green bg-white",
-    ghost: "bg-transparent",
-    danger: "bg-red-600 shadow-elevated",
-  };
+  const base = "min-h-[48px] rounded-[18px] px-4 py-3 items-center justify-center";
   const textVariants = {
     primary: "text-white font-semibold text-body",
     secondary: "text-funding-green font-semibold text-body",
@@ -41,14 +37,62 @@ export function Button({
     onPress?.(event);
   }
 
+  if (variant === "ghost") {
+    return (
+      <Pressable
+        className={cn(base, (disabled || loading) && "opacity-60", className)}
+        disabled={disabled || loading}
+        onPress={handlePress}
+        {...props}
+      >
+        <Text className={textVariants.ghost}>{loading ? "…" : title}</Text>
+      </Pressable>
+    );
+  }
+
+  if (variant === "primary") {
+    return (
+      <Pressable
+        className={cn(base, (disabled || loading) && "opacity-60", className)}
+        disabled={disabled || loading}
+        onPress={handlePress}
+        style={({ pressed }) => [
+          getPrimaryButtonClayStyle(),
+          { borderRadius: 18 },
+          pressed ? { opacity: 0.92, transform: [{ scale: 0.98 }] } : null,
+        ]}
+        {...props}
+      >
+        <Text className={textVariants.primary}>{loading ? "…" : title}</Text>
+      </Pressable>
+    );
+  }
+
+  if (variant === "danger") {
+    return (
+      <Pressable
+        className={cn(base, "bg-red-600", (disabled || loading) && "opacity-60", className)}
+        disabled={disabled || loading}
+        onPress={handlePress}
+        style={{ borderRadius: 18 }}
+        {...props}
+      >
+        <Text className={textVariants.danger}>{loading ? "…" : title}</Text>
+      </Pressable>
+    );
+  }
+
   return (
-    <Pressable
-      className={cn(base, variants[variant], (disabled || loading) && "opacity-60", className)}
-      disabled={disabled || loading}
-      onPress={handlePress}
-      {...props}
-    >
-      <Text className={textVariants[variant]}>{loading ? "…" : title}</Text>
-    </Pressable>
+    <ClaySurface variant="raised" radius="button" className={cn("overflow-hidden", className)}>
+      <Pressable
+        className={cn(base, (disabled || loading) && "opacity-60")}
+        disabled={disabled || loading}
+        onPress={handlePress}
+        style={({ pressed }) => (pressed ? getClayStyle("pressed") : undefined)}
+        {...props}
+      >
+        <Text className={textVariants.secondary}>{loading ? "…" : title}</Text>
+      </Pressable>
+    </ClaySurface>
   );
 }

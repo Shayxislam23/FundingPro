@@ -62,10 +62,8 @@ export default function PricingScreen() {
           plans.map((plan) => (
             <Card
               key={plan.id}
-              className={`mb-4 shadow-card ${
-                plan.highlighted
-                  ? "border-2 border-funding-green bg-funding-light-green/40"
-                  : "border border-gray-100"
+              className={`mb-4 ${
+                plan.highlighted ? "border-2 border-funding-green bg-funding-light-green/40" : ""
               }`}
             >
               {plan.highlighted && (

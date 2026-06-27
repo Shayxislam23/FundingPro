@@ -1,5 +1,6 @@
 import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { ClaySurface } from "../clay/ClaySurface";
 import { cn } from "../cn";
 
 type StatPillProps = {
@@ -11,19 +12,14 @@ type StatPillProps = {
 
 export function StatPill({ icon, value, label, className }: StatPillProps) {
   return (
-    <View
-      className={cn(
-        "flex-1 min-w-[45%] rounded-2xl bg-white border border-gray-100 p-4 shadow-card",
-        className
-      )}
-    >
+    <ClaySurface variant="raised" radius="card" className={cn("flex-1 min-w-[45%] p-4", className)}>
       <View className="flex-row items-center gap-2 mb-1.5">
-        <View className="w-8 h-8 rounded-lg bg-funding-light-green items-center justify-center">
+        <ClaySurface variant="inset" radius="pill" className="w-8 h-8 items-center justify-center">
           <Ionicons name={icon} size={16} color="#008A2E" />
-        </View>
+        </ClaySurface>
         <Text className="text-title font-black text-funding-black">{value}</Text>
       </View>
-      <Text className="text-caption text-gray-500">{label}</Text>
-    </View>
+      <Text className="text-caption text-funding-text-muted-light">{label}</Text>
+    </ClaySurface>
   );
 }

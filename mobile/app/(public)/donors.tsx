@@ -59,7 +59,7 @@ export default function DonorsScreen() {
           donors.map((d) => {
             const displayName = d.name_ru ?? d.name;
             return (
-              <Card key={d.id} className="mb-3 shadow-card">
+              <Card key={d.id} className="mb-3">
                 <View className="flex-row items-start gap-3">
                   <DonorAvatar name={d.name} nameRu={d.name_ru} />
                   <View className="flex-1">

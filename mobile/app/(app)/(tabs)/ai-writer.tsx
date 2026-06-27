@@ -243,7 +243,7 @@ export default function AiWriterTab() {
                   key={key}
                   onPress={() => setActiveSection(key)}
                   className={`mr-2 rounded-lg px-3 py-2 border ${
-                    activeSection === key ? "border-funding-green bg-green-50" : "border-gray-200"
+                    activeSection === key ? "border-funding-green bg-green-50" : "border-clay-inset bg-clay-surface"
                   }`}
                 >
                   <Text

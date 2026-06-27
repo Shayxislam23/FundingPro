@@ -45,6 +45,12 @@ jobs:
       - name: Deploy readiness check
         run: npm run deploy:check
 
+      - name: Payments and App Links env (informational)
+        continue-on-error: true
+        run: |
+          npm run payments:golive-check || true
+          npm run app-links:check || true
+
       - name: Build
         run: npm run build
 

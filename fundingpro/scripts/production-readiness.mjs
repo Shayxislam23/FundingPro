@@ -39,10 +39,25 @@ for (const [label, args] of steps) {
 console.log("\n→ uzum checklist (informational — may show blockers before contract)...");
 spawnSync("npm", ["run", "uzum:check"], { cwd: root, stdio: "inherit", shell: true });
 
+console.log("\n→ app links env check...");
+spawnSync("npm", ["run", "app-links:check"], { cwd: root, stdio: "inherit", shell: true });
+
+console.log("\n→ payments go-live env check...");
+spawnSync("npm", ["run", "payments:golive-check"], { cwd: root, stdio: "inherit", shell: true });
+
+console.log("\n→ payments go-live env (informational)...");
+spawnSync("npm", ["run", "payments:golive-check"], { cwd: root, stdio: "inherit", shell: true });
+
+console.log("\n→ app links env (recommended — does not fail readiness)...");
+spawnSync("npm", ["run", "app-links:check"], { cwd: root, stdio: "inherit", shell: true });
+
 console.log("\n--- Manual steps (cannot automate without your credentials) ---");
 console.log("  • npx convex dev && npm run convex:seed");
+console.log("  • npm run convex:seed:prod  (production catalog — docs/PROD-SEED.md)");
 console.log("  • Clerk Dashboard → JWT template `convex` + CLERK_JWT_ISSUER_DOMAIN in Convex env");
 console.log("  • npm run deploy:env  (after .env.production.local)");
+console.log("  • Vercel: APPLE_TEAM_ID + ANDROID_RELEASE_SHA256 → npm run app-links:check -- --live");
+console.log("  • Payments: sandbox uzum → payme → click, then PAYMENTS_ENABLED=true");
 console.log("  • vercel --prod  OR  npm run deploy:production");
 console.log("  • Growth: TELEGRAM_* + analytics keys → docs/GROWTH_PLAYBOOK.md");
 console.log("  • Pilot: docs/POST_UZUM_PILOT.md + npm run pilot:check");

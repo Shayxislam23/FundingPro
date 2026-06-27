@@ -9,7 +9,25 @@ See also: [`EAS-PREVIEW.md`](./EAS-PREVIEW.md), [`RELEASE.md`](./RELEASE.md), [`
 - [ ] `eas login` (Expo account with project access)
 - [ ] `app.json` → `extra.eas.projectId` is a real UUID (linked project)
 - [ ] EAS Secrets: `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, `EXPO_PUBLIC_API_URL` (or set in `eas.json` preview env)
-- [ ] Vercel production: `APPLE_TEAM_ID`, `ANDROID_RELEASE_SHA256` set → `.well-known` routes return real values (no `X-App-Links-Config: incomplete`)
+- [ ] Vercel production env (see `fundingpro/.env.production.example`):
+
+| Vercel variable | Purpose |
+|-----------------|---------|
+| `APPLE_TEAM_ID` | iOS AASA `appIDs` — 10-char Apple Developer Team ID |
+| `ANDROID_RELEASE_SHA256` | Android `assetlinks.json` release cert fingerprint(s) |
+| `IOS_BUNDLE_ID` | Optional (default `uz.fundingpro.app` from `mobile/app.json`) |
+| `ANDROID_PACKAGE` | Optional (default `uz.fundingpro.app`) |
+
+- [ ] App Links verification (from monorepo root or `fundingpro/`):
+
+```bash
+cd fundingpro
+npm run app-links:check
+SMOKE_BASE_URL=https://www.fundingpro.uz npm run app-links:check -- --live
+```
+
+Expected when configured: HTTP 200 on both `.well-known` routes, **no** `X-App-Links-Config: incomplete` header.
+
 - [ ] Optional prod catalog: `CONVEX_DEPLOY_KEY` → `npm run convex:seed:prod` from monorepo root
 
 ## Build (local — run when ready)
@@ -34,7 +52,8 @@ Install the build on a **physical device** (push + App Links require real device
 
 - [ ] Email OTP login completes
 - [ ] Custom scheme: `fundingpro://auth/callback` (Clerk redirect) → lands on home
-- [ ] App Link (after `.well-known` configured): open `https://www.fundingpro.uz/mobile/auth/callback` via Notes/Safari → app opens, session established
+- [ ] App Link (after Vercel env + live check): open `https://www.fundingpro.uz/mobile/auth/callback` via Notes/Safari → app opens, session established
+- [ ] Verify hosting first: `SMOKE_BASE_URL=https://www.fundingpro.uz npm run app-links:check -- --live` (from `fundingpro/`)
 - [ ] Logout → login again
 
 ### Catalog (requires prod seed or dev Convex)

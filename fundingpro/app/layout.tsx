@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { ConvexClerkProvider } from "@/components/providers/ConvexClerkProvider";
+import { siteConfig } from "@/lib/seo/site";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -14,8 +15,6 @@ const geistMono = localFont({
   variable: "--font-geist-mono",
   weight: "100 900",
 });
-
-import { siteConfig } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),

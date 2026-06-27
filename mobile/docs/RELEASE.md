@@ -1,4 +1,13 @@
-# FundingPro Mobile — Release Checklist (v0.3.0)
+# FundingPro Mobile — Release Checklist (v0.4.0)
+
+## What's new in v0.4.0
+
+- **Clay-lite UI**: canvas `#E8F0EA`, clay cards/pills, floating tab dock, hero gradient without clay overlay
+- **App Links**: iOS `associatedDomains` + Android `intentFilters` for `https://www.fundingpro.uz/mobile/*`
+- **Account deletion**: in-app request from profile (support ticket flow)
+- **Web SEO**: metadata + JSON-LD on landing, grants, donors, pricing; `.well-known` routes on web
+
+See `mobile/docs/CLAY-VERIFY.md` for local UI verification and `mobile/docs/EAS-PREVIEW.md` for preview builds.
 
 ## What's new in v0.3.0
 
@@ -43,7 +52,7 @@ Deep link handler validates `fundingpro://auth/callback` and Clerk session befor
 - AI disclosure in-app: Dashboard → AI → «Раскрытие AI»
 - Payment terms shown before checkout
 - Sign in with Email OTP (no social login required for review)
-- Account deletion: contact support (document in App Review notes if no in-app delete yet)
+- Account deletion: in-app request from Profile → «Запросить удаление аккаунта» (support ticket)
 
 ## Build commands
 
@@ -68,6 +77,6 @@ maestro test mobile/maestro/
 
 ## Versioning
 
-- Current release: **0.3.0** (`app.json`, `package.json`)
+- Current release: **0.4.0** (`app.json`, `package.json`)
 - `app.json` version + EAS `autoIncrement` for production builds
 - `X-Client-Version: mobile-<version>` sent on API requests

@@ -16,8 +16,17 @@ EAS project is linked in `app.json` (`extra.eas.projectId`).
 ```bash
 cd mobile
 eas secret:create --scope project --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value "pk_live_…"
-eas secret:create --scope project --name EXPO_PUBLIC_API_URL --value "https://www.fundingpro.uz"
+eas secret:create --scope project --name EXPO_PUBLIC_API_URL --value "https://www.fundingpro.uz/api/v1"
 ```
+
+Verify (logged in as project owner):
+
+```bash
+eas secret:list
+# or: eas env:list
+```
+
+As of last check: `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` is set; add `EXPO_PUBLIC_API_URL` if missing (preview profile also sets API URL in `eas.json` env).
 
 Optional: `EXPO_PUBLIC_SENTRY_DSN`
 

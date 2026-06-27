@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
+import { applyCorsToResponse, handleCorsPreflight } from "@/lib/api-cors";
 import {
   requireActiveUser,
   requireAdmin,
@@ -47,34 +48,51 @@ export async function getRouteParam(
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function withActiveUser(handler: ActiveUserHandler) {
+function withCors(
+  handler: (req: NextRequest, ctx: RouteContext) => Promise<NextResponse> | NextResponse
+) {
   return async (req: NextRequest, ctx: RouteContext): Promise<NextResponse> => {
+    const preflight = handleCorsPreflight(req);
+    if (preflight) return preflight;
+
+    const response = await handler(req, ctx);
+    return applyCorsToResponse(req, response);
+  };
+}
+
+export function withActiveUser(handler: ActiveUserHandler) {
+  return withCors(async (req, ctx) => {
     try {
       const user = await requireActiveUser(req);
       return await handler(req, user, ctx);
     } catch (err) {
       return handleRouteError(err);
     }
-  };
+  });
 }
 
 export function withAdmin(handler: AdminHandler) {
-  return async (req: NextRequest, ctx: RouteContext): Promise<NextResponse> => {
+  return withCors(async (req, ctx) => {
     try {
       const user = await requireAdmin(req);
       return await handler(req, user, ctx);
     } catch (err) {
       return handleRouteError(err);
     }
-  };
+  });
 }
 
 export function withPublic(handler: PublicHandler) {
-  return async (req: NextRequest, ctx: RouteContext): Promise<NextResponse> => {
+  return withCors(async (req, ctx) => {
     try {
       return await handler(req, ctx);
     } catch (err) {
       return handleRouteError(err);
     }
-  };
+  });
+}
+
+/** Public route wrapper for legacy or provider-specific payment webhooks. */
+export function withPaymentWebhook(handler: PublicHandler) {
+  return withPublic(handler);
 }

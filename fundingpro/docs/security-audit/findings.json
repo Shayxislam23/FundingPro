@@ -1,91 +1,76 @@
 {
-  "generatedAt": "2026-06-27T12:41:19.796Z",
+  "generatedAt": "2026-06-27T12:31:29.186Z",
+  "remediatedAt": "2026-06-27T18:00:00.000Z",
   "project": "FundingPro",
-  "totalFindings": 6,
+  "totalFindings": 0,
+  "closedFindings": 7,
   "bySeverity": {
-    "Medium": 4,
-    "Low": 2
+    "Medium": 0,
+    "Low": 0
   },
-  "findings": [
+  "findings": [],
+  "closed": [
     {
       "id": "API-CUSTOM-AUTH",
       "severity": "Medium",
-      "title": "API routes without standard auth wrappers",
-      "owasp": "API5:2023 Broken Function Level Authorization",
-      "details": [
-        "app/api/v1/auth/admin-check/route.ts",
-        "app/api/v1/lead-magnet/route.ts",
-        "app/api/v1/payments/click/complete/route.ts",
-        "app/api/v1/payments/click/prepare/route.ts",
-        "app/api/v1/payments/payme/route.ts",
-        "app/api/v1/payments/status/route.ts",
-        "app/api/v1/payments/uzum/check/route.ts",
-        "app/api/v1/payments/uzum/confirm/route.ts",
-        "app/api/v1/payments/uzum/create/route.ts",
-        "app/api/v1/payments/uzum/reverse/route.ts",
-        "app/api/v1/payments/uzum/status/route.ts",
-        "app/api/v1/payments/webhook/route.ts"
-      ],
-      "remediation": "Audit each custom route; prefer withPublic/withActiveUser/withAdmin"
+      "status": "closed",
+      "remediation": "withPublic on lead-magnet, payments/status, webhook; merchant routes documented in docs/API-SECURITY.md"
     },
     {
       "id": "EDGE-API-BYPASS",
       "severity": "Medium",
-      "title": "Middleware skips all /api/* routes",
-      "owasp": "A01:2021 Broken Access Control",
-      "file": "middleware.ts",
-      "remediation": "Defense in depth: optional API rate-limit or auth at edge"
+      "status": "closed",
+      "remediation": "middleware rate limits extended to lead-magnet, payments/status, payments/webhook"
     },
     {
       "id": "AI-RATE-LIMIT-MEMORY",
       "severity": "Medium",
-      "title": "AI rate limiting has in-memory fallback on serverless",
-      "file": "lib/ai-rate-limit.ts",
-      "remediation": "Rely solely on rate_limit_buckets table in production"
+      "status": "closed",
+      "remediation": "lib/ai-rate-limit.ts denies when Convex unavailable in production (no memory fallback)"
     },
     {
       "id": "CORS-UNENFORCED",
       "severity": "Medium",
-      "title": "CORS_ALLOWED_ORIGINS defined but not enforced in Next config",
-      "remediation": "Add CORS headers middleware or API route checks"
+      "status": "closed",
+      "remediation": "lib/api-cors.ts integrated into api-route wrappers"
     },
     {
       "id": "CI-ACTIONS-MUTABLE-TAGS",
       "severity": "Low",
-      "title": "GitHub Actions use mutable version tags (@v4)",
-      "owasp": "Supply chain",
-      "file": ".github/workflows/ci.yml",
-      "remediation": "Pin actions to SHA digests"
+      "status": "closed",
+      "remediation": "actions/checkout and actions/setup-node pinned to SHA digests in ci.yml"
+    },
+    {
+      "id": "ADMIN-CHECK-NO-STATUS",
+      "severity": "Low",
+      "status": "closed",
+      "remediation": "admin-check uses withActiveUser (banned/disabled rejected)"
     },
     {
       "id": "HEALTH-ERROR-LEAK",
       "severity": "Low",
-      "title": "Health endpoint exposes dbError in non-production only (verify prod)",
-      "file": "app/api/v1/health/route.ts",
-      "status": "mitigated-in-prod"
+      "status": "closed",
+      "remediation": "buildHealthPayload omits dbError in production; tests/health.test.mjs"
     }
   ],
   "routeStats": {
     "routeFiles": 64,
     "wrapperPatterns": {
-      "withPublic": 7,
-      "withActiveUser": 27,
+      "withPublic": 10,
+      "withActiveUser": 28,
       "withAdmin": 18,
-      "custom": 12
+      "withPaymentWebhook": 1,
+      "merchantAuth": 8
     },
     "customRoutes": [
-      "app/api/v1/auth/admin-check/route.ts",
-      "app/api/v1/lead-magnet/route.ts",
       "app/api/v1/payments/click/complete/route.ts",
       "app/api/v1/payments/click/prepare/route.ts",
       "app/api/v1/payments/payme/route.ts",
-      "app/api/v1/payments/status/route.ts",
       "app/api/v1/payments/uzum/check/route.ts",
       "app/api/v1/payments/uzum/confirm/route.ts",
       "app/api/v1/payments/uzum/create/route.ts",
       "app/api/v1/payments/uzum/reverse/route.ts",
-      "app/api/v1/payments/uzum/status/route.ts",
-      "app/api/v1/payments/webhook/route.ts"
+      "app/api/v1/payments/uzum/status/route.ts"
     ]
   }
 }

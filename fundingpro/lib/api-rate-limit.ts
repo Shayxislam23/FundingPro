@@ -6,6 +6,7 @@ import {
   WINDOW_MS,
   checkAiIpRateLimitAsync,
   checkAuthRateLimitAsync,
+  checkRateLimitAsync,
   getRateLimitSnapshotAsync,
 } from "./ai-rate-limit";
 
@@ -36,7 +37,11 @@ function withRateLimitHeaders(response: NextResponse, headers: Record<string, st
   return response;
 }
 
-/** Edge/middleware rate limit for /api/v1/ai/* and /api/v1/auth/* (IP-based, in-memory). */
+const LEAD_MAGNET_MAX_REQUESTS = Number(process.env.LEAD_MAGNET_RATE_LIMIT_MAX ?? 10);
+const PUBLIC_PAYMENTS_STATUS_MAX = Number(process.env.PAYMENTS_STATUS_RATE_LIMIT_MAX ?? 60);
+const WEBHOOK_MAX_REQUESTS = Number(process.env.WEBHOOK_RATE_LIMIT_MAX ?? 30);
+
+/** Edge/middleware rate limit for selected /api/v1/* routes (IP-based, Convex-backed). */
 export async function applyApiRateLimit(req: NextRequest): Promise<NextResponse | null> {
   const { pathname } = req.nextUrl;
   const ip = getClientIp(req);
@@ -58,6 +63,45 @@ export async function applyApiRateLimit(req: NextRequest): Promise<NextResponse 
     const bucketKey = `ai-ip:${ip}`;
     const allowed = await checkAiIpRateLimitAsync(ip);
     const headers = await rateLimitHeaders(bucketKey, MAX_REQUESTS);
+    if (!allowed) {
+      return withRateLimitHeaders(
+        apiError("Too many requests. Try again later.", 429, "RATE_LIMITED"),
+        headers
+      );
+    }
+    return null;
+  }
+
+  if (pathname === "/api/v1/lead-magnet") {
+    const bucketKey = `lead-magnet:${ip}`;
+    const allowed = await checkRateLimitAsync(bucketKey, LEAD_MAGNET_MAX_REQUESTS);
+    const headers = await rateLimitHeaders(bucketKey, LEAD_MAGNET_MAX_REQUESTS);
+    if (!allowed) {
+      return withRateLimitHeaders(
+        apiError("Too many requests. Try again later.", 429, "RATE_LIMITED"),
+        headers
+      );
+    }
+    return null;
+  }
+
+  if (pathname === "/api/v1/payments/status") {
+    const bucketKey = `payments-status:${ip}`;
+    const allowed = await checkRateLimitAsync(bucketKey, PUBLIC_PAYMENTS_STATUS_MAX);
+    const headers = await rateLimitHeaders(bucketKey, PUBLIC_PAYMENTS_STATUS_MAX);
+    if (!allowed) {
+      return withRateLimitHeaders(
+        apiError("Too many requests. Try again later.", 429, "RATE_LIMITED"),
+        headers
+      );
+    }
+    return null;
+  }
+
+  if (pathname === "/api/v1/payments/webhook") {
+    const bucketKey = `payments-webhook:${ip}`;
+    const allowed = await checkRateLimitAsync(bucketKey, WEBHOOK_MAX_REQUESTS);
+    const headers = await rateLimitHeaders(bucketKey, WEBHOOK_MAX_REQUESTS);
     if (!allowed) {
       return withRateLimitHeaders(
         apiError("Too many requests. Try again later.", 429, "RATE_LIMITED"),

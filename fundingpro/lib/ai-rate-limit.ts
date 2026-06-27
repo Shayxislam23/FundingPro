@@ -96,7 +96,11 @@ async function getConvexRateLimitSnapshot(
 async function enforceRateLimit(key: string, maxRequests: number): Promise<boolean> {
   const convexResult = await checkConvexRateLimit(key, maxRequests);
   if (convexResult) return convexResult.allowed;
-  return checkMemoryRateLimit(key, maxRequests);
+  if (shouldUseMemoryFallback()) {
+    return checkMemoryRateLimit(key, maxRequests);
+  }
+  console.error("Rate limit backend unavailable; denying request", { key });
+  return false;
 }
 
 export function getRateLimitSnapshot(key: string, maxRequests: number): RateLimitSnapshot {
@@ -109,7 +113,11 @@ export async function getRateLimitSnapshotAsync(
 ): Promise<RateLimitSnapshot> {
   const convexSnapshot = await getConvexRateLimitSnapshot(key, maxRequests);
   if (convexSnapshot) return convexSnapshot;
-  return getMemoryRateLimitSnapshot(key, maxRequests);
+  if (shouldUseMemoryFallback()) {
+    return getMemoryRateLimitSnapshot(key, maxRequests);
+  }
+  const now = Date.now();
+  return { limit: maxRequests, remaining: 0, resetAt: now + WINDOW_MS };
 }
 
 export function checkAiRateLimit(userId: string): boolean {

@@ -1,11 +1,12 @@
 export const dynamic = "force-dynamic";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { withPaymentWebhook } from "@/lib/api-route";
 
 /**
  * POST /api/v1/payments/webhook
  * Deprecated — use /api/v1/payments/uzum/* for Uzum Merchant API.
  */
-export async function POST(_req: NextRequest) {
+export const POST = withPaymentWebhook(async () => {
   return NextResponse.json(
     {
       success: false,
@@ -14,4 +15,4 @@ export async function POST(_req: NextRequest) {
     },
     { status: 410 }
   );
-}
+});

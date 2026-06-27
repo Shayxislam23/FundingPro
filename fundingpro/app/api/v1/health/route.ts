@@ -3,12 +3,7 @@ import { NextResponse } from "next/server";
 import { withPublic } from "@/lib/api-route";
 import { grantsHealthCheck } from "@/lib/db/grants";
 import { getCompanyHealthLabel } from "@/lib/company-info";
-import {
-  getPaymentIntegrationStatus,
-  isPaymentsEnabled,
-  isUzumCheckoutConfigured,
-  isUzumMerchantConfigured,
-} from "@/lib/payments";
+import { buildHealthPayload, healthHttpStatus } from "@/lib/health-response";
 
 export const GET = withPublic(async () => {
   let dbStatus = "ok";
@@ -21,28 +16,12 @@ export const GET = withPublic(async () => {
     dbError = err instanceof Error ? err.message : "unknown";
   }
 
-  const status = dbStatus === "ok" ? "ok" : "degraded";
-  const isProduction = process.env.NODE_ENV === "production";
+  const payload = buildHealthPayload({
+    dbStatus,
+    dbError,
+    company: getCompanyHealthLabel(),
+    aiProvider: process.env.AI_PROVIDER ?? "mock",
+  });
 
-  return NextResponse.json(
-    {
-      status,
-      service: "FundingPro API",
-      version: "1.0.0-beta",
-      company: getCompanyHealthLabel(),
-      timestamp: new Date().toISOString(),
-      database: isProduction ? { status: dbStatus } : { status: dbStatus, error: dbError },
-      ai: isProduction ? { status: "ok" } : { provider: process.env.AI_PROVIDER ?? "mock" },
-      payments: isProduction
-        ? { enabled: isPaymentsEnabled() }
-        : {
-            enabled: isPaymentsEnabled(),
-            integrationStatus: getPaymentIntegrationStatus(),
-            provider: "uzum",
-            merchantConfigured: isUzumMerchantConfigured(),
-            checkoutConfigured: isUzumCheckoutConfigured(),
-          },
-    },
-    { status: status === "ok" ? 200 : 503 }
-  );
+  return NextResponse.json(payload, { status: healthHttpStatus(payload) });
 });

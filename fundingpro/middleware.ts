@@ -12,9 +12,12 @@ const isAuthRoute = createRouteMatcher(["/auth(.*)"]);
 const isRateLimitedApiRoute = createRouteMatcher([
   "/api/v1/ai/(.*)",
   "/api/v1/auth/(.*)",
+  "/api/v1/lead-magnet",
   "/api/v1/payments/payme",
   "/api/v1/payments/click/(.*)",
   "/api/v1/payments/uzum/(.*)",
+  "/api/v1/payments/status",
+  "/api/v1/payments/webhook",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
@@ -73,5 +76,8 @@ export const config = {
     "/api/v1/payments/payme",
     "/api/v1/payments/click/:path*",
     "/api/v1/payments/uzum/:path*",
+    "/api/v1/lead-magnet",
+    "/api/v1/payments/status",
+    "/api/v1/payments/webhook",
   ],
 };

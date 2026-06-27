@@ -58,11 +58,29 @@ export default function ProfileScreen() {
   });
 
   const deleteRequestMutation = useMutation({
-    mutationFn: () => api.createSupportTicket(DELETE_SUBJECT, DELETE_MESSAGE),
-    onSuccess: () => {
+    mutationFn: async () => {
+      try {
+        return await api.requestAccountDeletion();
+      } catch (primaryError) {
+        try {
+          await api.createSupportTicket(DELETE_SUBJECT, DELETE_MESSAGE);
+          return { fallback: true as const };
+        } catch {
+          throw primaryError;
+        }
+      }
+    },
+    onSuccess: (result) => {
+      if ("fallback" in result && result.fallback) {
+        Alert.alert(
+          "Запрос отправлен",
+          "API недоступен — мы получили обращение в поддержку. Удаление будет обработано в течение 30 дней."
+        );
+        return;
+      }
       Alert.alert(
-        "Запрос отправлен",
-        "Мы обработаем удаление аккаунта в течение 30 дней. Вы получите подтверждение на email."
+        "Запрос принят",
+        "Аккаунт помечен на удаление. Данные будут удалены в течение 30 дней. Вы получите подтверждение на email."
       );
     },
     onError: () => {

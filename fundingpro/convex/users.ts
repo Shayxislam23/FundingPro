@@ -231,3 +231,45 @@ export const resolveUserId = authedQuery({
     return ctx.user._id;
   },
 });
+
+export const requestAccountDeletion = authedMutation({
+  args: {},
+  returns: v.object({
+    status: v.literal("pending"),
+    requestedAt: v.string(),
+    userId: v.string(),
+  }),
+  handler: async (ctx) => {
+    if (ctx.user.deletionRequestedAt) {
+      throw new Error("Account deletion already requested");
+    }
+
+    const now = Date.now();
+    await ctx.db.patch("users", ctx.user._id, {
+      isActive: false,
+      deletionRequestedAt: now,
+      updatedAt: now,
+    });
+
+    const memberships = await ctx.db
+      .query("organizationMembers")
+      .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
+      .collect();
+
+    for (const membership of memberships) {
+      const org = await ctx.db.get("organizations", membership.organizationId);
+      if (org && !org.deletedAt) {
+        await ctx.db.patch("organizations", org._id, {
+          deletedAt: now,
+          updatedAt: now,
+        });
+      }
+    }
+
+    return {
+      status: "pending" as const,
+      requestedAt: new Date(now).toISOString(),
+      userId: externalUserId(ctx.user),
+    };
+  },
+});

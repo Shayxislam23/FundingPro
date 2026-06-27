@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { applyApiRateLimit } from "@/lib/api-rate-limit";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -8,8 +9,19 @@ const isProtectedRoute = createRouteMatcher([
 
 const isAuthRoute = createRouteMatcher(["/auth(.*)"]);
 
+const isRateLimitedApiRoute = createRouteMatcher([
+  "/api/v1/ai/(.*)",
+  "/api/v1/auth/(.*)",
+]);
+
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
+
+  if (isRateLimitedApiRoute(request)) {
+    const limited = await applyApiRateLimit(request);
+    if (limited) return limited;
+    return NextResponse.next();
+  }
 
   if (pathname.startsWith("/api/") || pathname.startsWith("/_next/")) {
     return NextResponse.next();
@@ -46,5 +58,14 @@ export default clerkMiddleware(async (auth, request) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/auth/:path*", "/dashboard", "/admin", "/auth"],
+  matcher: [
+    "/dashboard/:path*",
+    "/admin/:path*",
+    "/auth/:path*",
+    "/dashboard",
+    "/admin",
+    "/auth",
+    "/api/v1/ai/:path*",
+    "/api/v1/auth/:path*",
+  ],
 };

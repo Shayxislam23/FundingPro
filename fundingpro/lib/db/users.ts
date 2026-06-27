@@ -38,3 +38,15 @@ export async function getUserOrganization(authToken: string) {
 export async function getUserSubscription(accessToken: string) {
   return convexQuery(api.users.getSubscription, {}, accessToken);
 }
+
+export type AccountDeletionRequest = {
+  status: "pending";
+  requestedAt: string;
+  userId: string;
+};
+
+export async function requestAccountDeletion(
+  accessToken: string
+): Promise<AccountDeletionRequest> {
+  return convexMutation(api.users.requestAccountDeletion, {}, accessToken);
+}

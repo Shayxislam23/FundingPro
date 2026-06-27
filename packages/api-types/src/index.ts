@@ -106,14 +106,28 @@ export const listGrantsResultSchema = z.object({
 export type GrantListItem = z.infer<typeof grantListItemSchema>;
 export type ListGrantsResult = z.infer<typeof listGrantsResultSchema>;
 
+export const grantRequirementSchema = z.object({
+  id: z.string(),
+  requirement_type: z.string(),
+  text: z.string(),
+  required: z.boolean(),
+});
+
+export type GrantRequirement = z.infer<typeof grantRequirementSchema>;
+
+export const grantDetailDonorSchema = donorSchema.extend({
+  website: z.string().nullable().optional(),
+});
+
 export const grantDetailSchema = grantListItemSchema.extend({
-  description: z.string().nullable().optional(),
-  eligibility_criteria: z.string().nullable().optional(),
-  application_url: z.string().nullable().optional(),
-  requirements: z.array(z.unknown()).optional(),
+  description_ru: z.string().nullable().optional(),
+  grant_requirements: z.array(grantRequirementSchema).optional(),
+  donor: grantDetailDonorSchema,
 });
 
 export type GrantDetail = z.infer<typeof grantDetailSchema>;
+
+export { GRANT_DETAIL_FIXTURE } from "./fixtures";
 
 export const planSchema = z.object({
   id: z.string(),

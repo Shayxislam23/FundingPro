@@ -14,7 +14,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "setup": "npx convex dev",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --import tsx --test tests/*.test.mjs",
     "test:smoke": "node scripts/smoke-test.mjs",
     "test:integration": "node scripts/api-auth-integration.mjs",
     "test:e2e": "playwright test",

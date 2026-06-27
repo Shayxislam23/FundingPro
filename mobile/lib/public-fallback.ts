@@ -277,10 +277,22 @@ export function isFallbackGrantId(id: string): boolean {
 export function getFallbackGrantDetail(id: string): GrantDetail | null {
   const grant = FALLBACK_GRANTS.find((item) => item.id === id);
   if (!grant) return null;
+
+  const donor = FALLBACK_DONORS.find((item) => item.id === grant.donor.id);
   return {
     ...grant,
-    eligibility_criteria: null,
-    application_url: null,
-    requirements: [],
+    description_ru:
+      grant.id === "fallback-grant-climate"
+        ? "Поддержка проектов адаптации к изменению климата в регионе ЦА."
+        : grant.id === "fallback-grant-green-economy"
+          ? "Устойчивое сельское хозяйство и развитие зелёного бизнеса."
+          : grant.id === "fallback-grant-education"
+            ? "Цифровая трансформация школ и университетов."
+            : null,
+    grant_requirements: [],
+    donor: {
+      ...grant.donor,
+      website: donor?.website ?? null,
+    },
   };
 }

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalQuery } from "./_generated/server";
 import { authedMutation } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 
 const platformValidator = v.union(v.literal("ios"), v.literal("android"));
 
@@ -76,10 +77,11 @@ export const listForUser = internalQuery({
     })
   ),
   handler: async (ctx, args) => {
-    const rows = await ctx.db
-      .query("pushTokens")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
+    const rows = await paginateAll(
+      ctx.db
+        .query("pushTokens")
+        .withIndex("by_user", (q) => q.eq("userId", args.userId))
+    );
 
     return rows.map((row) => ({
       id: row._id,

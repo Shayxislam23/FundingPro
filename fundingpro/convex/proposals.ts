@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { authedMutation, authedQuery, adminQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 import type { Id } from "./_generated/dataModel";
 
 export const logRequest = authedMutation({
@@ -74,10 +75,11 @@ export const listProjects = authedQuery({
   ),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 10;
-    const projects = await ctx.db
-      .query("proposalProjects")
-      .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-      .collect();
+    const projects = await paginateAll(
+      ctx.db
+        .query("proposalProjects")
+        .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
+    );
     return projects
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, limit)
@@ -109,8 +111,9 @@ export const listAiLogs = adminQuery({
     limit: v.number(),
   }),
   handler: async (ctx, args) => {
-    const all = await ctx.db.query("aiRequests").collect();
-    all.sort((a, b) => b.createdAt - a.createdAt);
+    const all = await paginateAll(
+      ctx.db.query("aiRequests").withIndex("by_created").order("desc")
+    );
     const total = all.length;
     const offset = (args.page - 1) * args.limit;
     const slice = all.slice(offset, offset + args.limit);

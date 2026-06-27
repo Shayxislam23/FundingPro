@@ -16,7 +16,7 @@ export const getStatus = authedQuery({
     isComplete: v.boolean(),
   }),
   handler: async (ctx) => {
-    const [membership, docs, saved, apps, eligibility, proposals] = await Promise.all([
+    const [membership, doc, saved, app, eligibility, proposal] = await Promise.all([
       ctx.db
         .query("organizationMembers")
         .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
@@ -24,31 +24,31 @@ export const getStatus = authedQuery({
       ctx.db
         .query("documents")
         .withIndex("by_user_status", (q) => q.eq("userId", ctx.user._id).eq("status", "active"))
-        .collect(),
+        .first(),
       ctx.db
         .query("savedGrants")
         .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-        .collect(),
+        .first(),
       ctx.db
         .query("applications")
         .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-        .collect(),
+        .first(),
       ctx.db
         .query("eligibilityChecks")
         .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-        .collect(),
+        .first(),
       ctx.db
         .query("proposalProjects")
         .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-        .collect(),
+        .first(),
     ]);
 
     const steps = {
       profile: !!membership,
-      documents: docs.length > 0,
-      saved_grant: saved.length > 0 || apps.length > 0,
-      eligibility: eligibility.length > 0,
-      ai_proposal: proposals.length > 0,
+      documents: !!doc,
+      saved_grant: !!saved || !!app,
+      eligibility: !!eligibility,
+      ai_proposal: !!proposal,
     };
 
     const completedCount = Object.values(steps).filter(Boolean).length;

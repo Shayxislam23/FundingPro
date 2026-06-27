@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { adminMutation, adminQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 
@@ -153,10 +154,9 @@ export const listDonors = adminQuery({
     })
   ),
   handler: async (ctx) => {
-    const donors = await ctx.db
-      .query("donors")
-      .withIndex("by_active", (q) => q.eq("isActive", true))
-      .collect();
+    const donors = await paginateAll(
+      ctx.db.query("donors").withIndex("by_active", (q) => q.eq("isActive", true))
+    );
     return donors.map((d) => ({
       id: d._id,
       name: d.name,
@@ -200,10 +200,11 @@ export const listRequirements = adminQuery({
     })
   ),
   handler: async (ctx, args) => {
-    const rows = await ctx.db
-      .query("grantRequirements")
-      .withIndex("by_grant", (q) => q.eq("grantId", args.grantId as Id<"grants">))
-      .collect();
+    const rows = await paginateAll(
+      ctx.db
+        .query("grantRequirements")
+        .withIndex("by_grant", (q) => q.eq("grantId", args.grantId as Id<"grants">))
+    );
     return rows.map((r) => ({
       id: r._id,
       requirementType: r.requirementType,

@@ -12,6 +12,7 @@ import { v } from "convex/values";
 import { query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
+import { paginateAll } from "./lib/pagination";
 
 const grantListValidator = v.object({
   id: v.string(),
@@ -316,10 +317,11 @@ export const getById = query({
     if (!grant) return null;
 
     const donor = await ctx.db.get("donors", grant.donorId);
-    const requirements = await ctx.db
-      .query("grantRequirements")
-      .withIndex("by_grant", (q) => q.eq("grantId", grant!._id))
-      .collect();
+    const requirements = await paginateAll(
+      ctx.db
+        .query("grantRequirements")
+        .withIndex("by_grant", (q) => q.eq("grantId", grant!._id))
+    );
 
     const base = mapGrantListItem(grant, donor);
     return {

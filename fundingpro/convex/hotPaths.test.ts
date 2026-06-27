@@ -319,3 +319,216 @@ describe("adminStats.dashboard", () => {
     expect(funnel.withApplication).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe("support.listForUser", () => {
+  test("returns paginated tickets for the authenticated user", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `support|${Date.now()}`;
+    const clerkId = `clerk-support-${Date.now()}`;
+
+    await t.run(async (ctx) => {
+      const userId = await seedUser(ctx, tokenIdentifier, clerkId);
+      const now = Date.now();
+      await ctx.db.insert("supportTickets", {
+        userId,
+        subject: "Billing question",
+        message: "Need help",
+        status: "OPEN",
+        priority: "LOW",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const result = await authed.query(api.support.listForUser, { page: 1, limit: 10 });
+    expect(result.tickets.length).toBe(1);
+    expect(result.total).toBe(1);
+    expect(result.tickets[0]?.subject).toBe("Billing question");
+  });
+});
+
+describe("proposals paginated lists", () => {
+  test("listProjects returns user projects with limit", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `proposals|${Date.now()}`;
+    const clerkId = `clerk-proposals-${Date.now()}`;
+
+    await t.run(async (ctx) => {
+      const userId = await seedUser(ctx, tokenIdentifier, clerkId);
+      const now = Date.now();
+      await ctx.db.insert("proposalProjects", {
+        userId,
+        title: "Water project",
+        donorFormat: "un",
+        status: "DRAFT",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const projects = await authed.query(api.proposals.listProjects, { limit: 5 });
+    expect(projects.length).toBe(1);
+    expect(projects[0]?.title).toBe("Water project");
+  });
+
+  test("listAiLogs returns paginated admin logs", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `admin-ai|${Date.now()}`;
+    const clerkId = `clerk-admin-ai-${Date.now()}`;
+
+    await t.run(async (ctx) => {
+      await seedUser(ctx, tokenIdentifier, clerkId, "admin");
+      const memberUser = await seedUser(ctx, `member-ai|${Date.now()}`, `member-ai-${Date.now()}`);
+      await ctx.db.insert("aiRequests", {
+        userId: memberUser,
+        requestType: "proposal",
+        model: "gpt-4o-mini",
+        inputTokens: 10,
+        outputTokens: 20,
+        hasPersonalData: false,
+        redactionApplied: true,
+        status: "SUCCESS",
+        createdAt: Date.now(),
+      });
+    });
+
+    const authedAdmin = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const result = await authedAdmin.query(api.proposals.listAiLogs, { page: 1, limit: 10 });
+    expect(result.logs.length).toBeGreaterThanOrEqual(1);
+    expect(result.total).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("consents user queries", () => {
+  test("listForUser and hasCurrent reflect recorded consents", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `consent|${Date.now()}`;
+    const clerkId = `clerk-consent-${Date.now()}`;
+
+    await t.run(async (ctx) => {
+      const userId = await seedUser(ctx, tokenIdentifier, clerkId);
+      const now = Date.now();
+      for (const consentType of ["terms_of_service", "privacy_policy", "ai_disclosure"]) {
+        await ctx.db.insert("userConsents", {
+          userId,
+          consentType,
+          documentVersion: "2025-01",
+          createdAt: now,
+        });
+      }
+    });
+
+    const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const listed = await authed.query(api.consents.listForUser, {});
+    expect(listed.length).toBe(3);
+
+    const current = await authed.query(api.consents.hasCurrent, {});
+    expect(current.ok).toBe(true);
+    expect(current.missing).toEqual([]);
+  });
+});
+
+describe("applications.list", () => {
+  test("returns paginated user applications", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `apps-list|${Date.now()}`;
+    const clerkId = `clerk-apps-list-${Date.now()}`;
+    let grantId = "" as Id<"grants">;
+
+    await t.run(async (ctx) => {
+      const seeded = await seedCatalog(ctx);
+      grantId = seeded.grantId;
+      const userId = await seedUser(ctx, tokenIdentifier, clerkId);
+      await ctx.db.insert("applications", {
+        userId,
+        grantId,
+        status: "SAVED",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const result = await authed.query(api.applications.list, { page: 1, limit: 10 });
+    expect(result.applications.length).toBe(1);
+    expect(result.total).toBe(1);
+    expect(result.applications[0]?.grant?.id).toBe(grantId);
+  });
+});
+
+describe("onboarding.getStatus", () => {
+  test("marks steps complete from first matching records", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `onboard|${Date.now()}`;
+    const clerkId = `clerk-onboard-${Date.now()}`;
+
+    await t.run(async (ctx) => {
+      const userId = await seedUser(ctx, tokenIdentifier, clerkId);
+      const now = Date.now();
+      const orgId = await ctx.db.insert("organizations", {
+        name: "Test NGO",
+        type: "NGO",
+        isVerified: false,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("organizationMembers", {
+        userId,
+        organizationId: orgId,
+        role: "owner",
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("documents", {
+        userId,
+        fileName: "charter.pdf",
+        storageKey: "charter.pdf",
+        docType: "CHARTER",
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const status = await authed.query(api.onboarding.getStatus, {});
+    expect(status.steps.profile).toBe(true);
+    expect(status.steps.documents).toBe(true);
+    expect(status.completedCount).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe("adminGrants admin lists", () => {
+  test("listDonors and listRequirements use paginated reads", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `admin-grants|${Date.now()}`;
+    const clerkId = `clerk-admin-grants-${Date.now()}`;
+    let grantId = "" as Id<"grants">;
+
+    await t.run(async (ctx) => {
+      await seedUser(ctx, tokenIdentifier, clerkId, "admin");
+      const seeded = await seedCatalog(ctx);
+      grantId = seeded.grantId;
+      await ctx.db.insert("grantRequirements", {
+        grantId,
+        requirementType: "general",
+        text: "Must be registered NGO",
+        required: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    const authedAdmin = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const donors = await authedAdmin.query(api.adminGrants.listDonors, {});
+    expect(donors.length).toBeGreaterThanOrEqual(1);
+
+    const requirements = await authedAdmin.query(api.adminGrants.listRequirements, {
+      grantId,
+    });
+    expect(requirements.length).toBe(1);
+    expect(requirements[0]?.text).toBe("Must be registered NGO");
+  });
+});

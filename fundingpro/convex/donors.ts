@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
+import { paginateAll } from "./lib/pagination";
 
 const donorRow = v.object({
   id: v.string(),
@@ -19,10 +20,9 @@ export const list = query({
   args: {},
   returns: listResultValidator,
   handler: async (ctx) => {
-    const donors = await ctx.db
-      .query("donors")
-      .withIndex("by_active", (q) => q.eq("isActive", true))
-      .collect();
+    const donors = await paginateAll(
+      ctx.db.query("donors").withIndex("by_active", (q) => q.eq("isActive", true))
+    );
 
     return {
       donors: donors.map((d) => ({

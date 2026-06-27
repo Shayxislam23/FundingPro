@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
+import { paginateAll } from "./lib/pagination";
 
 const HIGHLIGHTED = new Set(["plan-ngo-pro", "plan-business-pro"]);
 
@@ -18,10 +19,9 @@ export const list = query({
   args: {},
   returns: v.array(planRow),
   handler: async (ctx) => {
-    const plans = await ctx.db
-      .query("plans")
-      .withIndex("by_active", (q) => q.eq("isActive", true))
-      .collect();
+    const plans = await paginateAll(
+      ctx.db.query("plans").withIndex("by_active", (q) => q.eq("isActive", true))
+    );
 
     return plans
       .sort((a, b) => a.priceUsd - b.priceUsd)

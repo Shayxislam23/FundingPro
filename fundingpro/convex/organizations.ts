@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { authedMutation, authedQuery, adminMutation, adminQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 import type { Id } from "./_generated/dataModel";
 
 const userOrgValidator = v.object({
@@ -173,15 +174,16 @@ export const listAll = adminQuery({
   ),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
-    const orgs = await ctx.db.query("organizations").collect();
+    const orgs = await paginateAll(ctx.db.query("organizations"));
     const active = orgs.filter((o) => !o.deletedAt).slice(0, limit);
 
     const result = [];
     for (const org of active) {
-      const members = await ctx.db
-        .query("organizationMembers")
-        .withIndex("by_org", (q) => q.eq("organizationId", org._id))
-        .collect();
+      const members = await paginateAll(
+        ctx.db
+          .query("organizationMembers")
+          .withIndex("by_org", (q) => q.eq("organizationId", org._id))
+      );
       result.push({
         id: org._id,
         name: org.name,

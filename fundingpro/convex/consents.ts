@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
 import { authedMutation, authedQuery, adminQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 
 const REQUIRED_CONSENT_TYPES = [
   "terms_of_service",
@@ -54,10 +55,11 @@ export const listForUser = authedQuery({
     })
   ),
   handler: async (ctx) => {
-    const rows = await ctx.db
-      .query("userConsents")
-      .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-      .collect();
+    const rows = await paginateAll(
+      ctx.db
+        .query("userConsents")
+        .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
+    );
     return rows.map((r) => ({
       consentType: r.consentType,
       documentVersion: r.documentVersion,
@@ -75,10 +77,11 @@ export const hasCurrent = authedQuery({
     needsReconsent: v.boolean(),
   }),
   handler: async (ctx) => {
-    const consents = await ctx.db
-      .query("userConsents")
-      .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-      .collect();
+    const consents = await paginateAll(
+      ctx.db
+        .query("userConsents")
+        .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
+    );
 
     const latest = new Map<string, string>();
     for (const c of consents) {
@@ -104,10 +107,11 @@ export const assertPayment = authedQuery({
   args: {},
   returns: v.boolean(),
   handler: async (ctx) => {
-    const consents = await ctx.db
-      .query("userConsents")
-      .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-      .collect();
+    const consents = await paginateAll(
+      ctx.db
+        .query("userConsents")
+        .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
+    );
     for (const type of PAYMENT_CONSENT_TYPES) {
       const has = consents.some(
         (c) => c.consentType === type && c.documentVersion === CURRENT_VERSIONS[type]
@@ -129,7 +133,7 @@ export const listRecent = adminQuery({
     })
   ),
   handler: async (ctx, args) => {
-    const rows = await ctx.db.query("userConsents").collect();
+    const rows = await paginateAll(ctx.db.query("userConsents"));
     rows.sort((a, b) => b.createdAt - a.createdAt);
     const result = [];
     for (const row of rows.slice(0, args.limit)) {

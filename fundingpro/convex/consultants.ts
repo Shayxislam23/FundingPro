@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
 import { authedMutation, authedQuery, adminMutation, adminQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 import type { Id } from "./_generated/dataModel";
 
 export const list = query({
@@ -129,10 +130,11 @@ export const listUserOrders = authedQuery({
     })
   ),
   handler: async (ctx) => {
-    const orders = await ctx.db
-      .query("consultantOrders")
-      .withIndex("by_client", (q) => q.eq("clientUserId", ctx.user._id))
-      .collect();
+    const orders = await paginateAll(
+      ctx.db
+        .query("consultantOrders")
+        .withIndex("by_client", (q) => q.eq("clientUserId", ctx.user._id))
+    );
     return orders.map((o) => ({
       id: o._id,
       packageName: o.packageName,

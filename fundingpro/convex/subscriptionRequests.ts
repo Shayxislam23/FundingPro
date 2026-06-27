@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { type QueryCtx } from "./_generated/server";
 import { authedMutation, authedQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 import type { Id } from "./_generated/dataModel";
 
 async function resolvePlanId(ctx: QueryCtx, planId: string): Promise<Id<"plans">> {
@@ -70,10 +71,11 @@ export const listPendingPlanIds = authedQuery({
   args: {},
   returns: v.array(v.string()),
   handler: async (ctx) => {
-    const requests = await ctx.db
-      .query("subscriptionRequests")
-      .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-      .collect();
+    const requests = await paginateAll(
+      ctx.db
+        .query("subscriptionRequests")
+        .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
+    );
     const pending = requests.filter((r) => r.status === "PENDING");
     const planIds: string[] = [];
     for (const req of pending) {

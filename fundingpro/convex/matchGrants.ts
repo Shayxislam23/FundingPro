@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { authedQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 
 export const match = authedQuery({
   args: {
@@ -24,10 +25,9 @@ export const match = authedQuery({
     const sector = typeof profile.sector === "string" ? profile.sector : undefined;
     const country = typeof profile.country === "string" ? profile.country : undefined;
 
-    const grants = await ctx.db
-      .query("grants")
-      .withIndex("by_active", (q) => q.eq("isActive", true))
-      .collect();
+    const grants = await paginateAll(
+      ctx.db.query("grants").withIndex("by_active", (q) => q.eq("isActive", true))
+    );
 
     const scored = grants.map((grant) => {
       let score = 50;

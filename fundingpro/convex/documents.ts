@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { authedMutation, authedQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 import type { Id } from "./_generated/dataModel";
 
 const DOCUMENT_TYPES = [
@@ -56,12 +57,13 @@ export const listForUser = authedQuery({
   args: {},
   returns: v.array(documentRow),
   handler: async (ctx) => {
-    const docs = await ctx.db
-      .query("documents")
-      .withIndex("by_user_status", (q) =>
-        q.eq("userId", ctx.user._id).eq("status", "active")
-      )
-      .collect();
+    const docs = await paginateAll(
+      ctx.db
+        .query("documents")
+        .withIndex("by_user_status", (q) =>
+          q.eq("userId", ctx.user._id).eq("status", "active")
+        )
+    );
     return docs.map(mapDoc).sort((a, b) => b.created_at.localeCompare(a.created_at));
   },
 });

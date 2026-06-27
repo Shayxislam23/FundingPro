@@ -1,15 +1,17 @@
 import { v } from "convex/values";
 import { authedMutation, authedQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 import type { Id } from "./_generated/dataModel";
 
 export const listIds = authedQuery({
   args: {},
   returns: v.array(v.string()),
   handler: async (ctx) => {
-    const rows = await ctx.db
-      .query("savedGrants")
-      .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-      .collect();
+    const rows = await paginateAll(
+      ctx.db
+        .query("savedGrants")
+        .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
+    );
     return rows.map((r) => r.grantId);
   },
 });

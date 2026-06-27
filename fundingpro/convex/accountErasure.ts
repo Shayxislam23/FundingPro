@@ -55,22 +55,28 @@ async function deleteUserPushTokens(ctx: MutationCtx, userId: Id<"users">) {
 }
 
 async function deleteUserOrganizationMembers(ctx: MutationCtx, userId: Id<"users">) {
-  const memberships = await ctx.db
-    .query("organizationMembers")
-    .withIndex("by_user", (q) => q.eq("userId", userId))
-    .collect();
-  for (const membership of memberships) {
-    await ctx.db.delete("organizationMembers", membership._id);
+  while (true) {
+    const batch = await ctx.db
+      .query("organizationMembers")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .take(50);
+    if (batch.length === 0) break;
+    for (const membership of batch) {
+      await ctx.db.delete("organizationMembers", membership._id);
+    }
   }
 }
 
 async function deleteUserIdentities(ctx: MutationCtx, userId: Id<"users">) {
-  const identities = await ctx.db
-    .query("userIdentities")
-    .withIndex("by_user", (q) => q.eq("userId", userId))
-    .collect();
-  for (const identity of identities) {
-    await ctx.db.delete("userIdentities", identity._id);
+  while (true) {
+    const batch = await ctx.db
+      .query("userIdentities")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .take(50);
+    if (batch.length === 0) break;
+    for (const identity of batch) {
+      await ctx.db.delete("userIdentities", identity._id);
+    }
   }
 }
 

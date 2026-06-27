@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { adminQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 
 export const dashboard = adminQuery({
   args: {
@@ -30,10 +31,11 @@ export const dashboard = adminQuery({
         .query("platformStats")
         .withIndex("by_key", (q) => q.eq("key", "global"))
         .unique(),
-      ctx.db
-        .query("aiRequests")
-        .withIndex("by_created", (q) => q.gte("createdAt", args.monthStart))
-        .collect(),
+      paginateAll(
+        ctx.db
+          .query("aiRequests")
+          .withIndex("by_created", (q) => q.gte("createdAt", args.monthStart))
+      ),
       ctx.db.query("users").withIndex("by_created").order("desc").take(5),
     ]);
 
@@ -75,11 +77,12 @@ export const funnel = adminQuery({
   handler: async (ctx, args) => {
     const cutoff = args.last30DaysSignups ? (args.now ?? 0) - 30 * 24 * 60 * 60 * 1000 : 0;
     const users = cutoff
-      ? await ctx.db
-          .query("users")
-          .withIndex("by_created", (q) => q.gte("createdAt", cutoff))
-          .collect()
-      : await ctx.db.query("users").collect();
+      ? await paginateAll(
+          ctx.db
+            .query("users")
+            .withIndex("by_created", (q) => q.gte("createdAt", cutoff))
+        )
+      : await paginateAll(ctx.db.query("users"));
 
     let withOrg = 0;
     let withSaved = 0;

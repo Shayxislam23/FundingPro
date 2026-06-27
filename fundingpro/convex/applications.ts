@@ -18,18 +18,25 @@ async function listUserApplications(
   userId: Id<"users">,
   status?: string
 ) {
-  if (status) {
-    return await ctx.db
-      .query("applications")
-      .withIndex("by_user_and_status", (q) => q.eq("userId", userId).eq("status", status))
-      .collect();
+  const apps: Doc<"applications">[] = [];
+  const baseQuery = status
+    ? ctx.db
+        .query("applications")
+        .withIndex("by_user_and_status", (q) => q.eq("userId", userId).eq("status", status))
+    : ctx.db
+        .query("applications")
+        .withIndex("by_user_updated", (q) => q.eq("userId", userId));
+
+  let cursor: string | null = null;
+  let isDone = false;
+  while (!isDone) {
+    const batch = await baseQuery.order("desc").paginate({ numItems: 50, cursor });
+    apps.push(...batch.page);
+    isDone = batch.isDone;
+    cursor = batch.continueCursor;
   }
 
-  return await ctx.db
-    .query("applications")
-    .withIndex("by_user_updated", (q) => q.eq("userId", userId))
-    .order("desc")
-    .collect();
+  return apps;
 }
 
 async function listAdminApplications(

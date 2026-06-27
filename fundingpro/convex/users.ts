@@ -7,6 +7,7 @@ import {
   requireIdentity,
 } from "./lib/auth";
 import { authedMutation, authedQuery, adminMutation, adminQuery } from "./lib/customFunctions";
+import { paginateAll } from "./lib/pagination";
 import type { Doc } from "./_generated/dataModel";
 
 const internalUserValidator = v.object({
@@ -299,10 +300,11 @@ export const requestAccountDeletion = authedMutation({
       updatedAt: now,
     });
 
-    const memberships = await ctx.db
-      .query("organizationMembers")
-      .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-      .collect();
+    const memberships = await paginateAll(
+      ctx.db
+        .query("organizationMembers")
+        .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
+    );
 
     for (const membership of memberships) {
       const org = await ctx.db.get("organizations", membership.organizationId);

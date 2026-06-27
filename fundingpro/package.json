@@ -23,6 +23,8 @@
     "payme:sandbox": "node scripts/payme-sandbox.mjs",
     "click:sandbox": "node scripts/click-sandbox.mjs",
     "payments:check": "node scripts/payments-check.mjs",
+    "payments:golive-check": "node scripts/payments-golive-check.mjs",
+    "app-links:check": "node scripts/app-links-check.mjs",
     "uzum:checkout-mock": "node scripts/uzum-checkout-mock-e2e.mjs",
     "uzum:enable": "node scripts/uzum-enable-payments.mjs",
     "uzum:webhooks": "node -e \"const u=process.env.UZUM_WEBHOOK_BASE_URL||'https://fundingpro.uz';['check','create','confirm','reverse','status'].forEach(e=>console.log('POST '+u.replace(/\\/$/,'')+'/api/v1/payments/uzum/'+e))\"",
@@ -42,6 +44,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "5.7.6",
+    "@fundingpro/api-types": "^0.1.0",
     "@fundingpro/shared": "^0.1.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

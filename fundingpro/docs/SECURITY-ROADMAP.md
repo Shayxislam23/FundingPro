@@ -9,7 +9,7 @@ Last updated: 2026-06-27
 | ID | Title | Severity | Status | Notes |
 |----|-------|----------|--------|-------|
 | M-02 | Custom scheme without Universal/App Links (deep link hijack) | Medium | **Open** | `.well-known` routes exist; real Apple Team ID + Android SHA256 still required. Pen-test after App Links go live. |
-| M-03 | No certificate pinning for mobile API | Medium | **Open (accepted risk ADR pending)** | Trade-off: pinning vs cert rotation. Document decision in release checklist before v1.0. |
+| M-03 | No certificate pinning for mobile API | Medium | **Open (accepted v1)** | ADR: [`mobile/docs/ADR-certificate-pinning.md`](../../mobile/docs/ADR-certificate-pinning.md) — no pinning for v1.0; revisit after pen-test. |
 | L-02 | No in-app account deletion | Low | **In progress → API shipped** | `POST /api/v1/me/delete-request` + `DELETE /api/v1/me` mark user for deletion in Convex; mobile profile calls API with support-ticket fallback. Clerk user purge is ops/manual (see below). |
 
 ## Track 6 deliverables (this sprint)
@@ -38,7 +38,7 @@ Last updated: 2026-06-27
 ## Next steps (Track 6 backlog)
 
 1. **M-02** — Deploy verified App Links; re-run deep-link hijack test case.
-2. **M-03** — Write ADR: pin vs no-pin; implement or formally accept risk for v1.0.
+2. **M-03** — **Done (accepted v1)** — [`mobile/docs/ADR-certificate-pinning.md`](../../mobile/docs/ADR-certificate-pinning.md).
 3. **L-02** — Complete erasure cron + Clerk automation; close finding after store review.
 4. **6.4** — Regenerate `security-audit-orchestrator.mjs` report (drop stale Supabase findings).
 5. **6.6** — External pen-test after payments + App Links live.

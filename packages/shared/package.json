@@ -10,6 +10,9 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@fundingpro/api-types": "^0.1.0"
+  },
   "devDependencies": {
     "typescript": "^5"
   }

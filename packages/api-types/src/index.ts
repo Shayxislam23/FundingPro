@@ -106,6 +106,26 @@ export const listGrantsResultSchema = z.object({
 export type GrantListItem = z.infer<typeof grantListItemSchema>;
 export type ListGrantsResult = z.infer<typeof listGrantsResultSchema>;
 
+/** Query params for grants catalog (web lib/db + mobile API). */
+export const listGrantsParamsSchema = z.object({
+  search: z.string().optional(),
+  sector: z.string().optional(),
+  country: z.string().optional(),
+  donorId: z.string().optional(),
+  deadlineBefore: z.string().optional(),
+  deadlineAfter: z.string().optional(),
+  activeOnly: z.boolean().optional(),
+  featured: z.boolean().optional(),
+  today: z.number().optional(),
+  page: z.number().optional(),
+  limit: z.number().optional(),
+  cursor: z.string().nullable().optional(),
+});
+
+export type ListGrantsParams = z.infer<typeof listGrantsParamsSchema>;
+/** @deprecated Use ListGrantsParams — kept for legacy imports. */
+export type GrantListParams = ListGrantsParams;
+
 export const grantRequirementSchema = z.object({
   id: z.string(),
   requirement_type: z.string(),

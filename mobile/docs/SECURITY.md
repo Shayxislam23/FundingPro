@@ -47,7 +47,7 @@ Clerk Expo → getToken({ template: "convex" }) → Authorization: Bearer <jwt> 
 | ID | Описание | Статус |
 |----|----------|--------|
 | M-02 | Custom scheme без Universal/App Links (hijack risk на Android) | **Открыто** — `.well-known` + env на web; device verify pending — см. `fundingpro/docs/SECURITY-ROADMAP.md` |
-| M-03 | Нет certificate pinning для API | **Открыто** — ADR в Track 6 (`fundingpro/docs/SECURITY-ROADMAP.md`) |
+| M-03 | Нет certificate pinning для API | **Открыто (accepted v1)** — см. [`ADR-certificate-pinning.md`](./ADR-certificate-pinning.md) |
 | M-04 | Push token регистрация на backend | **Исправлено** — `registerAndSyncPushToken()` после Clerk login → `POST /me/push-token` |
 | M-05 | Offline cache грантов в AsyncStorage (не секреты, но без шифрования) | **Принято** — публичные данные |
 
@@ -84,7 +84,7 @@ Clerk Expo → getToken({ template: "convex" }) → Authorization: Bearer <jwt> 
 ## Оставшиеся риски и roadmap
 
 1. **Universal Links / App Links** — задайте `APPLE_TEAM_ID` и `ANDROID_RELEASE_SHA256` в Vercel; проверьте `.well-known` на device. Статус: **M-02 открыт** — [`fundingpro/docs/SECURITY-ROADMAP.md`](../../fundingpro/docs/SECURITY-ROADMAP.md).
-2. **SSL pinning** — рассмотреть для production API (trade-off с ротацией сертификатов). Статус: **M-03 открыт**.
+2. **SSL pinning** — для v1.0 **не внедряем** (accepted risk): [`ADR-certificate-pinning.md`](./ADR-certificate-pinning.md). Пересмотр после pen-test или требований store.
 3. **Account deletion** — профиль вызывает `POST /api/v1/me/delete-request`; при сбое API — тикет в поддержку. Полный cascade + Clerk delete — backlog Track 6. Статус: **L-02 частично закрыт**.
 4. **Rate limiting** — middleware на `/api/v1/ai/*` и `/api/v1/auth/*` (IP buckets + per-user AI limits). DB-backed buckets — backlog.
 5. **Pen-test** — повторить после App Links live на device.

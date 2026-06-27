@@ -124,15 +124,28 @@ if (!process.env.APPLE_TEAM_ID?.trim() || !process.env.ANDROID_RELEASE_SHA256?.t
   );
 }
 
+function printNextSteps() {
+  console.log("\n--- Next steps (O1 Vercel env) ---");
+  console.log("  1. Copy fundingpro/.env.production.example → .env.production.local");
+  console.log("  2. Fill Convex + Clerk + Resend keys (see docs/ENV.md)");
+  console.log("  3. npm run deploy:env   # push to Vercel — review diff first");
+  console.log("  4. npm run ops:readiness  # full in-repo gate");
+  console.log("  5. vercel --prod  OR  npm run deploy:production");
+  console.log("-----------------------------------\n");
+}
+
 if (warnings.some((w) => w.startsWith("MISSING"))) {
   console.error("Deploy check FAILED:\n");
   warnings.forEach((w) => console.error(`  ${w}`));
+  printNextSteps();
   process.exit(1);
 }
 
 if (warnings.length) {
   console.warn("Deploy check warnings:\n");
   warnings.forEach((w) => console.warn(`  ${w}`));
+  printNextSteps();
 } else {
   console.log("Deploy check passed — all required env vars present.");
+  console.log("  → Run npm run ops:readiness before production deploy.");
 }

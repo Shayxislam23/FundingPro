@@ -95,5 +95,19 @@ if (liveCheck || BASE.startsWith("https://")) {
 }
 
 console.log(allOk ? "\nAll checks passed" : "\nSome checks failed");
-console.log("\nVercel env names: APPLE_TEAM_ID, ANDROID_RELEASE_SHA256, IOS_BUNDLE_ID, ANDROID_PACKAGE");
+
+console.log("\n--- O3 App Links next steps ---");
+if (!liveCheck) {
+  console.log("  Local only — set env then redeploy Vercel:");
+  console.log("  1. Vercel → APPLE_TEAM_ID + ANDROID_RELEASE_SHA256 (Production)");
+  console.log("  2. Redeploy production");
+  console.log("  3. SMOKE_BASE_URL=https://www.fundingpro.uz npm run app-links:check -- --live");
+} else {
+  console.log("  Live check ran — if failed, fix Vercel env and redeploy.");
+}
+console.log("  4. Device smoke: mobile/docs/EAS-SMOKE.md");
+console.log("  5. Mark M-02 Resolved in docs/SECURITY-ROADMAP.md");
+console.log("  Env: APPLE_TEAM_ID, ANDROID_RELEASE_SHA256, IOS_BUNDLE_ID, ANDROID_PACKAGE");
+console.log("-----------------------------------\n");
+
 process.exit(allOk ? 0 : 1);

@@ -1,41 +1,36 @@
 # Отчёт о security-аудите FundingPro
 
-> **Обновление (июнь 2026):** Backend мигрирован с Supabase/PostgreSQL на **Convex + Clerk**. Ниже — исторический отчёт аудита эпохи Supabase (24.06.2026). Актуальный стек: Convex (БД + server functions), Clerk (auth), Vercel (Next.js). Рекомендации про RLS, `SUPABASE_SERVICE_ROLE_KEY` и Supabase Auth **не применимы** к текущей архитектуре; см. `lib/auth/admin-access.ts` и Convex custom functions для access control.
+> **Стек (июнь 2026):** Next.js 15, **Convex** (БД + server functions), **Clerk** (auth), Vercel. Исторический блок про Supabase/PostgreSQL (24.06.2026) сохранён ниже для архива; рекомендации про RLS и `SUPABASE_SERVICE_ROLE_KEY` **не применимы** к текущей архитектуре.
 
-**Дата:** 24 июня 2026  
-**Объект (на момент аудита):** FundingPro (Next.js 14, Supabase, Vercel) — https://www.fundingpro.uz  
-**Текущий стек:** Next.js 14, Convex, Clerk, Vercel  
-**Методология:** 817 cybersecurity skills (Anthropic-Cybersecurity-Skills) через orchestrator + ручной code review + динамические пробы (local + production) + Supabase MCP advisors  
-
----
-
-## Резюме для руководства
-
-Проведён системный аудит безопасности приложения FundingPro: статический анализ кода и CI, проверка 57 API-маршрутов, инвентаризация RLS в Supabase, динамические пробы против local stack и production, доменные проверки (AI, платежи Uzum, загрузка файлов), STRIDE threat model.
-
-**Критическая уязвимость (RLS на public schema)** — устранена миграцией `20250623210000_rls_hardening_public_schema.sql`, применённой на remote Supabase.
-
-**Остаются приоритетные риски:**
-
-| Приоритет | Кол-во | Главные темы |
-|-----------|--------|--------------|
-| High | 3 | Отсутствует `SUPABASE_SERVICE_ROLE_KEY` в Vercel; npm audit (4 high); флаг `ADMIN_BYPASS_DEV` |
-| Medium | 7 | 12 custom-auth API routes; middleware не охватывает `/api/*`; AI rate limit in-memory; upload через admin storage; CORS; Supabase Auth (SMTP, leaked passwords) |
-| Low | 4 | Mutable GitHub Actions tags; admin-check без проверки banned; dev-only anon fallback (mitigated) |
-
-**Покрытие 817 skills:** EXECUTED 32 · ADAPTED 600 · N/A 161 · TOOL_BLOCKED 24 — см. [`docs/security-audit/skills-matrix.json`](security-audit/skills-matrix.json).
+**Дата обновления:** 27 июня 2026  
+**Объект:** FundingPro — https://www.fundingpro.uz  
+**Методология:** 817 cybersecurity skills (orchestrator) + static/domain checks + dynamic probes  
 
 ---
 
-## Область и окружения
+## Резюме для руководства (Convex era)
 
-| Среда | URL / идентификатор | Что проверялось |
-|-------|---------------------|-----------------|
-| Код | `fundingpro/` | Auth, API, SQL, AI gateway, payments |
-| Local | `:3099`, Docker Postgres `:5433` | BOLA, auth matrix, headers (16/16 probes) |
-| Production | https://www.fundingpro.uz | Read-only probes (13/16; см. ниже) |
-| Supabase | `xgvwfnfifzsgscwvtcnz` | Advisors, RLS inventory, migration |
-| CI | `.github/workflows/ci.yml` | Lint, tests, `security:audit`, npm audit |
+| Метрика | Значение |
+|---------|----------|
+| **Findings (machine-readable)** | **6** — Medium: 4, Low: 2 |
+| **API routes** | 64 files — `withActiveUser`: 27, `withAdmin`: 18, `withPublic`: 7, custom: 12 |
+| **npm audit (prod gate)** | **0 high** — Next 15.5.19 + Clerk 7.5.9 (см. SECURITY-ROADMAP) |
+| **Skills coverage** | 817 skills mapped — см. [`skills-matrix.json`](security-audit/skills-matrix.json) |
+
+**Главные остаточные риски:**
+
+| Приоритет | ID | Тема |
+|-----------|-----|------|
+| Medium | API-CUSTOM-AUTH | 12 payment/marketing routes без стандартных wrappers — см. [`API-SECURITY.md`](./API-SECURITY.md) |
+| Medium | EDGE-API-BYPASS | Middleware пропускает `/api/*` — mitigated rate-limit на AI/auth |
+| Medium | AI-RATE-LIMIT-MEMORY | In-memory fallback если нет `CONVEX_DEPLOY_KEY` в prod |
+| Medium | CORS-UNENFORCED | `CORS_ALLOWED_ORIGINS` не применяется (Track 6.7) |
+| Low | CI-ACTIONS-MUTABLE-TAGS | GitHub Actions `@v4` без SHA pin |
+| Low | HEALTH-ERROR-LEAK | dbError в health (non-prod only) |
+
+`ADMIN-CHECK-NO-STATUS` отсутствует в последнем прогоне orchestrator — перезапустите `npm run security:audit` после изменений auth routes.
+
+**Ops blockers (не code findings):** M-02 App Links live verification, PSP sandbox E2E, external pen-test — [`OPS-RUNBOOK.md`](./OPS-RUNBOOK.md).
 
 ---
 
@@ -43,173 +38,84 @@
 
 | Файл | Описание |
 |------|----------|
+| [`docs/API-SECURITY.md`](./API-SECURITY.md) | Route wrappers, custom auth matrix, Convex patterns |
+| [`docs/security-audit/findings.json`](security-audit/findings.json) | 6 активных findings |
 | [`docs/security-audit/skills-matrix.json`](security-audit/skills-matrix.json) | Матрица 817 skills |
-| [`docs/security-audit/findings.json`](security-audit/findings.json) | 14 findings с severity и remediation |
 | [`docs/security-audit/threat-model.md`](security-audit/threat-model.md) | STRIDE threat model |
+| [`docs/PEN-TEST-CHECKLIST.md`](./PEN-TEST-CHECKLIST.md) | External pen-test scope |
 | [`scripts/security-audit-orchestrator.mjs`](../scripts/security-audit-orchestrator.mjs) | Orchestrator |
-| [`scripts/security-api-probe.mjs`](../scripts/security-api-probe.mjs) | Dynamic API probes |
+| [`scripts/ops-readiness.mjs`](../scripts/ops-readiness.mjs) | In-repo ops gate |
 
-**Запуск локально:**
+**Запуск:**
 
 ```bash
 cd fundingpro
-npm run security:audit      # static + domain + matrix
+npm run security:audit      # static + domain → findings.json
 npm run security:probe      # local probes
 npm run security:probe:prod # production (read-only)
+npm run ops:readiness       # deploy + app-links + payments dry-run
 ```
 
 ---
 
-## Устранённые находки (remediated)
+## API inventory
 
-### Critical — RLS disabled на public tables (SUPABASE-RLS-HARDENING)
+| Wrapper | Count | Notes |
+|---------|-------|-------|
+| `withActiveUser` | 27 | User-scoped CRUD, AI, documents |
+| `withAdmin` | 18 | Admin catalog, payments ledger |
+| `withPublic` | 7 | Health, plans, legal, public reads |
+| Custom | 12 | PSP callbacks, admin-check, lead-magnet |
 
-**Было:** 24+ таблиц в `public` без Row Level Security; anon key PostgREST мог читать/писать чувствительные данные.
-
-**Сделано:** Миграция `20250623210000_rls_hardening_public_schema.sql` — RLS включён, политики для public read (grants, plans, donors), user-scoped (applications, documents), admin-only таблиц.
-
-### Medium — Security headers (HEADERS-MISSING)
-
-**Сделано:** CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy в [`next.config.mjs`](../next.config.mjs). **Требуется production redeploy** для появления заголовков на www.fundingpro.uz.
-
-### High — Anon fallback для service role (AUTH-SERVICE-ROLE-FALLBACK)
-
-**Сделано:** [`lib/supabase-server.ts`](../lib/supabase-server.ts) — fail-fast в `NODE_ENV=production` без `SUPABASE_SERVICE_ROLE_KEY`.
-
-### Low — Uzum Basic auth timing
-
-**Сделано:** `timingSafeEqual` в [`lib/payments/uzum-auth.ts`](../lib/payments/uzum-auth.ts).
-
-### CI hardening
-
-**Сделано:** шаги `security:audit` и `npm audit` в CI; `.gitleaks.toml`; Semgrep rules в `.semgrep/`.
+Custom routes — обоснованы merchant auth или публичным read-only status. Полная матрица: [`API-SECURITY.md`](./API-SECURITY.md).
 
 ---
 
-## Активные findings
+## Устранённые / mitigated (2026)
 
-### High
-
-| ID | Описание | Remediation |
-|----|----------|-------------|
-| SUPABASE-SERVICE-ROLE-MISSING | Service role key не задан в Vercel production | Dashboard → API Keys → добавить `SUPABASE_SERVICE_ROLE_KEY`, redeploy |
-| NPM-AUDIT-HIGH | 4 high, 1 moderate в npm dependencies | `npm audit fix`, обновить Next/transitive deps |
-| ADMIN-DEV-BYPASS | Флаг `ADMIN_BYPASS_DEV` в admin-access | Никогда не задавать в production env |
-
-### Medium
-
-| ID | Описание | Remediation |
-|----|----------|-------------|
-| API-CUSTOM-AUTH | 12 маршрутов без `withPublic`/`withActiveUser`/`withAdmin` | Построчный audit: health, plans, legal, lead-magnet, payments/* |
-| EDGE-API-BYPASS | Middleware пропускает `/api/*` | Defense in depth: edge rate-limit или auth pre-check |
-| AI-RATE-LIMIT-MEMORY | In-memory fallback rate limit на serverless | Только `rate_limit_buckets` в production |
-| UPLOAD-ADMIN-STORAGE | Upload через admin client | User-scoped client + server-side ownership check |
-| CORS-UNENFORCED | `CORS_ALLOWED_ORIGINS` не применяется | Middleware или route-level CORS |
-| SUPABASE-AUTH-LEAKED-PASSWORDS | HaveIBeenPwned protection выключен | Supabase Dashboard → Auth → Password security |
-| SUPABASE-SMTP-MANUAL | Resend SMTP не в Supabase Auth | Dashboard → Auth → SMTP (smtp.resend.com:465) |
-
-### Low
-
-| ID | Описание | Статус |
-|----|----------|--------|
-| AUTH-SERVICE-ROLE-DEV-FALLBACK | Anon fallback только в dev | mitigated |
-| CI-ACTIONS-MUTABLE-TAGS | `@v4` без SHA pin | Рекомендуется pin digest |
-| ADMIN-CHECK-NO-STATUS | admin-check без banned/disabled | Review |
-| HEALTH-ERROR-LEAK | dbError в health (non-prod) | mitigated-in-prod |
-
----
-
-## Динамическое тестирование
-
-### Local (16/16 passed)
-
-Auth boundaries, BOLA negative tests, CORS reflection, security headers — все пробы успешны после build с новым `next.config.mjs`.
-
-### Production (13/16 passed)
-
-| Probe | Результат | Причина |
-|-------|-----------|---------|
-| GET `/api/v1/plans` → 200 | FAIL (500) | **Schema drift:** remote `plans` (legacy: `segment`, `code`, `status`) ≠ app schema (`name`, `target_type`, `is_active`) |
-| Security headers на `/` | FAIL | Старый deploy без `next.config.mjs` headers |
-| Остальные (health, grants, auth-negative, CORS) | PASS | — |
-
-**Рекомендация по `/plans`:** применить миграцию выравнивания schema или адаптировать `listPlans()` под legacy; добавить `SUPABASE_SERVICE_ROLE_KEY` для admin paths.
-
----
-
-## API inventory (57 routes)
-
-| Wrapper | Count |
-|---------|-------|
-| `withActiveUser` | 25 |
-| `withAdmin` | 18 |
-| `withPublic` | 2 |
-| Custom (manual auth) | 12 |
-
-Custom routes требуют явного обоснования публичности или merchant auth — см. `findings.json` → `customRoutes`.
-
----
-
-## SQL injection
-
-Ручной review + static scan: все `pool.query` в `lib/db/` используют параметризацию (`$1`, `$2`). Supabase `.or()` filter strings — не raw SQL; ложные срабатывания устранены в orchestrator.
-
----
-
-## AI security
-
-- Prompt injection surface: `/api/v1/ai/proposal/generate`, `/api/v1/ai/match-grants`
-- [`lib/ai-gateway.ts`](../lib/ai-gateway.ts): sanitization, redaction
-- Rate limit: DB-backed + in-memory fallback (Medium finding на serverless)
-
----
-
-## Payments (Uzum)
-
-- `PAYMENTS_ENABLED=false` на production (health probe)
-- Basic auth на merchant routes; timing-safe compare добавлен
-- Webhook routes — custom auth; требуют review при включении payments
-
----
-
-## Compliance
-
-- `user_consents` table + legal routes — consent flows присутствуют
-- Audit logs / AI requests — warn-only при сбое записи (repudiation gap в threat model)
-
----
-
-## Покрытие skills по subdomain (summary)
-
-| Subdomain | Skills | Статус для FundingPro |
-|-----------|--------|------------------------|
-| api-security | 28 | EXECUTED / ADAPTED — OWASP API Top 10 на routes |
-| web-application-security | 42 | ADAPTED — headers, CORS, XSS patterns |
-| identity-access-management | 37 | EXECUTED — JWT, admin model, middleware |
-| devsecops | 18 | EXECUTED — CI, gitleaks, npm audit, semgrep |
-| ai-security | 14 | EXECUTED — prompt injection checklist |
-| cloud-security | 66 | ADAPTED — Supabase/Vercel (не AWS/K8s) |
-| mobile / OT / forensics / red-team / … | ~400+ | N/A — нет mobile app, OT, K8s и т.д. |
-
-Полная матрица: [`skills-matrix.json`](security-audit/skills-matrix.json).
+| ID | Статус | Notes |
+|----|--------|-------|
+| AI-RATE-LIMIT-MEMORY | **Resolved in prod** | Convex `rateLimitBuckets` when `CONVEX_DEPLOY_KEY` set |
+| NPM-AUDIT-HIGH | **Resolved** | Next 15.5.19 pin; 0 high at prod gate |
+| HEADERS-MISSING | **Resolved** | CSP/HSTS in `next.config.mjs` |
+| SUPABASE-* | **N/A** | Stack migrated to Convex |
+| Rate limiting Track 6.2 | **Resolved** | Middleware + Convex buckets |
 
 ---
 
 ## Backlog remediation (приоритет)
 
-1. **P0:** Добавить `SUPABASE_SERVICE_ROLE_KEY` в Vercel → redeploy production (headers + admin DB paths)
-2. **P0:** Выровнять schema `plans` на remote Supabase или compatibility layer в `listPlans()`
-3. **P1:** `npm audit fix` — закрыть 4 high CVE
-4. **P1:** Supabase Auth — SMTP Resend + leaked password protection
-5. **P2:** Pin GitHub Actions to SHA; enforce CORS; убрать in-memory AI rate limit в prod
-6. **P2:** Audit 12 custom API routes; document public intent
-7. **P3:** Optional manual wave — Burp/ZAP DAST для 24 TOOL_BLOCKED skills
+1. **P1:** M-02 — Vercel App Links env + live check + device smoke → mark Resolved
+2. **P1:** O4 — PSP sandbox E2E on preview before `PAYMENTS_ENABLED=true`
+3. **P2:** Audit/document 12 custom API routes (partially done in API-SECURITY.md)
+4. **P2:** Enforce `CORS_ALLOWED_ORIGINS` (Track 6.7)
+5. **P2:** Pin GitHub Actions to SHA digests
+6. **P3:** Narrow `v.any()` on `convex/matchGrants.ts` profile arg
+7. **P3:** External pen-test — [`PEN-TEST-CHECKLIST.md`](./PEN-TEST-CHECKLIST.md)
 
 ---
 
 ## Заключение
 
-FundingPro прошёл полный skills-driven аудит с документированным покрытием всех 817 skills. Критический риск открытого PostgREST (RLS) устранён. Основной остаточный риск — **отсутствие service role в production** (блокирует admin paths и часть public endpoints) и **schema drift** на таблице `plans`. После добавления ключа, redeploy и npm audit fix приложение будет соответствовать baseline hardening для beta/production.
+FundingPro прошёл skills-driven аудит с актуальным Convex/Clerk стеком. **6 findings** (4 Medium, 2 Low), без Critical/High в `findings.json`. Основной launch risk — **ops verification** (App Links, payments sandbox, pen-test), не блокирующий code defects.
 
 **Threat model:** [`security-audit/threat-model.md`](security-audit/threat-model.md)  
-**Machine-readable findings:** [`security-audit/findings.json`](security-audit/findings.json)
+**Machine-readable findings:** [`security-audit/findings.json`](security-audit/findings.json)  
+**Incident response:** [`OPS-RUNBOOK.md#incident-response`](./OPS-RUNBOOK.md#incident-response)
+
+---
+
+## Архив: Supabase-era audit (24 июня 2026)
+
+<details>
+<summary>Исторический отчёт (Supabase, RLS, service role) — click to expand</summary>
+
+Проведён системный аудит эпохи Supabase: 57 API-маршрутов, RLS inventory, dynamic probes.
+
+**Критическая уязвимость (RLS)** — устранена миграцией `20250623210000_rls_hardening_public_schema.sql`.
+
+**Были High:** `SUPABASE_SERVICE_ROLE_KEY` missing, npm audit high, `ADMIN_BYPASS_DEV` — последние два закрыты; Supabase items N/A после миграции на Convex.
+
+Production probes (legacy): `/plans` 500 из-за schema drift на Supabase — **не актуально** для Convex.
+
+</details>

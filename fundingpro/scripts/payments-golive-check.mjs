@@ -122,13 +122,21 @@ if (runSandbox) {
   }
 }
 
-console.log("\n--- Recommended before Vercel production ---");
-console.log("  1. npm run deploy:check");
-console.log("  2. npm run convex:seed:prod   (see docs/PROD-SEED.md)");
-console.log("  3. Sandbox each provider locally (see docs/PAYMENTS-OVERVIEW.md)");
-console.log("  4. Set Vercel env — keep PAYMENTS_ENABLED=false until preview smoke passes");
-console.log("  5. PAYMENTS_ENABLED=true only after uzum → payme → click sandbox green");
+console.log("\n--- O4 PSP sandbox → production ---");
+if (!paymentsEnabled) {
+  console.log("  Mode: DRY RUN (PAYMENTS_ENABLED=false — safe default)");
+  console.log("  1. Set provider credentials in .env.local or Vercel Preview");
+  console.log("  2. PAYMENTS_ENABLED=true npm run payments:golive -- --sandbox");
+  console.log("  3. Run uzum:sandbox → payme:sandbox → click:sandbox (order matters)");
+} else {
+  console.log("  Mode: GO-LIVE (PAYMENTS_ENABLED=true)");
+  console.log("  1. Confirm preview sandbox passed on all enabled providers");
+  console.log("  2. Set same env on Vercel Production → redeploy");
+  console.log("  3. SMOKE_BASE_URL=https://www.fundingpro.uz npm run payments:check");
+}
+console.log("  · Rollback: set PAYMENTS_ENABLED=false on Vercel → redeploy (see OPS-RUNBOOK)");
+console.log("  · Docs: docs/PAYMENTS-OVERVIEW.md · docs/OPS-RUNBOOK.md");
 console.log("---------------------------------------------------------------\n");
 
-console.log(allOk ? "Go-live env check passed" : "Go-live env check failed");
+console.log(allOk ? "Go-live env check passed" : "Go-live env check failed — fix ✗ items above");
 process.exit(allOk ? 0 : 1);

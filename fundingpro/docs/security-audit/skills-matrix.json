@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-24T00:21:48.794Z",
+  "generatedAt": "2026-06-27T12:41:19.795Z",
   "project": "FundingPro",
-  "totalSkills": 817,
+  "totalSkills": 837,
   "statusCounts": {
     "ADAPTED": 600,
-    "N/A": 161,
+    "N/A": 181,
     "TOOL_BLOCKED": 24,
     "EXECUTED": 32
   },
@@ -40,6 +40,14 @@
       "tags": [],
       "status": "N/A",
       "reason": "Subdomain digital-forensics not applicable to Next.js SaaS stack"
+    },
+    {
+      "slug": "alert-manager",
+      "name": "alert-manager",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
     },
     {
       "slug": "analyzing-active-directory-acl-abuse",
@@ -882,6 +890,14 @@
       "reason": "Subdomain threat-intelligence reviewed at category level"
     },
     {
+      "slug": "backlink-analyzer",
+      "name": "backlink-analyzer",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
       "slug": "benchmarking-kubernetes-with-kube-bench",
       "name": "benchmarking-kubernetes-with-kube-bench",
       "subdomain": "container-security",
@@ -1266,12 +1282,20 @@
       "reason": "Subdomain incident-response reviewed at category level"
     },
     {
+      "slug": "competitor-analysis",
+      "name": "competitor-analysis",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
       "slug": "conducting-api-security-testing",
       "name": "conducting-api-security-testing",
       "subdomain": "penetration-testing",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "conducting-cloud-incident-response",
@@ -1648,6 +1672,30 @@
       "reason": "Subdomain incident-response reviewed at category level"
     },
     {
+      "slug": "content-gap-analysis",
+      "name": "content-gap-analysis",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
+      "slug": "content-quality-auditor",
+      "name": "content-quality-auditor",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
+      "slug": "content-refresher",
+      "name": "content-refresher",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
       "slug": "continuous-llm-red-teaming-with-promptfoo",
       "name": "continuous-llm-red-teaming-with-promptfoo",
       "subdomain": "ai-security",
@@ -1963,7 +2011,7 @@
       "subdomain": "api-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "detecting-business-email-compromise",
@@ -2719,12 +2767,28 @@
       "reason": "Subdomain threat-hunting reviewed at category level"
     },
     {
+      "slug": "domain-authority-auditor",
+      "name": "domain-authority-auditor",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
       "slug": "emulating-cloud-attacks-with-stratus-red-team",
       "name": "emulating-cloud-attacks-with-stratus-red-team",
       "subdomain": "cloud-security",
       "tags": [],
       "status": "ADAPTED",
       "reason": "Subdomain cloud-security reviewed at category level"
+    },
+    {
+      "slug": "entity-optimizer",
+      "name": "entity-optimizer",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
     },
     {
       "slug": "enumerating-cloud-with-cloudfox",
@@ -2863,7 +2927,7 @@
       "subdomain": "api-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "exploiting-broken-link-hijacking",
@@ -3170,6 +3234,14 @@
       "tags": [],
       "status": "ADAPTED",
       "reason": "Subdomain threat-intelligence reviewed at category level"
+    },
+    {
+      "slug": "geo-content-optimizer",
+      "name": "geo-content-optimizer",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
     },
     {
       "slug": "hardening-docker-containers-for-production",
@@ -3933,7 +4005,7 @@
       "subdomain": "application-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "implementing-diamond-model-analysis",
@@ -4305,7 +4377,7 @@
       "subdomain": "cryptography",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "implementing-kubernetes-network-policy-with-calico",
@@ -5027,7 +5099,7 @@
       "subdomain": "zero-trust-architecture",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "implementing-zero-trust-in-cloud",
@@ -5035,7 +5107,7 @@
       "subdomain": "cloud-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "implementing-zero-trust-network-access",
@@ -5084,7 +5156,7 @@
       "subdomain": "devsecops",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "integrating-sast-into-github-actions-pipeline",
@@ -5101,6 +5173,14 @@
       "tags": [],
       "status": "N/A",
       "reason": "Subdomain mobile-security not applicable to Next.js SaaS stack"
+    },
+    {
+      "slug": "internal-linking-optimizer",
+      "name": "internal-linking-optimizer",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
     },
     {
       "slug": "investigating-insider-threat-indicators",
@@ -5146,6 +5226,14 @@
       ],
       "status": "N/A",
       "reason": "Subdomain digital-forensics not applicable to Next.js SaaS stack"
+    },
+    {
+      "slug": "keyword-research",
+      "name": "keyword-research",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
     },
     {
       "slug": "managing-cloud-identity-with-okta",
@@ -5197,6 +5285,22 @@
       "reason": "Subdomain threat-intelligence reviewed at category level"
     },
     {
+      "slug": "memory-management",
+      "name": "memory-management",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
+      "slug": "meta-tags-optimizer",
+      "name": "meta-tags-optimizer",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
       "slug": "migrating-to-post-quantum-cryptography",
       "name": "migrating-to-post-quantum-cryptography",
       "subdomain": "cryptography",
@@ -5246,6 +5350,14 @@
       "reason": "Subdomain penetration-testing reviewed at category level"
     },
     {
+      "slug": "on-page-seo-auditor",
+      "name": "on-page-seo-auditor",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
       "slug": "operating-havoc-c2",
       "name": "operating-havoc-c2",
       "subdomain": "red-teaming",
@@ -5284,6 +5396,14 @@
       "tags": [],
       "status": "N/A",
       "reason": "Subdomain digital-forensics not applicable to Next.js SaaS stack"
+    },
+    {
+      "slug": "performance-reporter",
+      "name": "performance-reporter",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
     },
     {
       "slug": "performing-access-recertification-with-saviynt",
@@ -5691,7 +5811,7 @@
       "subdomain": "web-application-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "performing-cve-prioritization-with-kev-catalog",
@@ -5723,7 +5843,7 @@
       "subdomain": "web-application-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "performing-disk-forensics-investigation",
@@ -6592,7 +6712,7 @@
       "subdomain": "security-operations",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "performing-static-malware-analysis-with-pe-studio",
@@ -6728,7 +6848,7 @@
       "subdomain": "penetration-testing",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "performing-web-application-scanning-with-nikto",
@@ -6744,7 +6864,7 @@
       "subdomain": "vulnerability-management",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "performing-web-cache-deception-attack",
@@ -6835,6 +6955,14 @@
       "reason": "Subdomain threat-intelligence reviewed at category level"
     },
     {
+      "slug": "rank-tracker",
+      "name": "rank-tracker",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
       "slug": "recovering-deleted-files-with-photorec",
       "name": "recovering-deleted-files-with-photorec",
       "subdomain": "digital-forensics",
@@ -6864,7 +6992,7 @@
       "subdomain": "ai-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "relaying-ntlm-for-adcs-esc8",
@@ -6880,7 +7008,7 @@
       "subdomain": "cloud-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "reverse-engineering-android-malware-with-jadx",
@@ -6950,7 +7078,7 @@
       "subdomain": "devsecops",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "scanning-docker-images-with-trivy",
@@ -6966,7 +7094,7 @@
       "subdomain": "devsecops",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "scanning-infrastructure-with-nessus",
@@ -6993,6 +7121,14 @@
       "reason": "Requires specialized tool (nmap)"
     },
     {
+      "slug": "schema-markup-generator",
+      "name": "schema-markup-generator",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
       "slug": "securing-agentic-ai-tool-invocation",
       "name": "securing-agentic-ai-tool-invocation",
       "subdomain": "ai-security",
@@ -7006,7 +7142,7 @@
       "subdomain": "cloud-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "securing-aws-iam-permissions",
@@ -7022,7 +7158,7 @@
         "id: F1005.004"
       ],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "securing-aws-lambda-execution-roles",
@@ -7030,7 +7166,7 @@
       "subdomain": "cloud-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "securing-azure-with-microsoft-defender",
@@ -7038,7 +7174,7 @@
       "subdomain": "cloud-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "securing-container-registry-images",
@@ -7046,7 +7182,7 @@
       "subdomain": "cloud-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "securing-container-registry-with-harbor",
@@ -7054,7 +7190,7 @@
       "subdomain": "container-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "securing-github-actions-workflows",
@@ -7070,7 +7206,7 @@
       "subdomain": "container-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "securing-historian-server-in-ot-environment",
@@ -7086,7 +7222,7 @@
       "subdomain": "cloud-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "securing-remote-access-to-ot-environment",
@@ -7103,6 +7239,30 @@
       "tags": [],
       "status": "EXECUTED",
       "reason": "Automated or code-review check mapped to FundingPro"
+    },
+    {
+      "slug": "seo-content-writer",
+      "name": "seo-content-writer",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
+      "slug": "serp-analysis",
+      "name": "serp-analysis",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
+    },
+    {
+      "slug": "technical-seo-checker",
+      "name": "technical-seo-checker",
+      "subdomain": "unknown",
+      "tags": [],
+      "status": "N/A",
+      "reason": "No FundingPro surface for subdomain unknown"
     },
     {
       "slug": "testing-android-intents-for-vulnerabilities",
@@ -7301,7 +7461,7 @@
       "subdomain": "api-security",
       "tags": [],
       "status": "ADAPTED",
-      "reason": "Checklist adapted to Vercel/Supabase/Next.js stack"
+      "reason": "Checklist adapted to Vercel/Convex/Clerk/Next.js stack"
     },
     {
       "slug": "tracking-threat-actor-infrastructure",

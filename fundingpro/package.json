@@ -38,6 +38,7 @@
     "deploy:production": "node scripts/production-next-steps.mjs",
     "deploy:setup-env": "node scripts/setup-production-env.mjs",
     "production:readiness": "node scripts/production-readiness.mjs",
+    "ops:readiness": "node scripts/ops-readiness.mjs",
     "check": "npm run typecheck && npm test && npm run test:convex",
     "security:audit": "node scripts/security-audit-orchestrator.mjs",
     "security:probe": "node scripts/security-api-probe.mjs",

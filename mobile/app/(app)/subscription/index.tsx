@@ -3,7 +3,7 @@ import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
-import type { PaymentProviderId } from "@fundingpro/api-types";
+import type { PaymentProviderId, Plan } from "@fundingpro/api-types";
 import { PaymentConsentCheckbox } from "../../../components/legal/ReconsentBanner";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
@@ -11,7 +11,6 @@ import { Screen } from "../../../components/ui/Screen";
 import { LoadingState } from "../../../components/ui/States";
 import { api } from "../../../lib/api/client";
 import { queryKeys } from "../../../lib/query-keys";
-import type { Plan } from "@fundingpro/api-types";
 
 const PROVIDER_LABELS: Record<PaymentProviderId, string> = {
   uzum: "Uzum Bank",

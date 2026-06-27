@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { DashboardCard } from "@/components/design/DashboardCard";
 import { CreditCard, TrendingUp, AlertCircle, Loader2, RefreshCcw } from "lucide-react";
@@ -40,7 +40,7 @@ export default function AdminPaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [providerFilter, setProviderFilter] = useState<PaymentProviderFilter>("all");
 
-  const fetchReport = async (provider: PaymentProviderFilter = providerFilter) => {
+  const fetchReport = useCallback(async (provider: PaymentProviderFilter) => {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
@@ -53,11 +53,11 @@ export default function AdminPaymentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchReport(providerFilter);
-  }, [providerFilter]);
+    void fetchReport(providerFilter);
+  }, [providerFilter, fetchReport]);
 
   if (loading && !report) {
     return (

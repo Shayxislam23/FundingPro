@@ -120,6 +120,27 @@ Only after preview smoke with sandbox credentials:
 | Admin ledger | `/admin/payments` |
 | Idempotency | duplicate webhook must not double-activate |
 
+### Phase 5 — Rollback & incident response
+
+If production payments misbehave after go-live:
+
+1. Set **`PAYMENTS_ENABLED=false`** on Vercel production → redeploy (immediate kill switch).
+2. Verify: `SMOKE_BASE_URL=https://www.fundingpro.uz npm run payments:check` — all providers `enabled: false`.
+3. Investigate `/admin/payments` ledger + Convex `paymentEvents` for duplicate activations.
+4. PSP dashboards: pause webhooks or rotate merchant keys if credentials may be compromised.
+5. Re-enable only after preview sandbox re-run: `PAYMENTS_ENABLED=true npm run payments:golive-check -- --sandbox`.
+
+### Phase 6 — Post go-live monitoring
+
+| Signal | Action |
+|--------|--------|
+| Webhook 4xx spike | Check `CONVEX_SYSTEM_SECRET`, provider signature env |
+| Duplicate subscriptions | Replay idempotency test; inspect `activateSubscriptionFromPayment` |
+| Provider `configured: false` | Missing Vercel env — `npm run deploy:check` |
+| User checkout failures | Mobile + web `GET /api/v1/payments/status` |
+
+Pen-test scope: [`PEN-TEST-CHECKLIST.md`](./PEN-TEST-CHECKLIST.md) §2 (payments).
+
 ## Legal
 
 Оферта и политика возвратов упоминают Uzum Bank, Payme и Click как PSP. FundingPro не хранит данные карт.

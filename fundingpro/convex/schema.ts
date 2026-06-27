@@ -23,7 +23,8 @@ export default defineSchema({
     .index("by_clerkId", ["clerkId"])
     .index("by_token", ["tokenIdentifier"])
     .index("by_email", ["email"])
-    .index("by_created", ["createdAt"]),
+    .index("by_created", ["createdAt"])
+    .index("by_deletion_requested", ["deletionRequestedAt"]),
 
   userIdentities: defineTable({
     userId: v.id("users"),

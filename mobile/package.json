@@ -3,7 +3,7 @@
   "version": "0.4.0",
   "main": "expo-router/entry",
   "dependencies": {
-    "@clerk/clerk-expo": "^2.9.7",
+    "@clerk/clerk-expo": "^2.19.41",
     "@expo/vector-icons": "^15.0.2",
     "@fundingpro/api-types": "^0.1.0",
     "@fundingpro/shared": "^0.1.0",

@@ -17,6 +17,7 @@ jobs:
       NEXT_PUBLIC_CONVEX_URL: "https://placeholder.convex.cloud"
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_Y2xlcmsuZGV2JHRlc3Qk"
       CLERK_SECRET_KEY: "sk_test_Y2xlcmsuZGV2JHRlc3Qk"
+      CLERK_JWT_ISSUER_DOMAIN: "https://placeholder.clerk.accounts.dev"
       RESEND_API_KEY: "re_placeholder"
       RESEND_FROM_EMAIL: "info@fundingpro.uz"
       ADMIN_EMAILS: "admin@fundingpro.uz"

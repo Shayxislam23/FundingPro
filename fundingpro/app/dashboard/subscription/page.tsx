@@ -3,76 +3,38 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { ShieldCheck, Clock, CheckCircle2, ChevronRight, Loader2, CreditCard, Smartphone } from "lucide-react";
+import { ShieldCheck, Clock, CheckCircle2, Loader2, CreditCard } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
-import { formatPlanPrice, formatPlanPriceDisplay } from "@/lib/format-plan";
-
-type Plan = {
-  id: string;
-  name: string;
-  nameRu: string;
-  pricePrimary: string;
-  priceSecondary: string;
-  period: string;
-  highlighted?: boolean;
-  features: string[];
-};
-
-type PaymentConfig = {
-  paymentsEnabled: boolean;
-  integrationStatus: string;
-  message: string;
-  merchantConfigured: boolean;
-  checkoutConfigured: boolean;
-  providers?: {
-    id: "uzum" | "payme" | "click";
-    enabled: boolean;
-    configured: boolean;
-    label: string;
-    methods: string[];
-  }[];
-};
-
-function mapApiPlan(row: {
-  id: string;
-  name: string;
-  nameRu: string;
-  priceUsd: number;
-  priceUzs: number;
-  features: string[];
-  highlighted: boolean;
-}): Plan {
-  const display = formatPlanPriceDisplay(row.priceUzs, row.priceUsd);
-  return {
-    id: row.id,
-    name: row.name,
-    nameRu: row.nameRu,
-    pricePrimary: display.primary,
-    priceSecondary: display.secondary,
-    period: "/мес",
-    highlighted: row.highlighted,
-    features: row.features,
-  };
-}
+import { SubscriptionPlans } from "./components/SubscriptionPlans";
+import { useSubscriptionCheckout } from "./hooks/useSubscriptionCheckout";
+import { mapApiPlan, type PaymentConfig, type Plan } from "./types";
 
 export default function SubscriptionPage() {
-  const [requested, setRequested] = useState<Set<string>>(new Set());
-  const [requesting, setRequesting] = useState<string | null>(null);
-  const [requestError, setRequestError] = useState<string | null>(null);
-  const [requestSuccess, setRequestSuccess] = useState<string | null>(null);
-  const [paying, setPaying] = useState<string | null>(null);
   const [ngoPlans, setNgoPlans] = useState<Plan[]>([]);
   const [businessPlans, setBusinessPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [usdUzsRate, setUsdUzsRate] = useState<number | null>(null);
-  const [payError, setPayError] = useState<string | null>(null);
-  const [acceptPaymentLegal, setAcceptPaymentLegal] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<{
     planName: string;
     limits: { eligibilityChecks: number | null; aiProposals: number | null };
     used: { eligibilityChecks: number; aiProposals: number };
   } | null>(null);
+
+  const {
+    requested,
+    requesting,
+    requestError,
+    requestSuccess,
+    paying,
+    payError,
+    acceptPaymentLegal,
+    setAcceptPaymentLegal,
+    handleRequest,
+    handlePay,
+    enabledProviders,
+    paymentsOn,
+  } = useSubscriptionCheckout(paymentConfig);
 
   useEffect(() => {
     (async () => {
@@ -117,104 +79,6 @@ export default function SubscriptionPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const headers = await getAuthHeaders();
-        const res = await fetch("/api/v1/subscription-requests", { headers });
-        if (!res.ok) return;
-        const json = await res.json();
-        const ids: string[] = json.data?.pendingPlanIds ?? [];
-        if (ids.length) setRequested(new Set(ids));
-      } catch {
-        /* ignore */
-      }
-    })();
-  }, []);
-
-  async function handleRequest(planId: string, planName: string) {
-    if (requested.has(planId)) return;
-    setRequesting(planId);
-    setRequestError(null);
-    setRequestSuccess(null);
-    try {
-      const headers = await getAuthHeaders();
-      const res = await fetch("/api/v1/subscription-requests", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ planId, planName }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setRequestError(json.error?.message ?? "Не удалось отправить запрос");
-        return;
-      }
-      setRequested((prev) => new Set(prev).add(planId));
-      setRequestSuccess(planName);
-      setTimeout(() => setRequestSuccess(null), 8000);
-    } catch {
-      setRequestError("Не удалось отправить запрос");
-    } finally {
-      setRequesting(null);
-    }
-  }
-
-  async function handlePay(planId: string, provider: "uzum" | "payme" | "click", method?: "checkout") {
-    if (!acceptPaymentLegal) {
-      setPayError("Примите оферту и политику возвратов перед оплатой");
-      return;
-    }
-    setPayError(null);
-    setPaying(`${planId}:${provider}:${method ?? "default"}`);
-    try {
-      const headers = await getAuthHeaders();
-      const intentRes = await fetch("/api/v1/payments/intent", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ planId, acceptedPaymentTerms: true, provider }),
-      });
-      const intentJson = await intentRes.json();
-      if (!intentRes.ok) throw new Error(intentJson.error?.message ?? "Intent failed");
-
-      const data = intentJson.data ?? {};
-      const { paymentId, uzumAppUrl, paymeCheckoutUrl, clickPayUrl } = data;
-
-      if (provider === "uzum" && method !== "checkout" && uzumAppUrl) {
-        window.location.href = uzumAppUrl;
-        return;
-      }
-      if (provider === "payme" && paymeCheckoutUrl) {
-        window.location.href = paymeCheckoutUrl;
-        return;
-      }
-      if (provider === "click" && clickPayUrl) {
-        window.location.href = clickPayUrl;
-        return;
-      }
-
-      const checkoutRes = await fetch("/api/v1/payments/checkout", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ paymentId, provider }),
-      });
-      const checkoutJson = await checkoutRes.json();
-      if (!checkoutRes.ok) throw new Error(checkoutJson.error?.message ?? "Checkout failed");
-
-      const redirectUrl = checkoutJson.data?.redirectUrl;
-      if (redirectUrl) window.location.href = redirectUrl;
-    } catch (err) {
-      console.error(err);
-      setPayError(err instanceof Error ? err.message : "Ошибка оплаты");
-    } finally {
-      setPaying(null);
-    }
-  }
-
-  const enabledProviders =
-    paymentConfig?.providers?.filter((p) => p.enabled && p.configured) ?? [];
-
-  const paymentsOn = paymentConfig?.paymentsEnabled ?? false;
 
   return (
     <div>
@@ -325,49 +189,17 @@ export default function SubscriptionPage() {
           <Loader2 className="w-6 h-6 animate-spin text-funding-green" />
         </div>
       ) : (
-        <>
-          {ngoPlans.length > 0 && (
-            <div className="mb-8">
-              <h2 className="font-bold text-funding-black mb-4">НКО и частные лица</h2>
-              <div className="grid sm:grid-cols-3 gap-5">
-                {ngoPlans.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    paymentsOn={paymentsOn}
-                    requested={requested.has(plan.id)}
-                    requesting={requesting === plan.id}
-                    paying={paying?.startsWith(plan.id) ?? false}
-                    onRequest={() => handleRequest(plan.id, plan.nameRu)}
-                    onPay={(provider, method) => handlePay(plan.id, provider, method)}
-                    enabledProviders={enabledProviders}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {businessPlans.length > 0 && (
-            <div className="mb-8">
-              <h2 className="font-bold text-funding-black mb-4">Бизнес</h2>
-              <div className="grid sm:grid-cols-3 gap-5">
-                {businessPlans.map((plan) => (
-                  <PlanCard
-                    key={plan.id}
-                    plan={plan}
-                    paymentsOn={paymentsOn}
-                    requested={requested.has(plan.id)}
-                    requesting={requesting === plan.id}
-                    paying={paying?.startsWith(plan.id) ?? false}
-                    onRequest={() => handleRequest(plan.id, plan.nameRu)}
-                    onPay={(provider, method) => handlePay(plan.id, provider, method)}
-                    enabledProviders={enabledProviders}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </>
+        <SubscriptionPlans
+          ngoPlans={ngoPlans}
+          businessPlans={businessPlans}
+          paymentsOn={paymentsOn}
+          requested={requested}
+          requesting={requesting}
+          paying={paying}
+          enabledProviders={enabledProviders}
+          onRequest={handleRequest}
+          onPay={handlePay}
+        />
       )}
 
       <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
@@ -397,121 +229,6 @@ export default function SubscriptionPage() {
           </p>
         </div>
       </div>
-    </div>
-  );
-}
-
-function PlanCard({
-  plan,
-  paymentsOn,
-  requested,
-  requesting,
-  paying,
-  onRequest,
-  onPay,
-  enabledProviders,
-}: {
-  plan: Plan;
-  paymentsOn: boolean;
-  requested: boolean;
-  requesting: boolean;
-  paying: boolean;
-  onRequest: () => void;
-  onPay: (provider: "uzum" | "payme" | "click", method?: "checkout") => void;
-  enabledProviders: NonNullable<PaymentConfig["providers"]>;
-}) {
-  return (
-    <div
-      className="rounded-2xl p-5 border flex flex-col"
-      style={
-        plan.highlighted
-          ? { background: "#020703", borderColor: "rgba(0,138,46,0.5)", color: "#fff" }
-          : { background: "#fff", borderColor: "#e5e7eb", color: "#050505" }
-      }
-    >
-      {plan.highlighted && (
-        <div
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold mb-3 self-start"
-          style={{ background: "rgba(0,138,46,0.2)", color: "#12B94F" }}
-        >
-          Популярный
-        </div>
-      )}
-      <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: plan.highlighted ? "#A7B8AA" : "#6b7280" }}>
-        {plan.nameRu}
-      </p>
-      <div className="flex items-baseline gap-1 mb-1">
-        <span className="text-3xl font-black">{plan.pricePrimary}</span>
-        <span className="text-sm" style={{ color: plan.highlighted ? "#A7B8AA" : "#9ca3af" }}>{plan.period}</span>
-      </div>
-      {plan.priceSecondary ? (
-        <p className="text-xs mb-4" style={{ color: plan.highlighted ? "#A7B8AA" : "#6b7280" }}>
-          {plan.priceSecondary}
-        </p>
-      ) : (
-        <div className="mb-4" />
-      )}
-      <ul className="space-y-2 flex-1 mb-5">
-        {plan.features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-xs">
-            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: "#008A2E" }} />
-            <span style={{ color: plan.highlighted ? "#D1FAE5" : "#4A5A4D" }}>{f}</span>
-          </li>
-        ))}
-      </ul>
-
-      {paymentsOn && enabledProviders.length > 0 ? (
-        <div className="space-y-2">
-          {enabledProviders.map((provider) => (
-            <button
-              key={provider.id}
-              onClick={() => onPay(provider.id)}
-              disabled={paying}
-              className="w-full py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 disabled:opacity-60"
-              style={
-                plan.highlighted
-                  ? { background: provider.id === "uzum" ? "#008A2E" : "rgba(0,138,46,0.85)", color: "#fff" }
-                  : { background: "#F0FDF4", color: "#008A2E", border: "1px solid #BBF7D0" }
-              }
-            >
-              {paying ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <>
-                  {provider.id === "uzum" ? <CreditCard className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
-                  {provider.label}
-                </>
-              )}
-            </button>
-          ))}
-        </div>
-      ) : requested ? (
-        <div className="space-y-2">
-          <div
-            className="w-full py-3 rounded-xl text-xs font-semibold text-center flex items-center justify-center gap-2"
-            style={{ background: "rgba(0,138,46,0.15)", color: "#12B94F" }}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Запрос отправлен
-          </div>
-          <p className="text-[10px] text-center leading-relaxed" style={{ color: plan.highlighted ? "#A7B8AA" : "#9ca3af" }}>
-            Ответ придёт на ваш email в течение 1–2 рабочих дней
-          </p>
-        </div>
-      ) : (
-        <button
-          onClick={onRequest}
-          disabled={requesting}
-          className="w-full py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 disabled:opacity-60"
-          style={
-            plan.highlighted
-              ? { background: "#008A2E", color: "#fff" }
-              : { background: "#F0FDF4", color: "#008A2E", border: "1px solid #BBF7D0" }
-          }
-        >
-          {requesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <>Запросить подключение <ChevronRight className="w-3.5 h-3.5" /></>}
-        </button>
-      )}
     </div>
   );
 }

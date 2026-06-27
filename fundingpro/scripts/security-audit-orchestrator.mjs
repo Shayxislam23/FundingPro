@@ -71,9 +71,25 @@ console.log(`\nWrote ${outDir}/skills-matrix.json (${skills.length} skills)`);
 console.log(`Wrote ${outDir}/findings.json (${allFindings.length} findings)`);
 console.log("  By severity:", findingsDoc.bySeverity);
 
-process.exit(
-  process.env.SECURITY_AUDIT_STRICT === "1" &&
-    allFindings.some((f) => f.severity === "Critical" && f.status !== "remediated" && f.status !== "mitigated")
-    ? 1
-    : 0
+const openFindings = allFindings.filter(
+  (f) => f.status !== "remediated" && f.status !== "mitigated" && f.status !== "pass"
 );
+
+const strict = process.env.SECURITY_AUDIT_STRICT === "1";
+const failOnMedium = process.env.SECURITY_AUDIT_FAIL_MEDIUM === "1" || strict;
+const severityRank = { Critical: 0, High: 1, Medium: 2, Low: 3, Informational: 4 };
+const threshold = failOnMedium ? severityRank.Medium : severityRank.Critical;
+
+const shouldFail = openFindings.some(
+  (f) => (severityRank[f.severity] ?? 99) <= threshold
+);
+
+if (shouldFail) {
+  console.error(
+    `\nSecurity audit failed: ${openFindings.length} open finding(s) at or above ${
+      failOnMedium ? "Medium" : "Critical"
+    }`
+  );
+}
+
+process.exit(shouldFail ? 1 : 0);

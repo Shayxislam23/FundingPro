@@ -24,17 +24,31 @@ export function runStaticChecks() {
     withPublic: 0,
     withActiveUser: 0,
     withAdmin: 0,
+    withPaymentWebhook: 0,
+    merchantAuth: 0,
     custom: 0,
   };
   const customRoutes = [];
+  const merchantRoutes = [];
+
+  function isMerchantRoute(content, rel) {
+    if (content.includes("withUzumMerchant")) return true;
+    if (content.includes("validatePaymeBasicAuth")) return true;
+    if (rel.includes("/payments/click/")) return true;
+    return false;
+  }
 
   for (const file of routeFiles) {
     const content = readFileSync(file, "utf8");
     const rel = file.replace(fundingproRoot + "/", "");
     if (content.includes("withPublic")) wrapperPatterns.withPublic++;
+    else if (content.includes("withPaymentWebhook")) wrapperPatterns.withPaymentWebhook++;
     else if (content.includes("withAdmin")) wrapperPatterns.withAdmin++;
     else if (content.includes("withActiveUser")) wrapperPatterns.withActiveUser++;
-    else {
+    else if (isMerchantRoute(content, rel)) {
+      wrapperPatterns.merchantAuth++;
+      merchantRoutes.push(rel);
+    } else {
       wrapperPatterns.custom++;
       customRoutes.push(rel);
     }
@@ -67,9 +81,11 @@ export function runStaticChecks() {
     }
   }
 
-  // middleware API bypass
+  // middleware API bypass — only flag when edge rate limits are absent
   const middleware = readFileSync(join(fundingproRoot, "middleware.ts"), "utf8");
-  if (middleware.includes('pathname.startsWith("/api/")')) {
+  const hasEdgeRateLimits =
+    middleware.includes("isRateLimitedApiRoute") && middleware.includes("applyApiRateLimit");
+  if (middleware.includes('pathname.startsWith("/api/")') && !hasEdgeRateLimits) {
     findings.push({
       id: "EDGE-API-BYPASS",
       severity: "Medium",
@@ -217,5 +233,8 @@ export function runStaticChecks() {
     }
   }
 
-  return { findings, stats: { routeFiles: routeFiles.length, wrapperPatterns, customRoutes } };
+  return {
+    findings,
+    stats: { routeFiles: routeFiles.length, wrapperPatterns, customRoutes, merchantRoutes },
+  };
 }

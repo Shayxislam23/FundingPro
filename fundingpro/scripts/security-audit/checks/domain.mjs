@@ -25,9 +25,12 @@ export function runDomainChecks() {
     });
   }
 
-  // AI rate limit
+  // AI rate limit — dev-only memory fallback is acceptable when production denies without Convex
   const aiRate = readFileSync(join(fundingproRoot, "lib/ai-rate-limit.ts"), "utf8");
-  if (aiRate.includes("memory") || aiRate.includes("Map")) {
+  const prodDeniesWithoutConvex =
+    aiRate.includes("Rate limit backend unavailable; denying request") &&
+    aiRate.includes("shouldUseMemoryFallback");
+  if ((aiRate.includes("memory") || aiRate.includes("Map")) && !prodDeniesWithoutConvex) {
     findings.push({
       id: "AI-RATE-LIMIT-MEMORY",
       severity: "Medium",
@@ -102,7 +105,13 @@ export function runDomainChecks() {
   // CORS env unused
   const corsEnv = readFileSync(join(fundingproRoot, ".env.example"), "utf8");
   const nextConfig = readFileSync(join(fundingproRoot, "next.config.mjs"), "utf8");
-  if (corsEnv.includes("CORS_ALLOWED_ORIGINS") && !nextConfig.includes("CORS")) {
+  const apiRoute = readFileSync(join(fundingproRoot, "lib/api-route.ts"), "utf8");
+  const corsEnforced =
+    nextConfig.includes("CORS") ||
+    (apiRoute.includes("api-cors") &&
+      apiRoute.includes("applyCorsToResponse") &&
+      apiRoute.includes("handleCorsPreflight"));
+  if (corsEnv.includes("CORS_ALLOWED_ORIGINS") && !corsEnforced) {
     findings.push({
       id: "CORS-UNENFORCED",
       severity: "Medium",

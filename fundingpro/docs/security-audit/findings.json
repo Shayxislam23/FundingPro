@@ -1,68 +1,21 @@
 {
-  "generatedAt": "2026-06-27T12:31:29.186Z",
-  "remediatedAt": "2026-06-27T18:00:00.000Z",
+  "generatedAt": "2026-06-27T12:49:06.112Z",
   "project": "FundingPro",
   "totalFindings": 0,
-  "closedFindings": 7,
-  "bySeverity": {
-    "Medium": 0,
-    "Low": 0
-  },
+  "bySeverity": {},
   "findings": [],
-  "closed": [
-    {
-      "id": "API-CUSTOM-AUTH",
-      "severity": "Medium",
-      "status": "closed",
-      "remediation": "withPublic on lead-magnet, payments/status, webhook; merchant routes documented in docs/API-SECURITY.md"
-    },
-    {
-      "id": "EDGE-API-BYPASS",
-      "severity": "Medium",
-      "status": "closed",
-      "remediation": "middleware rate limits extended to lead-magnet, payments/status, payments/webhook"
-    },
-    {
-      "id": "AI-RATE-LIMIT-MEMORY",
-      "severity": "Medium",
-      "status": "closed",
-      "remediation": "lib/ai-rate-limit.ts denies when Convex unavailable in production (no memory fallback)"
-    },
-    {
-      "id": "CORS-UNENFORCED",
-      "severity": "Medium",
-      "status": "closed",
-      "remediation": "lib/api-cors.ts integrated into api-route wrappers"
-    },
-    {
-      "id": "CI-ACTIONS-MUTABLE-TAGS",
-      "severity": "Low",
-      "status": "closed",
-      "remediation": "actions/checkout and actions/setup-node pinned to SHA digests in ci.yml"
-    },
-    {
-      "id": "ADMIN-CHECK-NO-STATUS",
-      "severity": "Low",
-      "status": "closed",
-      "remediation": "admin-check uses withActiveUser (banned/disabled rejected)"
-    },
-    {
-      "id": "HEALTH-ERROR-LEAK",
-      "severity": "Low",
-      "status": "closed",
-      "remediation": "buildHealthPayload omits dbError in production; tests/health.test.mjs"
-    }
-  ],
   "routeStats": {
     "routeFiles": 64,
     "wrapperPatterns": {
-      "withPublic": 10,
+      "withPublic": 9,
       "withActiveUser": 28,
       "withAdmin": 18,
       "withPaymentWebhook": 1,
-      "merchantAuth": 8
+      "merchantAuth": 8,
+      "custom": 0
     },
-    "customRoutes": [
+    "customRoutes": [],
+    "merchantRoutes": [
       "app/api/v1/payments/click/complete/route.ts",
       "app/api/v1/payments/click/prepare/route.ts",
       "app/api/v1/payments/payme/route.ts",

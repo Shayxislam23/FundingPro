@@ -34,14 +34,15 @@ export const metadata: Metadata = {
 const DEFAULT_COUNTRY = "Uzbekistan";
 
 type PageProps = {
-  searchParams: { country?: string; page?: string; q?: string };
+  searchParams: Promise<{ country?: string; page?: string; q?: string }>;
 };
 
 export default async function PublicGrantsPage({ searchParams }: PageProps) {
-  const countryParam = searchParams.country;
+  const sp = await searchParams;
+  const countryParam = sp.country;
   const countryFilter = countryParam === undefined ? DEFAULT_COUNTRY : countryParam;
-  const page = Math.max(1, parseInt(searchParams.page ?? "1", 10) || 1);
-  const search = searchParams.q?.trim() ?? "";
+  const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+  const search = sp.q?.trim() ?? "";
 
   let grants: Awaited<ReturnType<typeof listPublicGrants>>["grants"] = [];
   let total = 0;

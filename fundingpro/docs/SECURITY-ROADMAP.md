@@ -50,7 +50,7 @@ Last updated: 2026-06-27
 4. Update M-02 status to **Resolved** in this doc.
 5. Include in external pen-test scope — [`PEN-TEST-CHECKLIST.md`](./PEN-TEST-CHECKLIST.md).
 
-**CI / local:** Run `npm ci` from monorepo root (not `npm install` inside `fundingpro/` alone) to avoid `ENOWORKSPACES` and SWC lockfile warnings. Root `overrides` pin `@next/swc-*@14.2.33` to match `next@14.2.x` optional deps.
+**CI / local:** Run `npm ci` from monorepo root (not `npm install` inside `fundingpro/` alone) to avoid `ENOWORKSPACES` and SWC lockfile warnings. Root `overrides` pin `next@15.5.19`, `@clerk/nextjs@7.5.9`, and `@next/swc-*@15.5.19` optional deps in `fundingpro/package.json`.
 
 ## Related audit IDs
 
@@ -70,18 +70,19 @@ Last updated: 2026-06-27
 
 ## Dependency baseline (Codex audit P1 — 2026-06-27)
 
-**S3 decision:** Next 15 + Clerk 7 **deferred** — attempted bump caused monorepo type/build regressions; remain on max safe 14.x / 5.x until a dedicated upgrade branch with full auth/payment regression.
+**S3 decision:** Next 15.5.19 + Clerk 7.5.9 on branch `upgrade/next15-clerk7` (2026-06-27). Merge to `main` pending 0-high prod audit gate.
 
 | Package | Version | Notes |
 |---------|---------|-------|
-| `next` | 14.2.35 | Latest 14.2.x patch; pairs with `@next/swc-*@14.2.33` |
-| `@clerk/nextjs` | 5.7.6 | Latest 5.x; pinned exact in `fundingpro/package.json` |
-| `eslint-config-next` | 14.2.35 | Aligned with `next` |
+| `next` | 15.5.19 | App Router async `params`/`searchParams`; `outputFileTracingRoot` in `next.config.mjs` |
+| `@clerk/nextjs` | 7.5.9 | Stricter publishable-key validation — CI uses `pk_test_Y2xlcmsuZGV2JHRlc3Qk` |
+| `eslint-config-next` | 15.5.19 | Aligned with `next` |
 | `postcss` (dev) | ^8.5.10 | Root override + devDep bump for GHSA-qx2v-qp2m-jg93 |
+| `@next/swc-*` | 15.5.19 | Optional deps in `fundingpro/package.json` for monorepo hoisting |
 
-**Regression (2026-06-27):** `npm run typecheck --workspace=fundingpro`, `npm test --workspace=fundingpro` (81 tests), `npm run test:convex --workspace=fundingpro`, `NEXT_PUBLIC_CONVEX_URL=https://placeholder.convex.cloud npm run build --workspace=fundingpro`.
+**Regression (2026-06-27, upgrade branch):** `npm run build`, `npm run typecheck --workspace=fundingpro`, `npm test` (81), `npm run test:convex` (8), mobile/shared/api-types typecheck.
 
-**Remaining npm audit (high):** Clerk auth bypass (GHSA-w24r-5266-9c3c) and Next 14 advisories — require Next 15+ / Clerk 7+; tracked for S3 upgrade sprint.
+**Remaining npm audit (high):** 6 in `fundingpro` workspace (nested `postcss` via `next`); mobile `@clerk/clerk-expo` chain — tracked before merge.
 
 ## References
 

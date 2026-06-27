@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Calendar, MapPin, DollarSign, FileText, ArrowLeft, Loader2, Plus, AlertTriangle } from "lucide-react";
 import { translateSector } from "@fundingpro/shared";
@@ -39,8 +40,8 @@ function formatDeadline(d: string | null) {
   };
 }
 
-export default function GrantDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function GrantDetailPage() {
+  const { id } = useParams<{ id: string }>();
   const [grant, setGrant] = useState<Grant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

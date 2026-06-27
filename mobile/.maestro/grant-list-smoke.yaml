@@ -1,5 +1,0 @@
-appId: uz.fundingpro.app
----
-- launchApp
-- tapOn: "Публичные гранты"
-- assertVisible: "Публичные гранты"

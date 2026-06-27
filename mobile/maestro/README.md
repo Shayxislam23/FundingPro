@@ -43,6 +43,8 @@ Single flow:
 ```bash
 maestro test mobile/maestro/public-grants.yaml
 maestro test mobile/maestro/auth-login.yaml
+maestro test mobile/maestro/onboarding-checklist.yaml
+maestro test mobile/maestro/subscription-consent.yaml
 ```
 
 Interactive debug (step through UI):
@@ -57,6 +59,8 @@ maestro studio
 |------|----------------|
 | `public-grants.yaml` | Landing → tap «Публичные гранты» → grants screen header |
 | `auth-login.yaml` | Landing → login → Clerk email OTP → dashboard «Главная» |
+| `onboarding-checklist.yaml` | After login → home onboarding card «Первые шаги в FundingPro» |
+| `subscription-consent.yaml` | After login → Ещё → Подписка → payment terms consent copy |
 
 ### `public-grants.yaml`
 
@@ -91,6 +95,17 @@ Production Clerk instances do not accept `+clerk_test` / `424242`. For manual QA
 
 Do not enable Clerk test mode on production.
 
+### `onboarding-checklist.yaml`
+
+- Runs `auth-login.yaml` first via `runFlow`.
+- Expects the test user to have **incomplete onboarding** (checklist visible on home).
+- If all steps are done, the card is hidden — use a fresh `+clerk_test` user or reset onboarding in backend.
+
+### `subscription-consent.yaml`
+
+- Runs `auth-login.yaml`, opens **Ещё → Подписка**.
+- Asserts payment consent copy before checkout (no payment initiated).
+
 ## Troubleshooting
 
 | Symptom | Likely cause |
@@ -102,12 +117,13 @@ Do not enable Clerk test mode on production.
 | «Главная» timeout after OTP | Convex/API unreachable after Clerk session |
 | Wrong screen after launch | Remove app data or rely on `clearState: true` in flows |
 
-## CI (optional)
+## CI
 
-Point Maestro at a prebuilt simulator `.app` and run:
+The `mobile` job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) installs Maestro via Homebrew when available and validates flow files. Full execution requires a dev-client `.app`:
 
 ```bash
-maestro test mobile/maestro/ --format junit --output maestro-results.xml
+export MAESTRO_APP_PATH=/path/to/FundingPro.app
+maestro test mobile/maestro/ --format junit --output mobile/maestro-results.xml
 ```
 
-EAS + device farm setup is project-specific; see `mobile/docs/RELEASE.md` for release checklist.
+Store submission checklist: [`mobile/docs/STORE-LAUNCH.md`](../docs/STORE-LAUNCH.md). Release builds: [`mobile/docs/RELEASE.md`](../docs/RELEASE.md).

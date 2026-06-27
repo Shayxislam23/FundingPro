@@ -1,5 +1,0 @@
-# Requires authenticated session with incomplete onboarding.
-appId: uz.fundingpro.app
----
-- launchApp
-- assertVisible: "Первые шаги в FundingPro"

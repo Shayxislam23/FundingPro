@@ -75,6 +75,8 @@ eas submit --platform android
 maestro test mobile/maestro/
 ```
 
+See [`mobile/docs/STORE-LAUNCH.md`](./STORE-LAUNCH.md) for App Store screenshots, review notes, and v1.0.0 path.
+
 ## Versioning
 
 - Current release: **0.4.0** (`app.json`, `package.json`)

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { GrantCard } from "@/components/design/GrantCard";
 import { Search, Loader2 } from "lucide-react";
-import { translateSector } from "@/lib/sector-labels";
+import { translateSector } from "@fundingpro/shared";
 import { getAuthHeaders } from "@/lib/client-auth";
 import { buildMatchScoreMap } from "@/lib/match-score";
 import {
@@ -14,7 +14,7 @@ import {
   formatDeadlineDisplay,
   getDeadlineUrgency,
   isDeadlineExpired,
-} from "@/lib/format-grant";
+} from "@fundingpro/shared";
 
 async function authHeaders(): Promise<Record<string, string>> {
   return getAuthHeaders();

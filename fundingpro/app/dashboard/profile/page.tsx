@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { Building2, Loader2, CheckCircle2, Pencil } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
-import { SECTOR_OPTIONS, translateSector } from "@/lib/sector-labels";
+import { SECTOR_OPTIONS, translateSector } from "@fundingpro/shared";
 import { trackEvent } from "@/lib/analytics";
 
 type Organization = {

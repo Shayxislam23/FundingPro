@@ -5,7 +5,7 @@ import { withActiveUser } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
 import { ensureInternalUser } from "@/lib/db/users";
 import { listApplications, createApplication } from "@/lib/db/applications";
-import { parsePagination } from "@/lib/validation";
+import { parsePagination } from "@fundingpro/shared";
 
 export const GET = withActiveUser(async (req, authUser) => {
   const { searchParams } = new URL(req.url);

@@ -8,9 +8,9 @@ import { OrgOnboardingBanner } from "@/components/design/OrgOnboardingBanner";
 import { OnboardingChecklist } from "@/components/design/OnboardingChecklist";
 import { ReconsentBanner } from "@/components/legal/ReconsentBanner";
 import { BookOpen, BarChart3, CheckCircle2, FileText, ArrowRight, Sparkles, Target, Loader2, Building2 } from "lucide-react";
-import { translateSector } from "@/lib/sector-labels";
+import { translateSector } from "@fundingpro/shared";
 import { getAuthHeaders } from "@/lib/client-auth";
-import { formatGrantAmount, formatDeadlineDate, getDeadlineUrgency } from "@/lib/format-grant";
+import { formatGrantAmount, formatDeadlineDate, getDeadlineUrgency } from "@fundingpro/shared";
 import { getStatusLabel, getStatusStyle } from "@/lib/application-status";
 import type { OnboardingStepId } from "@/lib/db/onboarding";
 

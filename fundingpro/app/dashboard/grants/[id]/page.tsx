@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Calendar, MapPin, DollarSign, FileText, ArrowLeft, Loader2, Plus, AlertTriangle } from "lucide-react";
-import { translateSector } from "@/lib/sector-labels";
+import { translateSector } from "@fundingpro/shared";
 import { getAuthHeaders } from "@/lib/client-auth";
 
 type Grant = {

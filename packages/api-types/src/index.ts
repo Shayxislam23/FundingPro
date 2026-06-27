@@ -99,6 +99,8 @@ export const listGrantsResultSchema = z.object({
   page: z.number(),
   limit: z.number(),
   pages: z.number(),
+  continueCursor: z.string().nullable().optional(),
+  isDone: z.boolean().optional(),
 });
 
 export type GrantListItem = z.infer<typeof grantListItemSchema>;

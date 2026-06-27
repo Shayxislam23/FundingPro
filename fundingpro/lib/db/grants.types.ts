@@ -34,8 +34,9 @@ export type ListGrantsParams = {
   activeOnly?: boolean;
   featured?: boolean;
   today?: number;
-  page: number;
-  limit: number;
+  page?: number;
+  limit?: number;
+  cursor?: string | null;
 };
 
 export type ListGrantsResult = {
@@ -44,4 +45,6 @@ export type ListGrantsResult = {
   page: number;
   limit: number;
   pages: number;
+  continueCursor?: string | null;
+  isDone?: boolean;
 };

@@ -7,7 +7,7 @@ import { insertDocument, DOCUMENT_TYPES } from "@/lib/db/documents";
 import { convexMutation } from "@/lib/convex-server";
 import { api } from "@/lib/convex-server";
 import { saveLocalFile, deleteLocalFile } from "@/lib/local-storage";
-import { sanitizeStorageFileName } from "@/lib/validation";
+import { sanitizeStorageFileName } from "@fundingpro/shared";
 import { validateFileContent, isAllowedUploadMime } from "@/lib/file-sniff";
 import { MAX_UPLOAD_BYTES } from "@/lib/upload-limits";
 

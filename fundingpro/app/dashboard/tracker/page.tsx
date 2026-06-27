@@ -6,7 +6,7 @@ import { SectionLabel } from "@/components/design/SectionLabel";
 import { EmptyState } from "@/components/design/EmptyState";
 import { BarChart3, Plus, Loader2, ChevronDown } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
-import { formatGrantAmount, formatDeadlineDate } from "@/lib/format-grant";
+import { formatGrantAmount, formatDeadlineDate } from "@fundingpro/shared";
 import { getStatusLabel, getStatusStyle } from "@/lib/application-status";
 
 type ApplicationStatus =

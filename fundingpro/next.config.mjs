@@ -38,6 +38,7 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  transpilePackages: ["@fundingpro/shared"],
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

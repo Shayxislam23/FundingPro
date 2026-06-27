@@ -308,10 +308,23 @@ export const aiProposalsListSchema = z.object({
   total: z.number().optional(),
 });
 
+export const paymentProviderIdSchema = z.enum(["uzum", "payme", "click"]);
+
+export type PaymentProviderId = z.infer<typeof paymentProviderIdSchema>;
+
+export const providerStatusItemSchema = z.object({
+  id: paymentProviderIdSchema,
+  enabled: z.boolean(),
+  configured: z.boolean(),
+  label: z.string(),
+  methods: z.array(z.string()),
+});
+
 export const paymentConfigSchema = z.object({
   paymentsEnabled: z.boolean(),
   integrationStatus: z.string(),
-  provider: z.string().optional(),
+  provider: paymentProviderIdSchema.optional(),
+  providers: z.array(providerStatusItemSchema).optional(),
   merchantConfigured: z.boolean().optional(),
   checkoutConfigured: z.boolean().optional(),
   message: z.string().optional(),
@@ -326,8 +339,10 @@ export const paymentIntentSchema = z.object({
   amountUzs: z.number().optional(),
   amountTiyin: z.number().optional(),
   currency: z.string().optional(),
-  provider: z.string().optional(),
+  provider: paymentProviderIdSchema.optional(),
   uzumAppUrl: z.string().nullable().optional(),
+  paymeCheckoutUrl: z.string().nullable().optional(),
+  clickPayUrl: z.string().nullable().optional(),
 });
 
 export const checkoutSessionSchema = z.object({

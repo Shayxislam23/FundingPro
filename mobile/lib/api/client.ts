@@ -324,13 +324,18 @@ export const api = {
     return parseResponse(await apiFetch("/payments/status"), paymentConfigSchema);
   },
 
-  async createPaymentIntent(planId: string, acceptedPaymentTerms: boolean) {
+  async createPaymentIntent(
+    planId: string,
+    acceptedPaymentTerms: boolean,
+    provider: "uzum" | "payme" | "click" = "uzum"
+  ) {
     return parseResponse(
       await apiFetch("/payments/intent", {
         method: "POST",
         body: JSON.stringify({
           planId,
           acceptedPaymentTerms,
+          provider,
           platform: "mobile",
         }),
       }),
@@ -338,11 +343,11 @@ export const api = {
     );
   },
 
-  async startCheckout(paymentId: string) {
+  async startCheckout(paymentId: string, provider?: "uzum" | "payme" | "click") {
     return parseResponse(
       await apiFetch("/payments/checkout", {
         method: "POST",
-        body: JSON.stringify({ paymentId, platform: "mobile" }),
+        body: JSON.stringify({ paymentId, platform: "mobile", provider }),
       }),
       checkoutSessionSchema
     );

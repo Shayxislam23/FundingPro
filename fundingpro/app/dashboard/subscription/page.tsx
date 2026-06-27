@@ -24,6 +24,13 @@ type PaymentConfig = {
   message: string;
   merchantConfigured: boolean;
   checkoutConfigured: boolean;
+  providers?: {
+    id: "uzum" | "payme" | "click";
+    enabled: boolean;
+    configured: boolean;
+    label: string;
+    methods: string[];
+  }[];
 };
 
 function mapApiPlan(row: {
@@ -153,34 +160,43 @@ export default function SubscriptionPage() {
     }
   }
 
-  async function handlePay(planId: string, method: "checkout" | "uzum_app") {
+  async function handlePay(planId: string, provider: "uzum" | "payme" | "click", method?: "checkout") {
     if (!acceptPaymentLegal) {
       setPayError("Примите оферту и политику возвратов перед оплатой");
       return;
     }
     setPayError(null);
-    setPaying(`${planId}:${method}`);
+    setPaying(`${planId}:${provider}:${method ?? "default"}`);
     try {
       const headers = await getAuthHeaders();
       const intentRes = await fetch("/api/v1/payments/intent", {
         method: "POST",
         headers,
-        body: JSON.stringify({ planId, acceptedPaymentTerms: true }),
+        body: JSON.stringify({ planId, acceptedPaymentTerms: true, provider }),
       });
       const intentJson = await intentRes.json();
       if (!intentRes.ok) throw new Error(intentJson.error?.message ?? "Intent failed");
 
-      const { paymentId, uzumAppUrl } = intentJson.data ?? {};
+      const data = intentJson.data ?? {};
+      const { paymentId, uzumAppUrl, paymeCheckoutUrl, clickPayUrl } = data;
 
-      if (method === "uzum_app" && uzumAppUrl) {
+      if (provider === "uzum" && method !== "checkout" && uzumAppUrl) {
         window.location.href = uzumAppUrl;
+        return;
+      }
+      if (provider === "payme" && paymeCheckoutUrl) {
+        window.location.href = paymeCheckoutUrl;
+        return;
+      }
+      if (provider === "click" && clickPayUrl) {
+        window.location.href = clickPayUrl;
         return;
       }
 
       const checkoutRes = await fetch("/api/v1/payments/checkout", {
         method: "POST",
         headers,
-        body: JSON.stringify({ paymentId }),
+        body: JSON.stringify({ paymentId, provider }),
       });
       const checkoutJson = await checkoutRes.json();
       if (!checkoutRes.ok) throw new Error(checkoutJson.error?.message ?? "Checkout failed");
@@ -194,6 +210,9 @@ export default function SubscriptionPage() {
       setPaying(null);
     }
   }
+
+  const enabledProviders =
+    paymentConfig?.providers?.filter((p) => p.enabled && p.configured) ?? [];
 
   const paymentsOn = paymentConfig?.paymentsEnabled ?? false;
 
@@ -272,7 +291,7 @@ export default function SubscriptionPage() {
           <CreditCard className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "#008A2E" }} />
           <div>
             <p className="text-sm font-semibold mb-1" style={{ color: "#14532D" }}>
-              Оплата через Uzum Bank
+              Оплата через Uzum Bank, Payme или Click
             </p>
             <p className="text-sm leading-relaxed" style={{ color: "#166534" }}>
               Оплата в сумах (UZS){usdUzsRate ? ` по курсу 1 USD = ${usdUzsRate.toLocaleString("ru-RU")} UZS` : ""} на дату платежа.
@@ -320,8 +339,8 @@ export default function SubscriptionPage() {
                     requesting={requesting === plan.id}
                     paying={paying?.startsWith(plan.id) ?? false}
                     onRequest={() => handleRequest(plan.id, plan.nameRu)}
-                    onPayCheckout={() => handlePay(plan.id, "checkout")}
-                    onPayUzumApp={() => handlePay(plan.id, "uzum_app")}
+                    onPay={(provider, method) => handlePay(plan.id, provider, method)}
+                    enabledProviders={enabledProviders}
                   />
                 ))}
               </div>
@@ -341,8 +360,8 @@ export default function SubscriptionPage() {
                     requesting={requesting === plan.id}
                     paying={paying?.startsWith(plan.id) ?? false}
                     onRequest={() => handleRequest(plan.id, plan.nameRu)}
-                    onPayCheckout={() => handlePay(plan.id, "checkout")}
-                    onPayUzumApp={() => handlePay(plan.id, "uzum_app")}
+                    onPay={(provider, method) => handlePay(plan.id, provider, method)}
+                    enabledProviders={enabledProviders}
                   />
                 ))}
               </div>
@@ -374,7 +393,7 @@ export default function SubscriptionPage() {
             Безопасность платежей
           </p>
           <p className="text-xs leading-relaxed" style={{ color: "#166534" }}>
-            Данные карт обрабатывает Uzum Bank. FundingPro не хранит реквизиты карт.
+            Данные карт обрабатывают Uzum Bank, Payme и Click. FundingPro не хранит реквизиты карт.
           </p>
         </div>
       </div>
@@ -389,8 +408,8 @@ function PlanCard({
   requesting,
   paying,
   onRequest,
-  onPayCheckout,
-  onPayUzumApp,
+  onPay,
+  enabledProviders,
 }: {
   plan: Plan;
   paymentsOn: boolean;
@@ -398,8 +417,8 @@ function PlanCard({
   requesting: boolean;
   paying: boolean;
   onRequest: () => void;
-  onPayCheckout: () => void;
-  onPayUzumApp: () => void;
+  onPay: (provider: "uzum" | "payme" | "click", method?: "checkout") => void;
+  enabledProviders: NonNullable<PaymentConfig["providers"]>;
 }) {
   return (
     <div
@@ -441,29 +460,30 @@ function PlanCard({
         ))}
       </ul>
 
-      {paymentsOn ? (
+      {paymentsOn && enabledProviders.length > 0 ? (
         <div className="space-y-2">
-          <button
-            onClick={onPayCheckout}
-            disabled={paying}
-            className="w-full py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 disabled:opacity-60"
-            style={
-              plan.highlighted
-                ? { background: "#008A2E", color: "#fff" }
-                : { background: "#F0FDF4", color: "#008A2E", border: "1px solid #BBF7D0" }
-            }
-          >
-            {paying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><CreditCard className="w-3.5 h-3.5" /> Оплатить картой</>}
-          </button>
-          <button
-            onClick={onPayUzumApp}
-            disabled={paying}
-            className="w-full py-2.5 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 disabled:opacity-60"
-            style={{ color: plan.highlighted ? "#A7B8AA" : "#6b7280", border: "1px solid", borderColor: plan.highlighted ? "rgba(167,184,170,0.3)" : "#e5e7eb" }}
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-            Uzum Bank
-          </button>
+          {enabledProviders.map((provider) => (
+            <button
+              key={provider.id}
+              onClick={() => onPay(provider.id)}
+              disabled={paying}
+              className="w-full py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 disabled:opacity-60"
+              style={
+                plan.highlighted
+                  ? { background: provider.id === "uzum" ? "#008A2E" : "rgba(0,138,46,0.85)", color: "#fff" }
+                  : { background: "#F0FDF4", color: "#008A2E", border: "1px solid #BBF7D0" }
+              }
+            >
+              {paying ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <>
+                  {provider.id === "uzum" ? <CreditCard className="w-3.5 h-3.5" /> : <Smartphone className="w-3.5 h-3.5" />}
+                  {provider.label}
+                </>
+              )}
+            </button>
+          ))}
         </div>
       ) : requested ? (
         <div className="space-y-2">

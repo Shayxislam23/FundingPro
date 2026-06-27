@@ -29,6 +29,11 @@ type Settings = {
   hasClerkKeys: boolean;
   adminEmailsConfigured: boolean;
   nodeEnv: string;
+  paymentProviders?: { id: string; enabled: boolean; configured: boolean; label: string }[];
+  uzumMerchantConfigured?: boolean;
+  uzumCheckoutConfigured?: boolean;
+  paymeConfigured?: boolean;
+  clickConfigured?: boolean;
 };
 
 function StatusCell({ ok, yes, no }: { ok: boolean; yes?: string; no?: string }) {
@@ -191,6 +196,16 @@ export default function AdminSettingsPage() {
                 <span className="text-xs font-medium text-gray-500">Idempotency keys</span>
                 <span className="text-xs font-semibold" style={{ color: "#008A2E" }}>Включены</span>
               </div>
+              {(s?.paymentProviders ?? []).map((p) => (
+                <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-50">
+                  <span className="text-xs font-medium text-gray-500">{p.label}</span>
+                  <StatusCell
+                    ok={p.configured}
+                    yes={p.enabled ? "Настроен" : "Выкл."}
+                    no="Не настроен"
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>

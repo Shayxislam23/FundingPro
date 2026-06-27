@@ -6,10 +6,13 @@ import { DashboardCard } from "@/components/design/DashboardCard";
 import { CreditCard, TrendingUp, AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
 
+type PaymentProviderFilter = "all" | "uzum" | "payme" | "click";
+
 type PaymentReport = {
   integrationStatus: string;
   paymentsEnabled: boolean;
   message: string;
+  providers?: { id: string; enabled: boolean; configured: boolean; label: string }[];
   stats: { totalPayments: number; pendingPayments: number; subscriptionRequests: number };
   commissionTiers: { range: string; platform: number; current?: boolean }[];
   payments: {
@@ -35,12 +38,14 @@ type PaymentReport = {
 export default function AdminPaymentsPage() {
   const [report, setReport] = useState<PaymentReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [providerFilter, setProviderFilter] = useState<PaymentProviderFilter>("all");
 
-  const fetchReport = async () => {
+  const fetchReport = async (provider: PaymentProviderFilter = providerFilter) => {
     setLoading(true);
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch("/api/v1/admin/payments", { headers });
+      const qs = provider !== "all" ? `?provider=${provider}` : "";
+      const res = await fetch(`/api/v1/admin/payments${qs}`, { headers });
       const json = await res.json();
       setReport(json.data ?? null);
     } catch {
@@ -50,7 +55,9 @@ export default function AdminPaymentsPage() {
     }
   };
 
-  useEffect(() => { fetchReport(); }, []);
+  useEffect(() => {
+    fetchReport(providerFilter);
+  }, [providerFilter]);
 
   if (loading && !report) {
     return (
@@ -72,7 +79,7 @@ export default function AdminPaymentsPage() {
           <h1 className="text-2xl font-black text-funding-black">Платежи и Revenue Share</h1>
         </div>
         <button
-          onClick={fetchReport}
+          onClick={() => fetchReport(providerFilter)}
           disabled={loading}
           className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-500 hover:border-funding-green hover:text-funding-green transition-colors disabled:opacity-40"
         >
@@ -80,6 +87,36 @@ export default function AdminPaymentsPage() {
           Обновить
         </button>
       </div>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        {(["all", "uzum", "payme", "click"] as PaymentProviderFilter[]).map((id) => (
+          <button
+            key={id}
+            onClick={() => setProviderFilter(id)}
+            className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors"
+            style={
+              providerFilter === id
+                ? { background: "#D9F7DD", color: "#008A2E", borderColor: "#BBF7D0" }
+                : { background: "#fff", color: "#6b7280", borderColor: "#e5e7eb" }
+            }
+          >
+            {id === "all" ? "Все" : id.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {report.providers && report.providers.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          {report.providers.map((p) => (
+            <div key={p.id} className="rounded-xl border border-gray-100 bg-white p-3 text-sm">
+              <p className="font-semibold text-funding-black">{p.label}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {p.enabled ? "Включён" : "Выключен"} · {p.configured ? "Настроен" : "Не настроен"}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div
         className="flex items-start gap-3 rounded-2xl p-5 mb-6 border"

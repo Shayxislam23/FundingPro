@@ -2,10 +2,18 @@ export const dynamic = "force-dynamic";
 import { apiSuccess } from "@/lib/api";
 import { withAdmin } from "@/lib/api-route";
 import { COMPANY } from "@/lib/company-info";
+import {
+  isClickConfigured,
+  isPaymeConfigured,
+  isPaymentsEnabled,
+  isUzumCheckoutConfigured,
+  isUzumMerchantConfigured,
+} from "@/lib/payments/config";
+import { getProviderStatus } from "@/lib/payments/providers/registry";
 
 export const GET = withAdmin(async () => {
   const aiProvider = process.env.AI_PROVIDER ?? "mock";
-  const paymentsEnabled = process.env.PAYMENTS_ENABLED === "true";
+  const paymentsEnabled = isPaymentsEnabled();
   const hasWebhookSecret = !!(
     process.env.UZUM_WEBHOOK_SECRET ?? process.env.PAYMENT_WEBHOOK_SECRET
   );
@@ -38,5 +46,10 @@ export const GET = withAdmin(async () => {
     hasClerkKeys,
     adminEmailsConfigured: adminEmails.trim().length > 0,
     nodeEnv: process.env.NODE_ENV ?? "development",
+    paymentProviders: getProviderStatus(),
+    uzumMerchantConfigured: isUzumMerchantConfigured(),
+    uzumCheckoutConfigured: isUzumCheckoutConfigured(),
+    paymeConfigured: isPaymeConfigured(),
+    clickConfigured: isClickConfigured(),
   });
 });

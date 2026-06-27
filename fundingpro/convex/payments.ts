@@ -124,10 +124,13 @@ export const adminReport = adminQuery({
   handler: async (ctx, args) => {
     const providerFilter = args.provider && args.provider !== "all" ? args.provider : null;
 
-    const allPayments = await ctx.db.query("payments").order("desc").take(200);
     const payments = providerFilter
-      ? allPayments.filter((p) => p.provider === providerFilter)
-      : allPayments;
+      ? await ctx.db
+          .query("payments")
+          .withIndex("by_provider", (q) => q.eq("provider", providerFilter))
+          .order("desc")
+          .take(200)
+      : await ctx.db.query("payments").order("desc").take(200);
 
     const pendingPayments = payments.filter((p) => p.status === "PENDING").length;
 

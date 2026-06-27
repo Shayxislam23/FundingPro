@@ -185,7 +185,17 @@ export const listAdmin = adminQuery({
     perPage: v.number(),
   }),
   handler: async (ctx, args) => {
-    if (args.search?.includes("@")) {
+    // Admin email search: exact match via by_email only (no partial/substring scan).
+    if (args.search) {
+      if (!args.search.includes("@")) {
+        return {
+          users: [],
+          total: 0,
+          page: args.page,
+          perPage: args.limit,
+        };
+      }
+
       const exact = await ctx.db
         .query("users")
         .withIndex("by_email", (q) => q.eq("email", args.search))
@@ -206,6 +216,13 @@ export const listAdmin = adminQuery({
           perPage: args.limit,
         };
       }
+
+      return {
+        users: [],
+        total: 0,
+        page: args.page,
+        perPage: args.limit,
+      };
     }
 
     const users: Doc<"users">[] = [];
@@ -222,15 +239,9 @@ export const listAdmin = adminQuery({
       cursor = batch.continueCursor;
     }
 
-    let filtered = users;
-    if (args.search) {
-      const q = args.search.toLowerCase();
-      filtered = users.filter((u) => u.email?.toLowerCase().includes(q));
-    }
-
-    const total = filtered.length;
+    const total = users.length;
     const offset = (args.page - 1) * args.limit;
-    const pageUsers = filtered.slice(offset, offset + args.limit);
+    const pageUsers = users.slice(offset, offset + args.limit);
     return {
       users: pageUsers.map((u) => ({
         id: externalUserId(u),

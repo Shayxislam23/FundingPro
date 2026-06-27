@@ -3,7 +3,11 @@
  * Contract tests: mobile API client expectations vs running FundingPro API.
  * Usage: SMOKE_BASE_URL=http://localhost:3000 node fundingpro/scripts/mobile-api-contract.mjs
  */
+import { grantDetailSchema, GRANT_DETAIL_FIXTURE, listGrantsResultSchema } from "@fundingpro/api-types";
+
 const BASE = (process.env.SMOKE_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+const SEED_GRANT_ID_FALLBACK =
+  process.env.SEED_GRANT_ID ?? GRANT_DETAIL_FIXTURE.id;
 
 async function fetchJson(path, init = {}) {
   const res = await fetch(`${BASE}${path}`, init);
@@ -41,7 +45,28 @@ async function testGrants() {
   assert(json.success === true, "grants envelope success");
   assert(Array.isArray(json.data?.grants), "grants.data.grants array");
   assert(typeof json.data?.total === "number", "grants.data.total number");
+  const parsed = listGrantsResultSchema.safeParse(json.data);
+  assert(parsed.success, "grants.data matches listGrantsResultSchema");
   console.log(`OK  GET /api/v1/grants (${json.data.grants.length} items)`);
+  return json.data.grants[0]?.id ?? null;
+}
+
+async function testGrantDetail(grantIdFromList) {
+  const grantId = grantIdFromList ?? SEED_GRANT_ID_FALLBACK;
+  const { status, json } = await fetchJson(`/api/v1/grants/${grantId}`);
+  if (!grantIdFromList && status === 404) {
+    console.log(`SKIP GET /api/v1/grants/:id (seed fallback ${grantId} not found)`);
+    return;
+  }
+  assert(status === 200, `grant detail status ${status} for ${grantId}`);
+  assert(json.success === true, "grant detail envelope success");
+  const parsed = grantDetailSchema.safeParse(json.data);
+  assert(
+    parsed.success,
+    parsed.success ? undefined : JSON.stringify(parsed.error?.format?.() ?? parsed.error)
+  );
+  assert(parsed.data.id === grantId, "grant detail id matches request");
+  console.log(`OK  GET /api/v1/grants/${grantId}`);
 }
 
 async function testMeRequiresAuth() {
@@ -81,7 +106,8 @@ async function main() {
   console.log(`Contract tests against ${BASE}\n`);
   await testHealth();
   await testPlans();
-  await testGrants();
+  const grantId = await testGrants();
+  await testGrantDetail(grantId);
   await testMeRequiresAuth();
   await testAdminCheckRequiresAuth();
   await testLegalConsentStatusRequiresAuth();

@@ -234,6 +234,7 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_status", ["status"])
     .index("by_idempotency", ["idempotencyKey"])
+    .index("by_provider", ["provider"])
     .index("by_provider_ref", ["providerRefId"]),
 
   paymentEvents: defineTable({

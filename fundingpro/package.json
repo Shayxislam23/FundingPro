@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit",
     "setup": "npx convex dev",
     "test": "node --import tsx --test tests/*.test.mjs",
+    "test:convex": "npx vitest run --config vitest.config.ts",
     "test:smoke": "node scripts/smoke-test.mjs",
     "test:integration": "node scripts/api-auth-integration.mjs",
     "test:e2e": "playwright test",
@@ -23,6 +24,7 @@
     "payme:sandbox": "node scripts/payme-sandbox.mjs",
     "click:sandbox": "node scripts/click-sandbox.mjs",
     "payments:check": "node scripts/payments-check.mjs",
+    "payments:golive": "node scripts/payments-golive-check.mjs",
     "payments:golive-check": "node scripts/payments-golive-check.mjs",
     "app-links:check": "node scripts/app-links-check.mjs",
     "uzum:checkout-mock": "node scripts/uzum-checkout-mock-e2e.mjs",
@@ -36,14 +38,14 @@
     "deploy:production": "node scripts/production-next-steps.mjs",
     "deploy:setup-env": "node scripts/setup-production-env.mjs",
     "production:readiness": "node scripts/production-readiness.mjs",
-    "check": "npm run typecheck && npm test",
+    "check": "npm run typecheck && npm test && npm run test:convex",
     "security:audit": "node scripts/security-audit-orchestrator.mjs",
     "security:probe": "node scripts/security-api-probe.mjs",
     "security:probe:prod": "SMOKE_BASE_URL=https://www.fundingpro.uz node scripts/security-api-probe.mjs",
-    "contract:mobile-api": "node scripts/mobile-api-contract.mjs"
+    "contract:mobile-api": "node --import tsx scripts/mobile-api-contract.mjs"
   },
   "dependencies": {
-    "@clerk/nextjs": "5.7.6",
+    "@clerk/nextjs": "^5.7.6",
     "@fundingpro/api-types": "^0.1.0",
     "@fundingpro/shared": "^0.1.0",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -63,7 +65,7 @@
     "convex": "^1.42.0",
     "convex-helpers": "^0.1.120",
     "lucide-react": "^1.16.0",
-    "next": "14.2.35",
+    "next": "15.5.19",
     "nodemailer": "^9.0.1",
     "pg": "^8.20.0",
     "react": "^18",
@@ -73,16 +75,19 @@
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^2.0.0",
+    "@edge-runtime/vm": "^5.0.0",
     "@playwright/test": "^1.51.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
+    "convex-test": "^0.0.54",
     "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.35",
+    "eslint-config-next": "15.5.19",
     "postcss": "^8.5.10",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.9"
   }
 }

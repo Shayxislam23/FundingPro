@@ -1,6 +1,53 @@
 import { v } from "convex/values";
 import { adminMutation, adminQuery } from "./lib/customFunctions";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
+import type { QueryCtx } from "./_generated/server";
+
+const ADMIN_GRANTS_BATCH = 100;
+
+async function collectAdminGrants(ctx: QueryCtx, search?: string) {
+  const searchQ = search?.trim().toLowerCase();
+  const matched: Doc<"grants">[] = [];
+  let cursor: string | null = null;
+  let isDone = false;
+
+  while (!isDone) {
+    const batch = await ctx.db
+      .query("grants")
+      .withIndex("by_active", (q) => q.eq("isActive", true))
+      .order("desc")
+      .paginate({ numItems: ADMIN_GRANTS_BATCH, cursor });
+
+    for (const grant of batch.page) {
+      if (searchQ && !grant.title.toLowerCase().includes(searchQ)) continue;
+      matched.push(grant);
+    }
+
+    isDone = batch.isDone;
+    cursor = batch.continueCursor;
+  }
+
+  cursor = null;
+  isDone = false;
+  while (!isDone) {
+    const batch = await ctx.db
+      .query("grants")
+      .withIndex("by_active", (q) => q.eq("isActive", false))
+      .order("desc")
+      .paginate({ numItems: ADMIN_GRANTS_BATCH, cursor });
+
+    for (const grant of batch.page) {
+      if (searchQ && !grant.title.toLowerCase().includes(searchQ)) continue;
+      matched.push(grant);
+    }
+
+    isDone = batch.isDone;
+    cursor = batch.continueCursor;
+  }
+
+  matched.sort((a, b) => b.updatedAt - a.updatedAt);
+  return matched;
+}
 
 export const list = adminQuery({
   args: { search: v.optional(v.string()), page: v.number(), limit: v.number() },
@@ -20,12 +67,7 @@ export const list = adminQuery({
     pages: v.number(),
   }),
   handler: async (ctx, args) => {
-    let grants = await ctx.db.query("grants").collect();
-    if (args.search) {
-      const q = args.search.toLowerCase();
-      grants = grants.filter((g) => g.title.toLowerCase().includes(q));
-    }
-    grants.sort((a, b) => b.updatedAt - a.updatedAt);
+    const grants = await collectAdminGrants(ctx, args.search);
     const total = grants.length;
     const offset = (args.page - 1) * args.limit;
     const page = grants.slice(offset, offset + args.limit);

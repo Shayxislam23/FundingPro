@@ -1,3 +1,12 @@
+/**
+ * Grants catalog query strategy:
+ * - Fast path: `by_donor` when donorId is set (indexed per donor).
+ * - Featured: `by_featured` when featured=true.
+ * - Default: `by_active_status_deadline` for the public active catalog.
+ * Search, sector, country, and deadline filters run in TypeScript after the index scan.
+ * Scan budget: BATCH_SIZE (50) documents per paginate call; scans continue until isDone.
+ * Page/limit mode may scan the full indexed range before slicing — defer full-text search.
+ */
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { query } from "./_generated/server";
@@ -32,6 +41,8 @@ const listResultValidator = v.object({
 });
 
 const BATCH_SIZE = 50;
+
+/** Catalog scan budget: indexed paths (by_donor, by_featured, by_active_status_deadline) + in-memory filters for search/sector/country. Full-text search deferred — keep BATCH_SIZE pages bounded. */
 
 function mapGrantListItem(grant: Doc<"grants">, donor: Doc<"donors"> | null) {
   return {

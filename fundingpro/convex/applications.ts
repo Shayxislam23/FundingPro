@@ -13,6 +13,47 @@ const APPLICATION_STATUS_LABELS: Record<string, string> = {
   WITHDRAWN: "Отозвана",
 };
 
+async function listUserApplications(
+  ctx: { db: QueryCtx["db"] },
+  userId: Id<"users">,
+  status?: string
+) {
+  if (status) {
+    return await ctx.db
+      .query("applications")
+      .withIndex("by_user_and_status", (q) => q.eq("userId", userId).eq("status", status))
+      .collect();
+  }
+
+  return await ctx.db
+    .query("applications")
+    .withIndex("by_user_updated", (q) => q.eq("userId", userId))
+    .order("desc")
+    .collect();
+}
+
+async function listAdminApplications(
+  ctx: { db: QueryCtx["db"] },
+  status?: string
+) {
+  const apps: Doc<"applications">[] = [];
+  const baseQuery = status
+    ? ctx.db.query("applications").withIndex("by_status", (q) => q.eq("status", status))
+    : ctx.db.query("applications");
+
+  let cursor: string | null = null;
+  let isDone = false;
+  while (!isDone) {
+    const batch = await baseQuery.order("desc").paginate({ numItems: 50, cursor });
+    apps.push(...batch.page);
+    isDone = batch.isDone;
+    cursor = batch.continueCursor;
+  }
+
+  apps.sort((a, b) => b.updatedAt - a.updatedAt);
+  return apps;
+}
+
 async function mapApplication(ctx: { db: QueryCtx["db"] }, app: Doc<"applications">) {
   const grant = await ctx.db.get("grants", app.grantId);
   let donor: Doc<"donors"> | null = null;
@@ -79,15 +120,7 @@ export const list = authedQuery({
     pages: v.number(),
   }),
   handler: async (ctx, args) => {
-    let apps = await ctx.db
-      .query("applications")
-      .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-      .collect();
-
-    if (args.status) {
-      apps = apps.filter((a) => a.status === args.status);
-    }
-    apps.sort((a, b) => b.updatedAt - a.updatedAt);
+    const apps = await listUserApplications(ctx, ctx.user._id, args.status);
 
     const total = apps.length;
     const offset = (args.page - 1) * args.limit;
@@ -123,8 +156,9 @@ export const create = authedMutation({
 
     const existing = await ctx.db
       .query("applications")
-      .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-      .filter((q) => q.eq(q.field("grantId"), grant._id))
+      .withIndex("by_user_and_grant", (q) =>
+        q.eq("userId", ctx.user._id).eq("grantId", grant._id)
+      )
       .first();
 
     if (existing) {
@@ -214,9 +248,7 @@ export const listForAdmin = adminQuery({
     total: v.number(),
   }),
   handler: async (ctx, args) => {
-    let apps = await ctx.db.query("applications").collect();
-    if (args.status) apps = apps.filter((a) => a.status === args.status);
-    apps.sort((a, b) => b.updatedAt - a.updatedAt);
+    const apps = await listAdminApplications(ctx, args.status);
     const total = apps.length;
     const slice = apps.slice(0, args.limit);
     const applications = await Promise.all(slice.map((a) => mapApplication(ctx, a)));

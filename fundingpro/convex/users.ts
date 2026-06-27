@@ -7,7 +7,7 @@ import {
   requireIdentity,
 } from "./lib/auth";
 import { authedMutation, authedQuery, adminMutation, adminQuery } from "./lib/customFunctions";
-import type { Id } from "./_generated/dataModel";
+import type { Doc } from "./_generated/dataModel";
 
 const internalUserValidator = v.object({
   id: v.string(),
@@ -185,15 +185,52 @@ export const listAdmin = adminQuery({
     perPage: v.number(),
   }),
   handler: async (ctx, args) => {
-    let users = await ctx.db.query("users").collect();
+    if (args.search?.includes("@")) {
+      const exact = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", args.search))
+        .first();
+      if (exact) {
+        return {
+          users: [
+            {
+              id: externalUserId(exact),
+              email: exact.email ?? null,
+              isActive: exact.isActive,
+              platformRole: exact.platformRole,
+              createdAt: new Date(exact.createdAt).toISOString(),
+            },
+          ],
+          total: 1,
+          page: args.page,
+          perPage: args.limit,
+        };
+      }
+    }
+
+    const users: Doc<"users">[] = [];
+    let cursor: string | null = null;
+    let isDone = false;
+    while (!isDone) {
+      const batch = await ctx.db
+        .query("users")
+        .withIndex("by_created")
+        .order("desc")
+        .paginate({ numItems: 100, cursor });
+      users.push(...batch.page);
+      isDone = batch.isDone;
+      cursor = batch.continueCursor;
+    }
+
+    let filtered = users;
     if (args.search) {
       const q = args.search.toLowerCase();
-      users = users.filter((u) => u.email?.toLowerCase().includes(q));
+      filtered = users.filter((u) => u.email?.toLowerCase().includes(q));
     }
-    users.sort((a, b) => b.createdAt - a.createdAt);
-    const total = users.length;
+
+    const total = filtered.length;
     const offset = (args.page - 1) * args.limit;
-    const pageUsers = users.slice(offset, offset + args.limit);
+    const pageUsers = filtered.slice(offset, offset + args.limit);
     return {
       users: pageUsers.map((u) => ({
         id: externalUserId(u),

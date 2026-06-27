@@ -34,6 +34,7 @@ import type * as plans from "../plans.js";
 import type * as proposals from "../proposals.js";
 import type * as pushNotifications from "../pushNotifications.js";
 import type * as pushTokens from "../pushTokens.js";
+import type * as rateLimits from "../rateLimits.js";
 import type * as savedGrants from "../savedGrants.js";
 import type * as seed from "../seed.js";
 import type * as seedData from "../seedData.js";
@@ -75,6 +76,7 @@ declare const fullApi: ApiFromModules<{
   proposals: typeof proposals;
   pushNotifications: typeof pushNotifications;
   pushTokens: typeof pushTokens;
+  rateLimits: typeof rateLimits;
   savedGrants: typeof savedGrants;
   seed: typeof seed;
   seedData: typeof seedData;

@@ -22,7 +22,8 @@ export default defineSchema({
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_token", ["tokenIdentifier"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_created", ["createdAt"]),
 
   userIdentities: defineTable({
     userId: v.id("users"),
@@ -159,7 +160,10 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_grant", ["grantId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_user_and_grant", ["userId", "grantId"])
+    .index("by_user_and_status", ["userId", "status"])
+    .index("by_user_updated", ["userId", "updatedAt"]),
 
   documents: defineTable({
     userId: v.id("users"),
@@ -370,4 +374,10 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_token", ["token"]),
+
+  rateLimitBuckets: defineTable({
+    key: v.string(),
+    count: v.number(),
+    resetAt: v.number(),
+  }).index("by_key", ["key"]),
 });

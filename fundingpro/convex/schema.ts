@@ -1,5 +1,12 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import {
+  auditMetadataValidator,
+  eligibilityAnswersValidator,
+  paymentEventPayloadValidator,
+  paymentMetadataValidator,
+  planFeaturesValidator,
+} from "./lib/validators";
 
 const timestamps = {
   createdAt: v.number(),
@@ -120,7 +127,7 @@ export default defineSchema({
   eligibilityChecks: defineTable({
     userId: v.id("users"),
     grantId: v.optional(v.id("grants")),
-    answers: v.any(),
+    answers: eligibilityAnswersValidator,
     score: v.number(),
     status: v.string(),
     strengths: v.array(v.string()),
@@ -130,7 +137,8 @@ export default defineSchema({
     ...timestamps,
   })
     .index("by_user", ["userId"])
-    .index("by_grant", ["grantId"]),
+    .index("by_grant", ["grantId"])
+    .index("by_user_created", ["userId", "createdAt"]),
 
   proposalProjects: defineTable({
     userId: v.id("users"),
@@ -139,7 +147,9 @@ export default defineSchema({
     donorFormat: v.optional(v.string()),
     status: v.string(),
     ...timestamps,
-  }).index("by_user", ["userId"]),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_created", ["userId", "createdAt"]),
 
   proposalSections: defineTable({
     projectId: v.id("proposalProjects"),
@@ -189,7 +199,7 @@ export default defineSchema({
     priceUsd: v.number(),
     priceUzs: v.optional(v.number()),
     billingPeriod: v.string(),
-    features: v.any(),
+    features: planFeaturesValidator,
     isActive: v.boolean(),
     ...timestamps,
   })
@@ -228,7 +238,7 @@ export default defineSchema({
     providerRefId: v.optional(v.string()),
     idempotencyKey: v.string(),
     serviceType: v.string(),
-    metadata: v.optional(v.any()),
+    metadata: v.optional(paymentMetadataValidator),
     activatedAt: v.optional(v.number()),
     ...timestamps,
   })
@@ -241,7 +251,7 @@ export default defineSchema({
   paymentEvents: defineTable({
     paymentId: v.id("payments"),
     eventType: v.string(),
-    payload: v.any(),
+    payload: paymentEventPayloadValidator,
     source: v.string(),
     createdAt: v.number(),
   }).index("by_payment", ["paymentId"]).index("by_payment_event", ["paymentId", "eventType"]),
@@ -323,7 +333,8 @@ export default defineSchema({
     ...timestamps,
   })
     .index("by_client", ["clientUserId"])
-    .index("by_consultant", ["consultantId"]),
+    .index("by_consultant", ["consultantId"])
+    .index("by_created", ["createdAt"]),
 
   supportTickets: defineTable({
     userId: v.id("users"),
@@ -335,7 +346,8 @@ export default defineSchema({
     ...timestamps,
   })
     .index("by_user", ["userId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_created", ["createdAt"]),
 
   userConsents: defineTable({
     userId: v.id("users"),
@@ -354,12 +366,33 @@ export default defineSchema({
     entityId: v.optional(v.string()),
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
-    metadata: v.optional(v.any()),
+    metadata: auditMetadataValidator,
     createdAt: v.number(),
   })
     .index("by_user", ["userId"])
     .index("by_action", ["action"])
     .index("by_created", ["createdAt"]),
+
+  platformStats: defineTable({
+    key: v.literal("global"),
+    totalUsers: v.number(),
+    totalOrganizations: v.number(),
+    totalGrants: v.number(),
+    totalApplications: v.number(),
+    totalSupportTickets: v.number(),
+    totalAuditLogs: v.number(),
+    activeSubscriptions: v.number(),
+    openTickets: v.number(),
+    subscriptionRequests: v.number(),
+    recentUsers: v.array(
+      v.object({
+        clerkId: v.string(),
+        email: v.union(v.string(), v.null()),
+        createdAt: v.number(),
+      })
+    ),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
 
   settings: defineTable({
     key: v.string(),

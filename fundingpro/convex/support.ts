@@ -80,10 +80,13 @@ export const listForAdmin = adminQuery({
   ),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
-    const tickets = await ctx.db.query("supportTickets").collect();
-    tickets.sort((a, b) => b.createdAt - a.createdAt);
+    const tickets = await ctx.db
+      .query("supportTickets")
+      .withIndex("by_created")
+      .order("desc")
+      .take(limit);
     const result = [];
-    for (const t of tickets.slice(0, limit)) {
+    for (const t of tickets) {
       const user = await ctx.db.get("users", t.userId);
       result.push({
         id: t._id,

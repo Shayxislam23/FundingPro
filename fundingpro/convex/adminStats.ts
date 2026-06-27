@@ -25,53 +25,34 @@ export const dashboard = adminQuery({
     integrationStatus: v.string(),
   }),
   handler: async (ctx, args) => {
-    const [
-      users,
-      orgs,
-      grants,
-      apps,
-      tickets,
-      subs,
-      aiThisMonth,
-      requests,
-      openTickets,
-    ] = await Promise.all([
-      ctx.db.query("users").collect(),
-      ctx.db.query("organizations").collect(),
-      ctx.db.query("grants").collect(),
-      ctx.db.query("applications").collect(),
-      ctx.db.query("supportTickets").collect(),
-      ctx.db.query("subscriptions").collect(),
+    const [stats, aiThisMonth, recentUsersRaw] = await Promise.all([
+      ctx.db
+        .query("platformStats")
+        .withIndex("by_key", (q) => q.eq("key", "global"))
+        .unique(),
       ctx.db
         .query("aiRequests")
         .withIndex("by_created", (q) => q.gte("createdAt", args.monthStart))
         .collect(),
-      ctx.db.query("subscriptionRequests").collect(),
-      ctx.db
-        .query("supportTickets")
-        .withIndex("by_status", (q) => q.eq("status", "OPEN"))
-        .collect(),
+      ctx.db.query("users").withIndex("by_created").order("desc").take(5),
     ]);
 
-    const recentUsers = [...users]
-      .sort((a, b) => b.createdAt - a.createdAt)
-      .slice(0, 5)
-      .map((u) => ({
-        id: u.clerkId,
-        email: u.email ?? null,
-        createdAt: new Date(u.createdAt).toISOString(),
-      }));
+    const recentUsers = recentUsersRaw.map((u) => ({
+      id: u.clerkId,
+      email: u.email ?? null,
+      createdAt: new Date(u.createdAt).toISOString(),
+    }));
 
     return {
-      totalUsers: users.length,
-      totalOrganizations: orgs.filter((o) => !o.deletedAt).length,
-      totalGrants: grants.length,
-      totalApplications: apps.length,
-      totalSupportTickets: tickets.length,
-      activeSubscriptions: subs.filter((s) => s.status === "ACTIVE").length,
+      totalUsers: stats?.totalUsers ?? 0,
+      totalOrganizations: stats?.totalOrganizations ?? 0,
+      totalGrants: stats?.totalGrants ?? 0,
+      totalApplications: stats?.totalApplications ?? 0,
+      totalSupportTickets: stats?.totalSupportTickets ?? 0,
+      activeSubscriptions: stats?.activeSubscriptions ?? 0,
       aiRequestsThisMonth: aiThisMonth.length,
-      openTickets: openTickets.length,
-      subscriptionRequests: requests.filter((r) => r.status === "PENDING").length,
+      openTickets: stats?.openTickets ?? 0,
+      subscriptionRequests: stats?.subscriptionRequests ?? 0,
       recentUsers,
       integrationStatus: "convex",
     };
@@ -92,19 +73,20 @@ export const funnel = adminQuery({
     conversionRate: v.number(),
   }),
   handler: async (ctx, args) => {
-    const cutoff = args.last30DaysSignups
-      ? (args.now ?? 0) - 30 * 24 * 60 * 60 * 1000
-      : 0;
-
-    const users = await ctx.db.query("users").collect();
-    const filtered = users.filter((u) => u.createdAt >= cutoff);
+    const cutoff = args.last30DaysSignups ? (args.now ?? 0) - 30 * 24 * 60 * 60 * 1000 : 0;
+    const users = cutoff
+      ? await ctx.db
+          .query("users")
+          .withIndex("by_created", (q) => q.gte("createdAt", cutoff))
+          .collect()
+      : await ctx.db.query("users").collect();
 
     let withOrg = 0;
     let withSaved = 0;
     let withApp = 0;
     let withSub = 0;
 
-    for (const user of filtered) {
+    for (const user of users) {
       const [org, saved, app, sub] = await Promise.all([
         ctx.db
           .query("organizationMembers")
@@ -131,7 +113,7 @@ export const funnel = adminQuery({
       if (sub) withSub++;
     }
 
-    const signups = filtered.length;
+    const signups = users.length;
     return {
       signups,
       withOrg,

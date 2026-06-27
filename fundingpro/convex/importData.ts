@@ -1,6 +1,11 @@
+/**
+ * NOTE: This migration intentionally uses bounded `.collect()` reads where
+ * index-only uniqueness checks are not available across imported legacy rows.
+ */
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { paymentMetadataValidator } from "./lib/validators";
 
 const pgUserValidator = v.object({
   id: v.string(),
@@ -60,7 +65,7 @@ const pgPaymentValidator = v.object({
   providerRefId: v.union(v.string(), v.null()),
   idempotencyKey: v.string(),
   serviceType: v.string(),
-  metadata: v.optional(v.any()),
+  metadata: v.optional(paymentMetadataValidator),
   activatedAt: v.union(v.number(), v.null()),
   createdAt: v.number(),
   updatedAt: v.number(),

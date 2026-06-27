@@ -29,10 +29,15 @@ export const list = query({
     pages: v.number(),
   }),
   handler: async (ctx, args) => {
+    const limit = Math.min(Math.max(args.limit, 1), 50);
+    const pageNumber = Math.max(args.page, 1);
+    const offset = (pageNumber - 1) * limit;
+    const scanLimit = Math.max(offset + limit, 500);
+
     let profiles = await ctx.db
       .query("consultantProfiles")
       .withIndex("by_active", (q) => q.eq("isActive", true))
-      .collect();
+      .take(scanLimit);
 
     if (args.specialty) {
       profiles = profiles.filter((p) => p.specialties.includes(args.specialty!));
@@ -42,8 +47,7 @@ export const list = query({
     }
 
     const total = profiles.length;
-    const offset = (args.page - 1) * args.limit;
-    const page = profiles.slice(offset, offset + args.limit);
+    const page = profiles.slice(offset, offset + limit);
     const result = [];
     for (const p of page) {
       const org = await ctx.db.get("organizations", p.organizationId);
@@ -62,9 +66,9 @@ export const list = query({
     return {
       consultants: result,
       total,
-      page: args.page,
-      limit: args.limit,
-      pages: Math.ceil(total / args.limit) || 1,
+      page: pageNumber,
+      limit,
+      pages: Math.ceil(total / limit) || 1,
     };
   },
 });
@@ -101,7 +105,7 @@ export const createOrder = authedMutation({
       provider: "uzum",
       idempotencyKey: `consultant-${orderId}`,
       serviceType: "consultant_order",
-      metadata: { orderId, packageName: args.packageName },
+      metadata: { orderId: String(orderId), packageName: args.packageName },
       createdAt: now,
       updatedAt: now,
     });
@@ -153,10 +157,13 @@ export const listAdminOrders = adminQuery({
   ),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
-    const orders = await ctx.db.query("consultantOrders").collect();
-    orders.sort((a, b) => b.createdAt - a.createdAt);
+    const orders = await ctx.db
+      .query("consultantOrders")
+      .withIndex("by_created")
+      .order("desc")
+      .take(limit);
     const result = [];
-    for (const o of orders.slice(0, limit)) {
+    for (const o of orders) {
       const user = await ctx.db.get("users", o.clientUserId);
       result.push({
         id: o._id,

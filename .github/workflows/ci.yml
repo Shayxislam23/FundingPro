@@ -36,11 +36,19 @@ jobs:
       - name: Convex codegen
         run: npm run convex:codegen
 
-      - name: Typecheck and unit tests
-        run: npm run check
+      - name: Convex v.any() audit
+        run: node scripts/convex-any-audit.mjs
 
-      - name: Lint
-        run: npm run lint
+      - name: Typecheck and unit tests
+        run: npm run typecheck && npm test
+
+      - name: Convex tests
+        run: npm run test:convex
+
+      - name: Lint (zero warnings)
+        run: |
+          npm run lint --max-warnings=0
+          npm run lint --workspace=@fundingpro/mobile --max-warnings=0
 
       - name: Deploy readiness check
         run: npm run deploy:check
@@ -120,8 +128,8 @@ jobs:
       - name: Typecheck mobile
         run: npm run typecheck --workspace=@fundingpro/mobile
 
-      - name: Lint mobile
-        run: npm run lint --workspace=@fundingpro/mobile
+      - name: Lint mobile (zero warnings)
+        run: npm run lint --workspace=@fundingpro/mobile --max-warnings=0
 
       - name: API types unit tests
         run: npm test --workspace=@fundingpro/api-types
@@ -164,5 +172,7 @@ jobs:
         working-directory: fundingpro
         run: npx --yes semgrep@1.96.0 --config .semgrep/fundingpro.yml --error --quiet ..
 
-      - name: npm audit (high+)
-        run: npm audit --audit-level=high
+      - name: npm audit (high+, production deps per workspace)
+        run: |
+          npm audit --omit=dev --audit-level=high -w fundingpro
+          npm audit --omit=dev --audit-level=high -w @fundingpro/mobile

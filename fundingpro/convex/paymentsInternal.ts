@@ -9,6 +9,7 @@ import {
   paymeTransactionValidator,
   clickTransactionValidator,
 } from "./lib/paymentHelpers";
+import { paymentEventPayloadValidator, paymentMetadataValidator } from "./lib/validators";
 
 function readTransId(payload: unknown): string | null {
   if (payload && typeof payload === "object" && "transId" in payload) {
@@ -32,7 +33,7 @@ async function hasDuplicatePaymentEvent(
     .withIndex("by_payment_event", (q) =>
       q.eq("paymentId", paymentId).eq("eventType", eventType)
     )
-    .collect();
+    .take(50);
 
   const transId = readTransId(payload);
   return events.some((event) => {
@@ -58,7 +59,7 @@ export const insertEvent = internalMutation({
   args: {
     paymentId: v.string(),
     eventType: v.string(),
-    payload: v.any(),
+    payload: paymentEventPayloadValidator,
     source: v.optional(v.string()),
   },
   returns: v.null(),
@@ -258,14 +259,14 @@ export const updateProviderRef = internalMutation({
   args: {
     paymentId: v.string(),
     providerRefId: v.string(),
-    extraMetadata: v.optional(v.any()),
+    extraMetadata: v.optional(paymentMetadataValidator),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     const payment = await ctx.db.get("payments", args.paymentId as Id<"payments">);
     if (!payment) return null;
     const metadata = {
-      ...((payment.metadata ?? {}) as Record<string, unknown>),
+      ...(payment.metadata ?? {}),
       ...(args.extraMetadata ?? {}),
     };
     await ctx.db.patch("payments", payment._id, {

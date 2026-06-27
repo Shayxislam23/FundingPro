@@ -25,3 +25,49 @@ export const GRANT_DETAIL_FIXTURE = {
     },
   ],
 } as const;
+
+export const PLANS_FIXTURE = {
+  plans: [
+    {
+      id: "plan-ngo-basic",
+      name: "NGO Basic",
+      nameRu: "НКО Базовый",
+      targetType: "ngo",
+      priceUsd: 19,
+      priceUzs: 245000,
+      features: ["Eligibility checks", "Grant matching"],
+      highlighted: false,
+    },
+  ],
+  grouped: {
+    ngo: [
+      {
+        id: "plan-ngo-basic",
+        name: "NGO Basic",
+        nameRu: "НКО Базовый",
+        targetType: "ngo",
+        priceUsd: 19,
+        priceUzs: 245000,
+        features: ["Eligibility checks", "Grant matching"],
+        highlighted: false,
+      },
+    ],
+  },
+  total: 1,
+  usdUzsRate: 12900,
+} as const;
+
+export const PAYMENTS_STATUS_FIXTURE = {
+  paymentsEnabled: true,
+  integrationStatus: "configured",
+  provider: "uzum",
+  providers: [
+    {
+      id: "uzum",
+      enabled: true,
+      configured: true,
+      label: "Uzum",
+      methods: ["checkout"],
+    },
+  ],
+} as const;

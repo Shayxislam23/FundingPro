@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { authedQuery } from "./lib/customFunctions";
 
+const USAGE_SCAN_LIMIT = 500;
+
 export const monthlyUsage = authedQuery({
   args: {
     monthStart: v.number(),
@@ -15,17 +17,21 @@ export const monthlyUsage = authedQuery({
     const [eligibility, proposals] = await Promise.all([
       ctx.db
         .query("eligibilityChecks")
-        .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-        .collect(),
+        .withIndex("by_user_created", (q) =>
+          q.eq("userId", ctx.user._id).gte("createdAt", since)
+        )
+        .take(USAGE_SCAN_LIMIT),
       ctx.db
         .query("proposalProjects")
-        .withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-        .collect(),
+        .withIndex("by_user_created", (q) =>
+          q.eq("userId", ctx.user._id).gte("createdAt", since)
+        )
+        .take(USAGE_SCAN_LIMIT),
     ]);
 
     return {
-      eligibilityChecks: eligibility.filter((e) => e.createdAt >= since).length,
-      aiProposals: proposals.filter((p) => p.createdAt >= since).length,
+      eligibilityChecks: eligibility.length,
+      aiProposals: proposals.length,
     };
   },
 });

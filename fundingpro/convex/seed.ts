@@ -1,3 +1,7 @@
+/**
+ * NOTE: This seed intentionally uses `.collect()` to support idempotent
+ * dedupe against the small bootstrap catalog.
+ */
 import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
@@ -11,6 +15,7 @@ import {
   SEED_SETTINGS,
   parseDeadline,
 } from "./seedData";
+import { refreshPlatformStatsImpl } from "./platformStats";
 
 const seedResultValidator = v.object({
   skipped: v.boolean(),
@@ -82,7 +87,7 @@ export const run = internalMutation({
         priceUsd: plan.priceUsd,
         priceUzs: plan.priceUzs,
         billingPeriod: "monthly",
-        features: plan.features,
+        features: [...plan.features],
         isActive: true,
         createdAt: now,
         updatedAt: now,
@@ -238,6 +243,8 @@ export const run = internalMutation({
       organizationsInserted > 0 ||
       consultantsInserted > 0 ||
       grantsInserted > 0;
+
+    await refreshPlatformStatsImpl(ctx);
 
     return {
       skipped: catalogComplete && !insertedAnything,

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { authedMutation, authedQuery } from "./lib/customFunctions";
+import { eligibilityAnswersValidator } from "./lib/validators";
 import type { Id } from "./_generated/dataModel";
 
 export const getGrant = authedQuery({
@@ -26,7 +27,7 @@ export const getGrant = authedQuery({
 export const saveCheck = authedMutation({
   args: {
     grantId: v.optional(v.union(v.string(), v.null())),
-    answers: v.any(),
+    answers: eligibilityAnswersValidator,
     score: v.number(),
     status: v.string(),
     strengths: v.array(v.string()),

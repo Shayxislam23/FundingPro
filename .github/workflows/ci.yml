@@ -13,6 +13,7 @@ jobs:
       run:
         working-directory: fundingpro
     env:
+      CONVEX_AGENT_MODE: anonymous
       NEXT_PUBLIC_CONVEX_URL: "https://placeholder.convex.cloud"
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_Y2xlcmsuZGV2JHRlc3Qk"
       CLERK_SECRET_KEY: "sk_test_Y2xlcmsuZGV2JHRlc3Qk"
@@ -171,9 +172,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - uses: actions/setup-python@8c9ebf09f1fcd6e844b07411b4f2f585f5edecf2 # v5
+        with:
+          python-version: "3.11"
+
       - name: Semgrep SAST
         working-directory: fundingpro
-        run: npx --yes semgrep@1.96.0 --config .semgrep/fundingpro.yml --error --quiet ..
+        run: |
+          python -m pip install --upgrade pip
+          pip install semgrep==1.96.0
+          semgrep --config .semgrep/fundingpro.yml --error --quiet ..
 
       - name: npm audit (high+, production deps per workspace)
         run: |

@@ -24,6 +24,7 @@ import type * as grants from "../grants.js";
 import type * as importData from "../importData.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_customFunctions from "../lib/customFunctions.js";
+import type * as lib_pagination from "../lib/pagination.js";
 import type * as lib_paymentHelpers from "../lib/paymentHelpers.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as matchGrants from "../matchGrants.js";
@@ -70,6 +71,7 @@ declare const fullApi: ApiFromModules<{
   importData: typeof importData;
   "lib/auth": typeof lib_auth;
   "lib/customFunctions": typeof lib_customFunctions;
+  "lib/pagination": typeof lib_pagination;
   "lib/paymentHelpers": typeof lib_paymentHelpers;
   "lib/validators": typeof lib_validators;
   matchGrants: typeof matchGrants;

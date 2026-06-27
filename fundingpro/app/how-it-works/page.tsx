@@ -3,13 +3,14 @@ import Link from "next/link";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
 import { SectionLabel } from "@/components/design/SectionLabel";
+import { hreflangAlternates } from "@/lib/seo/site";
 import { ArrowRight, ChevronDown } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Как это работает",
   description:
     "Узнайте, как FundingPro помогает найти гранты, проверить соответствие требованиям донора и подготовить заявку с помощью AI.",
-  alternates: { canonical: "/how-it-works" },
+  alternates: hreflangAlternates("/how-it-works"),
 };
 
 const FAQ_ITEMS = [

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { ConvexClerkProvider } from "@/components/providers/ConvexClerkProvider";
-import { siteConfig } from "@/lib/seo/site";
+import { defaultOgImageUrl, defaultOgImages, hreflangAlternates, siteConfig } from "@/lib/seo/site";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -23,6 +23,7 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
+  alternates: hreflangAlternates("/"),
   openGraph: {
     type: "website",
     locale: siteConfig.locale,
@@ -30,11 +31,13 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     title: `${siteConfig.name} — AI-платформа для грантов`,
     description: siteConfig.ogDescription,
+    images: defaultOgImages(),
   },
   twitter: {
     card: "summary_large_image",
     title: `${siteConfig.name} — AI-платформа для грантов`,
     description: siteConfig.twitterDescription,
+    images: [defaultOgImageUrl],
   },
 };
 

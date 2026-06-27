@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LandingPageClient } from "@/components/landing/LandingPageClient";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { absoluteUrl, openGraphPage, siteConfig } from "@/lib/seo/site";
+import { absoluteUrl, hreflangAlternates, openGraphPage, siteConfig } from "@/lib/seo/site";
 
 export const metadata: Metadata = {
   title: `${siteConfig.name} — AI-платформа для грантов`,
@@ -16,13 +16,7 @@ export const metadata: Metadata = {
     title: `${siteConfig.name} — AI-платформа для грантов`,
     description: siteConfig.twitterDescription,
   },
-  alternates: {
-    canonical: "/",
-    languages: {
-      ru: "/",
-      uz: "/?lang=uz",
-    },
-  },
+  alternates: hreflangAlternates("/"),
 };
 
 export default function LandingPage() {

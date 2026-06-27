@@ -8,7 +8,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { listPlans } from "@/lib/db/plans";
 import { formatPlanPriceDisplay } from "@/lib/format-plan";
 import { getUsdUzsRate } from "@/lib/legal/documents";
-import { absoluteUrl, openGraphPage, siteConfig } from "@/lib/seo/site";
+import { absoluteUrl, hreflangAlternates, openGraphPage, siteConfig } from "@/lib/seo/site";
 import { ArrowRight } from "lucide-react";
 
 const pageTitle = "Тарифы и подписки";
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     title: `${pageTitle} | ${siteConfig.name}`,
     description: pageDescription,
   },
-  alternates: { canonical: "/pricing" },
+  alternates: hreflangAlternates("/pricing"),
 };
 
 export default async function PricingPage() {

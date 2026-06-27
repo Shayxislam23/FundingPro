@@ -5,7 +5,7 @@ import { LegalFooter } from "@/components/design/LegalFooter";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { listPublicDonors } from "@/lib/public-donors";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { absoluteUrl, openGraphPage, siteConfig } from "@/lib/seo/site";
+import { absoluteUrl, hreflangAlternates, openGraphPage, siteConfig } from "@/lib/seo/site";
 import { ArrowRight, Globe } from "lucide-react";
 
 const pageTitle = "Доноры и фонды";
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: `${pageTitle} | ${siteConfig.name}`,
     description: pageDescription,
   },
-  alternates: { canonical: "/donors" },
+  alternates: hreflangAlternates("/donors"),
 };
 
 export default async function DonorsPage() {

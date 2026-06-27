@@ -5,14 +5,16 @@ import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
 import { ShareGrantButton } from "@/components/grants/ShareGrantButton";
 import { getPublicGrantById } from "@/lib/public-grants";
-import { formatGrantAmount, formatDeadlineDate } from "@/lib/format-grant";
-import { translateSector } from "@/lib/sector-labels";
+import { formatGrantAmount, formatDeadlineDate } from "@fundingpro/shared";
+import { translateSector } from "@fundingpro/shared";
+import {
+  absoluteUrl,
+  defaultOgImageUrl,
+  defaultOgImages,
+  hreflangAlternates,
+  openGraphPage,
+} from "@/lib/seo/site";
 import { ArrowLeft, Calendar, MapPin, DollarSign, ExternalLink } from "lucide-react";
-
-const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(
-  /\/$/,
-  ""
-);
 
 type PageProps = { params: { id: string } };
 
@@ -25,20 +27,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     (grant.description_ru ?? grant.description)?.slice(0, 160) ??
     `Грант от ${grant.donor.name_ru ?? grant.donor.name}`;
 
+  const grantPath = `/grants/${params.id}`;
+
   return {
     title,
     description,
-    alternates: { canonical: `/grants/${params.id}` },
+    alternates: hreflangAlternates(grantPath),
     openGraph: {
-      title,
-      description,
-      url: `${appUrl}/grants/${params.id}`,
+      ...openGraphPage(title, description, grantPath),
       type: "article",
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
       description,
+      images: [defaultOgImageUrl],
     },
   };
 }
@@ -66,7 +69,7 @@ export default async function PublicGrantDetailPage({ params }: PageProps) {
       url: grant.donor.website ?? undefined,
     },
     dateModified: grant.deadline ?? undefined,
-    mainEntityOfPage: `${appUrl}/grants/${grant.id}`,
+    mainEntityOfPage: absoluteUrl(`/grants/${grant.id}`),
   };
 
   return (

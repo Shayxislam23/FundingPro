@@ -9,10 +9,10 @@ import {
   formatGrantAmount,
   formatDeadlineDate,
   getDeadlineUrgency,
-} from "@/lib/format-grant";
-import { translateSector } from "@/lib/sector-labels";
+} from "@fundingpro/shared";
+import { translateSector } from "@fundingpro/shared";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { absoluteUrl, openGraphPage, siteConfig } from "@/lib/seo/site";
+import { absoluteUrl, hreflangAlternates, openGraphPage, siteConfig } from "@/lib/seo/site";
 import { ArrowRight } from "lucide-react";
 
 const pageTitle = "Каталог грантов";
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: `${pageTitle} | ${siteConfig.name}`,
     description: pageDescription,
   },
-  alternates: { canonical: "/grants" },
+  alternates: hreflangAlternates("/grants"),
 };
 
 const DEFAULT_COUNTRY = "Uzbekistan";

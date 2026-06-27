@@ -13,9 +13,15 @@ Route-level auth wrappers, CORS, rate limits, and payment merchant boundaries fo
 
 All wrappers apply CORS from `CORS_ALLOWED_ORIGINS` (`lib/api-cors.ts`) and handle `OPTIONS` preflight.
 
-## Custom route matrix
+Regenerate the inventory below:
 
-Routes that do **not** use standard wrappers rely on **provider-specific auth** (merchant Basic auth, HMAC, or RPC credentials). Document and review these separately.
+```bash
+node scripts/security-audit/checks/api-routes.mjs
+```
+
+## Merchant / custom auth routes
+
+Routes that do **not** use standard wrappers rely on **provider-specific auth** (merchant Basic auth, HMAC, or RPC credentials).
 
 | Route | Wrapper / auth model | Notes |
 |-------|----------------------|-------|
@@ -33,7 +39,76 @@ Routes that do **not** use standard wrappers rely on **provider-specific auth** 
 | `POST /api/v1/payments/uzum/reverse` | **Merchant** — Uzum Basic auth | Same |
 | `POST /api/v1/payments/uzum/status` | **Merchant** — Uzum Basic auth | Same |
 
-All other `/api/v1/*` routes use `withPublic`, `withActiveUser`, or `withAdmin` — see `scripts/security-audit/checks/api-routes.mjs`.
+## Full route inventory (64 files)
+
+Generated from `app/api/v1/**/route.ts` — **64** route modules.
+
+| Method(s) | Path | Wrapper |
+|-----------|------|---------|
+| GET | `/api/v1/admin/ai-logs` | `withAdmin` |
+| GET | `/api/v1/admin/applications` | `withAdmin` |
+| GET | `/api/v1/admin/audit-logs` | `withAdmin` |
+| GET | `/api/v1/admin/consents` | `withAdmin` |
+| GET, PATCH | `/api/v1/admin/consultant-orders` | `withAdmin` |
+| GET | `/api/v1/admin/dashboard` | `withAdmin` |
+| GET, POST | `/api/v1/admin/donors` | `withAdmin` |
+| GET | `/api/v1/admin/funnel` | `withAdmin` |
+| GET, POST | `/api/v1/admin/grants` | `withAdmin` |
+| PATCH | `/api/v1/admin/grants/[id]` | `withAdmin` |
+| GET, POST | `/api/v1/admin/grants/[id]/requirements` | `withAdmin` |
+| GET | `/api/v1/admin/organizations` | `withAdmin` |
+| PATCH | `/api/v1/admin/organizations/[id]/verify` | `withAdmin` |
+| GET | `/api/v1/admin/payments` | `withAdmin` |
+| GET | `/api/v1/admin/settings` | `withAdmin` |
+| GET | `/api/v1/admin/support-tickets` | `withAdmin` |
+| PATCH | `/api/v1/admin/support-tickets/[id]` | `withAdmin` |
+| GET, PATCH | `/api/v1/admin/users` | `withAdmin` |
+| POST | `/api/v1/ai/match-grants` | `withActiveUser` |
+| POST | `/api/v1/ai/proposal/generate` | `withActiveUser` |
+| GET | `/api/v1/ai/proposals` | `withActiveUser` |
+| GET, POST | `/api/v1/applications` | `withActiveUser` |
+| GET, PATCH, DELETE | `/api/v1/applications/[id]` | `withActiveUser` |
+| GET | `/api/v1/auth/admin-check` | `withActiveUser` |
+| POST | `/api/v1/auth/audit-login` | `withActiveUser` |
+| GET, POST | `/api/v1/consultant-orders` | `withActiveUser` |
+| GET | `/api/v1/consultants` | `withActiveUser` |
+| GET, DELETE | `/api/v1/documents` | `withActiveUser` |
+| GET | `/api/v1/documents/[id]/download` | `withActiveUser` |
+| POST | `/api/v1/documents/upload` | `withActiveUser` |
+| GET | `/api/v1/donors` | `withPublic` |
+| POST | `/api/v1/eligibility/check` | `withActiveUser` |
+| GET | `/api/v1/grants` | `withPublic` |
+| GET | `/api/v1/grants/[id]` | `withPublic` |
+| POST, DELETE | `/api/v1/grants/[id]/save` | `withActiveUser` |
+| GET | `/api/v1/health` | `withPublic` |
+| POST | `/api/v1/lead-magnet` | `withPublic` |
+| GET | `/api/v1/legal` | `withPublic` |
+| POST | `/api/v1/legal/consent` | `withActiveUser` |
+| GET | `/api/v1/legal/consent/status` | `withActiveUser` |
+| GET, DELETE | `/api/v1/me` | `withActiveUser` |
+| POST, DELETE | `/api/v1/me/delete-request` | `withActiveUser` |
+| POST | `/api/v1/me/push-token` | `withActiveUser` |
+| GET | `/api/v1/onboarding/status` | `withActiveUser` |
+| GET, POST, PATCH | `/api/v1/organizations` | `withActiveUser` |
+| POST | `/api/v1/payments/checkout` | `withActiveUser` |
+| GET | `/api/v1/payments/checkout/return` | `withActiveUser` |
+| POST | `/api/v1/payments/click/complete` | **merchant** |
+| POST | `/api/v1/payments/click/prepare` | **merchant** |
+| POST | `/api/v1/payments/intent` | `withActiveUser` |
+| POST | `/api/v1/payments/payme` | **merchant** |
+| GET | `/api/v1/payments/status` | `withPublic` |
+| POST | `/api/v1/payments/uzum/check` | **merchant** |
+| POST | `/api/v1/payments/uzum/confirm` | **merchant** |
+| POST | `/api/v1/payments/uzum/create` | **merchant** |
+| POST | `/api/v1/payments/uzum/reverse` | **merchant** |
+| POST | `/api/v1/payments/uzum/status` | **merchant** |
+| POST | `/api/v1/payments/webhook` | `withPaymentWebhook` |
+| GET | `/api/v1/plan-usage` | `withActiveUser` |
+| GET | `/api/v1/plans` | `withPublic` |
+| GET | `/api/v1/stories` | `withPublic` |
+| GET, POST | `/api/v1/subscription-requests` | `withActiveUser` |
+| GET | `/api/v1/subscriptions/current` | `withActiveUser` |
+| GET, POST | `/api/v1/support-tickets` | `withActiveUser` |
 
 ## Edge rate limiting (`middleware.ts`)
 
@@ -55,5 +130,6 @@ Set `CORS_ALLOWED_ORIGINS` (comma-separated) in Vercel env. Wrappers attach `Acc
 ## Related docs
 
 - [`docs/security-audit/findings.json`](security-audit/findings.json) — audit findings tracker
+- [`docs/PEN-TEST-CHECKLIST.md`](PEN-TEST-CHECKLIST.md) — external pen-test scope
 - [`docs/PAYMENTS-OVERVIEW.md`](PAYMENTS-OVERVIEW.md) — payment provider setup
 - [`scripts/security-api-probe.mjs`](../scripts/security-api-probe.mjs) — dynamic probes

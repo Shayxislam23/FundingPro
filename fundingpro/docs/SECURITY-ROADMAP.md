@@ -46,18 +46,18 @@ Last updated: 2026-06-27
 
 ## Dependency baseline (Codex audit P1 — 2026-06-27)
 
-Patch-level bumps within **Next 14.x** and **Clerk 5.x** (no `npm audit fix --force`):
+**S3 decision:** Next 15 + Clerk 7 **deferred** — attempted bump caused monorepo type/build regressions; remain on max safe 14.x / 5.x until a dedicated upgrade branch with full auth/payment regression.
 
 | Package | Version | Notes |
 |---------|---------|-------|
-| `next` | 14.2.35 | Latest 14.2.x patch; pairs with `@next/swc-*@14.2.33` (no 14.2.35 SWC publish on npm) |
+| `next` | 14.2.35 | Latest 14.2.x patch; pairs with `@next/swc-*@14.2.33` |
 | `@clerk/nextjs` | 5.7.6 | Latest 5.x; pinned exact in `fundingpro/package.json` |
 | `eslint-config-next` | 14.2.35 | Aligned with `next` |
 | `postcss` (dev) | ^8.5.10 | Root override + devDep bump for GHSA-qx2v-qp2m-jg93 |
 
-**Regression (2026-06-27):** `npm run typecheck --workspace=fundingpro`, `npm test --workspace=fundingpro` (81 tests), `NEXT_PUBLIC_CONVEX_URL=https://placeholder.convex.cloud npm run build --workspace=fundingpro`.
+**Regression (2026-06-27):** `npm run typecheck --workspace=fundingpro`, `npm test --workspace=fundingpro` (81 tests), `npm run test:convex --workspace=fundingpro`, `NEXT_PUBLIC_CONVEX_URL=https://placeholder.convex.cloud npm run build --workspace=fundingpro`.
 
-**Remaining npm audit (high):** Clerk auth bypass chain (GHSA-w24r-5266-9c3c) and Next 14 advisories require **Next 15+ / Clerk 7+** — deferred; tracked for major upgrade sprint.
+**Remaining npm audit (high):** Clerk auth bypass (GHSA-w24r-5266-9c3c) and Next 14 advisories — require Next 15+ / Clerk 7+; tracked for S3 upgrade sprint.
 
 ## References
 

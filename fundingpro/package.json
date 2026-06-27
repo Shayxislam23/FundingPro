@@ -45,7 +45,7 @@
     "contract:mobile-api": "node --import tsx scripts/mobile-api-contract.mjs"
   },
   "dependencies": {
-    "@clerk/nextjs": "^5.7.6",
+    "@clerk/nextjs": "7.5.9",
     "@fundingpro/api-types": "^0.1.0",
     "@fundingpro/shared": "^0.1.0",
     "@radix-ui/react-dialog": "^1.1.15",

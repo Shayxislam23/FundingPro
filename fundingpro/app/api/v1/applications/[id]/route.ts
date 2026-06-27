@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
-import { withActiveUser } from "@/lib/api-route";
+import { withActiveUser, getRouteParam } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
 import {
   getApplicationForUser,
@@ -25,7 +25,7 @@ const ALLOWED_STATUSES = [
 const LOCKED_STATUSES = ["submitted", "under_review", "shortlisted", "won", "reporting"];
 
 export const GET = withActiveUser(async (_req, authUser, ctx) => {
-  const id = ctx.params?.id;
+  const id = await getRouteParam(ctx, "id");
   if (!id) return apiError("Missing id", 400, "MISSING_ID");
 
   const app = await getApplicationForUser(id, authUser.accessToken);
@@ -36,7 +36,7 @@ export const GET = withActiveUser(async (_req, authUser, ctx) => {
 });
 
 export const PATCH = withActiveUser(async (req, authUser, ctx) => {
-  const id = ctx.params?.id;
+  const id = await getRouteParam(ctx, "id");
   if (!id) return apiError("Missing id", 400, "MISSING_ID");
 
   const app = await getApplicationForUser(id, authUser.accessToken);
@@ -80,7 +80,7 @@ export const PATCH = withActiveUser(async (req, authUser, ctx) => {
 });
 
 export const DELETE = withActiveUser(async (req, authUser, ctx) => {
-  const id = ctx.params?.id;
+  const id = await getRouteParam(ctx, "id");
   if (!id) return apiError("Missing id", 400, "MISSING_ID");
 
   const app = await getApplicationForUser(id, authUser.accessToken);

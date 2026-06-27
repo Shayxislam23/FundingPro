@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
-import { withAdmin } from "@/lib/api-route";
+import { withAdmin, getRouteParam } from "@/lib/api-route";
 import { listGrantRequirements, addGrantRequirement } from "@/lib/db/admin-grants";
 
 export const GET = withAdmin(async (_req, admin, ctx) => {
-  const id = ctx.params?.id;
+  const id = await getRouteParam(ctx, "id");
   if (!id) return apiError("Missing id", 400, "MISSING_ID");
 
   const requirements = await listGrantRequirements(id, admin.accessToken);
@@ -12,7 +12,7 @@ export const GET = withAdmin(async (_req, admin, ctx) => {
 });
 
 export const POST = withAdmin(async (req, admin, ctx) => {
-  const id = ctx.params?.id;
+  const id = await getRouteParam(ctx, "id");
   if (!id) return apiError("Missing id", 400, "MISSING_ID");
 
   const body = await req.json();

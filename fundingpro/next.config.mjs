@@ -1,8 +1,12 @@
 /** @type {import('next').NextConfig} */
+import path from "path";
+import { fileURLToPath } from "url";
+
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * CSP tradeoffs:
- * - `unsafe-inline` — required by Next.js 14 for hydration/bootstrap scripts.
+ * - `unsafe-inline` — required by Next.js for hydration/bootstrap scripts.
  * - `unsafe-eval` — only in development (React Fast Refresh / devtools). Omitted in production builds.
  * - `connect-src` includes Convex and Clerk; add other origins here if you integrate analytics/CDN.
  */
@@ -39,6 +43,7 @@ const securityHeaders = [
 
 const nextConfig = {
   transpilePackages: ["@fundingpro/shared"],
+  outputFileTracingRoot: path.join(dirname, ".."),
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

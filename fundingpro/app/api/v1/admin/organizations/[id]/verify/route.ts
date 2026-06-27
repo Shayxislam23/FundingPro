@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
-import { withAdmin } from "@/lib/api-route";
+import { withAdmin, getRouteParam } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
 import { setOrganizationVerified } from "@/lib/db/organizations";
 
 export const PATCH = withAdmin(async (req, admin, ctx) => {
-  const id = ctx.params?.id;
+  const id = await getRouteParam(ctx, "id");
   if (!id) return apiError("Organization id required", 400, "MISSING_FIELDS");
 
   const body = await req.json();

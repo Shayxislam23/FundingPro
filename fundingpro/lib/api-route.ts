@@ -6,7 +6,9 @@ import {
   type AuthUser,
 } from "@/lib/auth-helpers";
 
-type RouteContext = { params?: Record<string, string> };
+type RouteContext = {
+  params: Promise<Record<string, string | string[]>>;
+};
 
 type ActiveUserHandler = (
   req: NextRequest,
@@ -35,8 +37,18 @@ function handleRouteError(err: unknown): NextResponse {
   return apiError("Internal error", 500, "INTERNAL_ERROR");
 }
 
+export async function getRouteParam(
+  ctx: RouteContext,
+  key: string
+): Promise<string | undefined> {
+  const params = await ctx.params;
+  const value = params[key];
+  if (value === undefined) return undefined;
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export function withActiveUser(handler: ActiveUserHandler) {
-  return async (req: NextRequest, ctx: RouteContext = {}): Promise<NextResponse> => {
+  return async (req: NextRequest, ctx: RouteContext): Promise<NextResponse> => {
     try {
       const user = await requireActiveUser(req);
       return await handler(req, user, ctx);
@@ -47,7 +59,7 @@ export function withActiveUser(handler: ActiveUserHandler) {
 }
 
 export function withAdmin(handler: AdminHandler) {
-  return async (req: NextRequest, ctx: RouteContext = {}): Promise<NextResponse> => {
+  return async (req: NextRequest, ctx: RouteContext): Promise<NextResponse> => {
     try {
       const user = await requireAdmin(req);
       return await handler(req, user, ctx);
@@ -58,7 +70,7 @@ export function withAdmin(handler: AdminHandler) {
 }
 
 export function withPublic(handler: PublicHandler) {
-  return async (req: NextRequest, ctx: RouteContext = {}): Promise<NextResponse> => {
+  return async (req: NextRequest, ctx: RouteContext): Promise<NextResponse> => {
     try {
       return await handler(req, ctx);
     } catch (err) {

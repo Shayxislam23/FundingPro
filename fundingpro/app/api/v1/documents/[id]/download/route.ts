@@ -1,13 +1,13 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api";
-import { withActiveUser } from "@/lib/api-route";
+import { withActiveUser, getRouteParam } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
 import { ensureInternalUser } from "@/lib/db/users";
 import { getDocumentById, getDocumentDownloadUrl } from "@/lib/db/documents";
 
 export const GET = withActiveUser(async (_req, authUser, ctx) => {
-  const id = ctx.params?.id;
+  const id = await getRouteParam(ctx, "id");
   if (!id) return apiError("Missing id", 400, "MISSING_ID");
 
   await ensureInternalUser({

@@ -1,3 +1,7 @@
 {
-  "extends": ["next/core-web-vitals", "plugin:@convex-dev/recommended"]
+  "extends": ["next/core-web-vitals", "plugin:@convex-dev/recommended"],
+  "ignorePatterns": ["convex/_generated/**"],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "error"
+  }
 }

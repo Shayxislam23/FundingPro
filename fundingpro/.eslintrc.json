@@ -1,5 +1,7 @@
 {
   "extends": ["next/core-web-vitals", "plugin:@convex-dev/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
   "ignorePatterns": ["convex/_generated/**"],
   "rules": {
     "@typescript-eslint/no-explicit-any": "error"

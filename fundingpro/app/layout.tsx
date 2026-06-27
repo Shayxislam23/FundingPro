@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import localFont from "next/font/local";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 import { ConvexClerkProvider } from "@/components/providers/ConvexClerkProvider";
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="ru">

@@ -3,7 +3,7 @@ const expoConfig = require("eslint-config-expo/flat");
 
 /** @type {import("eslint").Linter.Config[]} */
 module.exports = [
-  expoConfig,
+  ...expoConfig,
   {
     ignores: ["dist/*", ".expo/*"],
   },

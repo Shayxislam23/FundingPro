@@ -70,19 +70,21 @@ Last updated: 2026-06-27
 
 ## Dependency baseline (Codex audit P1 — 2026-06-27)
 
-**S3 decision:** Next 15.5.19 + Clerk 7.5.9 on branch `upgrade/next15-clerk7` (2026-06-27). Merge to `main` pending 0-high prod audit gate.
+**S3 decision:** Next 15.5.19 + Clerk 7.5.9 merged to `main` (2026-06-27). Prod audit gate: **0 high** (`fundingpro` + `@fundingpro/mobile`).
 
 | Package | Version | Notes |
 |---------|---------|-------|
 | `next` | 15.5.19 | App Router async `params`/`searchParams`; `outputFileTracingRoot` in `next.config.mjs` |
 | `@clerk/nextjs` | 7.5.9 | Stricter publishable-key validation — CI uses `pk_test_Y2xlcmsuZGV2JHRlc3Qk` |
 | `eslint-config-next` | 15.5.19 | Aligned with `next` |
-| `postcss` (dev) | ^8.5.10 | Root override + devDep bump for GHSA-qx2v-qp2m-jg93 |
+| `postcss` | ^8.5.10 | Root override + nested `next` override for GHSA-qx2v-qp2m-jg93 |
+| `@clerk/clerk-expo` | 2.19.41 | Mobile override; clears GHSA-w24r-5266-9c3c chain |
+| `ws` | 8.21.0 | Root + `viem` nested override |
 | `@next/swc-*` | 15.5.19 | Optional deps in `fundingpro/package.json` for monorepo hoisting |
 
-**Regression (2026-06-27, upgrade branch):** `npm run build`, `npm run typecheck --workspace=fundingpro`, `npm test` (81), `npm run test:convex` (8), mobile/shared/api-types typecheck.
+**Regression (2026-06-27, post-merge):** `npm run build`, `npm run typecheck --workspace=fundingpro`, `npm test` (81), `npm run test:convex` (8), lint both workspaces.
 
-**Remaining npm audit (high):** 6 in `fundingpro` workspace (nested `postcss` via `next`); mobile `@clerk/clerk-expo` chain — tracked before merge.
+**npm audit (high, prod deps):** 0 in `fundingpro` and `@fundingpro/mobile` (verified 2026-06-27).
 
 ## References
 

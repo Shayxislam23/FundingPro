@@ -179,3 +179,9 @@ jobs:
         run: |
           npm audit --omit=dev --audit-level=high -w fundingpro
           npm audit --omit=dev --audit-level=high -w @fundingpro/mobile
+
+      - name: Security audit orchestrator (0 open Medium+)
+        working-directory: fundingpro
+        env:
+          SECURITY_AUDIT_FAIL_MEDIUM: "1"
+        run: npm run security:audit

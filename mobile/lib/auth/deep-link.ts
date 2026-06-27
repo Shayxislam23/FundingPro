@@ -27,7 +27,7 @@ export function useAuthDeepLink() {
 
       try {
         if ("handleRedirectCallback" in clerk && typeof clerk.handleRedirectCallback === "function") {
-          await clerk.handleRedirectCallback({ redirectUrl: url });
+          await clerk.handleRedirectCallback({});
         }
       } catch {
         // Clerk may already have processed the session from token cache.

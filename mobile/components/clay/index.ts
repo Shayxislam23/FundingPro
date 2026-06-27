@@ -1,1 +1,1 @@
-export { ClayPressable, ClaySurface } from "./ClaySurface";
+export { ClaySurface } from "./ClaySurface";

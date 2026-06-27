@@ -1,4 +1,4 @@
-import { Pressable, View, type PressableProps, type PressableStateCallbackType, type ViewProps } from "react-native";
+import { View, type ViewProps } from "react-native";
 import { CLAY_RADIUS, getClayStyle, type ClayVariant } from "../../lib/clay-styles";
 
 type ClaySurfaceProps = ViewProps & {
@@ -34,36 +34,5 @@ export function ClaySurface({
     >
       {children}
     </View>
-  );
-}
-
-type ClayPressableProps = PressableProps & {
-  variant?: ClayVariant;
-  className?: string;
-  radius?: keyof typeof CLAY_RADIUS | number;
-};
-
-export function ClayPressable({
-  variant = "raised",
-  className,
-  style,
-  radius,
-  children,
-  ...props
-}: ClayPressableProps) {
-  const borderRadius = resolveRadius(radius);
-
-  return (
-    <Pressable
-      className={className}
-      style={(state: PressableStateCallbackType) => [
-        getClayStyle(state.pressed ? "pressed" : variant),
-        borderRadius !== undefined ? { borderRadius } : null,
-        typeof style === "function" ? style(state) : style,
-      ]}
-      {...props}
-    >
-      {children}
-    </Pressable>
   );
 }

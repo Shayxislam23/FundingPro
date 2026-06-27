@@ -1,4 +1,4 @@
-import { verifyPaymentWebhook } from "@/lib/api";
+import { verifyPaymentWebhook } from "@/lib/api-crypto";
 import {
   getPaymentIntegrationStatus,
   getPaymentProvider,

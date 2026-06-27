@@ -147,7 +147,8 @@ export const grantDetailSchema = grantListItemSchema.extend({
 
 export type GrantDetail = z.infer<typeof grantDetailSchema>;
 
-export { GRANT_DETAIL_FIXTURE } from "./fixtures";
+export { GRANT_DETAIL_FIXTURE, PAYMENTS_STATUS_FIXTURE, PLANS_FIXTURE } from "./fixtures";
+export * from "./payments";
 
 export const planSchema = z.object({
   id: z.string(),

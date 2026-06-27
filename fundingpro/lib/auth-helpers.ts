@@ -138,12 +138,17 @@ export async function writeAuditLog(params: {
   metadata?: Record<string, unknown>;
 }) {
   try {
+    const metadata = params.metadata
+      ? Object.fromEntries(
+          Object.entries(params.metadata).map(([key, value]) => [key, String(value)])
+        )
+      : undefined;
     await convexInternalMutation(internal.audit.write, {
       userId: params.userId,
       action: params.action,
       entityType: params.entityType,
       entityId: params.entityId,
-      metadata: params.metadata,
+      metadata,
     });
   } catch (err) {
     console.warn("Failed to write audit log", {

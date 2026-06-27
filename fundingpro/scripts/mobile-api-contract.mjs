@@ -3,7 +3,13 @@
  * Contract tests: mobile API client expectations vs running FundingPro API.
  * Usage: SMOKE_BASE_URL=http://localhost:3000 node fundingpro/scripts/mobile-api-contract.mjs
  */
-import { grantDetailSchema, GRANT_DETAIL_FIXTURE, listGrantsResultSchema } from "@fundingpro/api-types";
+import {
+  GRANT_DETAIL_FIXTURE,
+  grantDetailSchema,
+  listGrantsResultSchema,
+  paymentConfigSchema,
+  plansResponseSchema,
+} from "@fundingpro/api-types";
 
 const BASE = (process.env.SMOKE_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 const SEED_GRANT_ID_FALLBACK =
@@ -35,7 +41,8 @@ async function testPlans() {
   const { status, json } = await fetchJson("/api/v1/plans");
   assert(status === 200, `plans status ${status}`);
   assert(json.success === true, "plans envelope success");
-  assert(Array.isArray(json.data?.plans), "plans.data.plans array");
+  const parsed = plansResponseSchema.safeParse(json.data);
+  assert(parsed.success, "plans.data matches plansResponseSchema");
   console.log(`OK  GET /api/v1/plans (${json.data.plans.length} plans)`);
 }
 
@@ -91,7 +98,8 @@ async function testPaymentsStatus() {
   const { status, json } = await fetchJson("/api/v1/payments/status");
   assert(status === 200, `payments/status status ${status}`);
   assert(json.success === true, "payments/status envelope");
-  assert(typeof json.data?.paymentsEnabled === "boolean", "paymentsEnabled boolean");
+  const parsed = paymentConfigSchema.safeParse(json.data);
+  assert(parsed.success, "payments/status matches paymentConfigSchema");
   console.log("OK  GET /api/v1/payments/status");
 }
 

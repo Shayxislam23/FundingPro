@@ -7,7 +7,10 @@ export async function getGrantForEligibility(grantId: string, accessToken: strin
 export async function saveEligibilityCheck(
   params: {
     grantId?: string | null;
-    answers: Record<string, unknown>;
+    answers: Record<
+      string,
+      string | number | boolean | null | Array<string | number | boolean | null>
+    >;
     score: number;
     status: string;
     strengths: string[];

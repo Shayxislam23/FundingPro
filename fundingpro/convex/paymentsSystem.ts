@@ -5,6 +5,7 @@ import {
   paymentRecordValidator,
   uzumTransactionValidator,
 } from "./lib/paymentHelpers";
+import { paymentEventPayloadValidator, paymentMetadataValidator } from "./lib/validators";
 
 type PaymentRecord = Infer<typeof paymentRecordValidator>;
 type UzumTransaction = Infer<typeof uzumTransactionValidator>;
@@ -35,7 +36,7 @@ export const insertEvent = action({
     systemSecret: v.string(),
     paymentId: v.string(),
     eventType: v.string(),
-    payload: v.any(),
+    payload: paymentEventPayloadValidator,
     source: v.optional(v.string()),
   },
   returns: v.null(),
@@ -91,7 +92,7 @@ export const updateProviderRef = action({
     systemSecret: v.string(),
     paymentId: v.string(),
     providerRefId: v.string(),
-    extraMetadata: v.optional(v.any()),
+    extraMetadata: v.optional(paymentMetadataValidator),
   },
   returns: v.null(),
   handler: async (ctx, args) => {

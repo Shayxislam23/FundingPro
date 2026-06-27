@@ -1,17 +1,7 @@
 import { v } from "convex/values";
 import { authedMutation, authedQuery, adminQuery } from "./lib/customFunctions";
-import type { Doc, Id } from "./_generated/dataModel";
-import { mapPayment } from "./lib/paymentHelpers";
-import type { QueryCtx } from "./_generated/server";
-
-async function resolvePlanId(ctx: { db: QueryCtx["db"] }, planId: string) {
-  const bySlug = await ctx.db
-    .query("plans")
-    .withIndex("by_slug", (q) => q.eq("slug", planId))
-    .unique();
-  if (bySlug) return bySlug._id;
-  return planId as Id<"plans">;
-}
+import type { Id } from "./_generated/dataModel";
+import { mapPayment, paymentRecordValidator, resolvePlanId } from "./lib/paymentHelpers";
 
 export const createIntent = authedMutation({
   args: {
@@ -62,23 +52,7 @@ export const createIntent = authedMutation({
 
 export const getById = authedQuery({
   args: { paymentId: v.string() },
-  returns: v.union(
-    v.object({
-      id: v.string(),
-      userId: v.string(),
-      subscriptionId: v.union(v.string(), v.null()),
-      amountUsd: v.number(),
-      amountTiyin: v.number(),
-      currency: v.string(),
-      status: v.string(),
-      provider: v.string(),
-      providerRefId: v.union(v.string(), v.null()),
-      idempotencyKey: v.string(),
-      serviceType: v.string(),
-      metadata: v.any(),
-    }),
-    v.null()
-  ),
+  returns: paymentRecordValidator,
   handler: async (ctx, args) => {
     const payment = await ctx.db.get("payments", args.paymentId as Id<"payments">);
     if (!payment || payment.userId !== ctx.user._id) return null;
@@ -137,13 +111,15 @@ export const adminReport = adminQuery({
     const paymentRows = await Promise.all(
       payments.slice(0, 50).map(async (p) => {
         const user = await ctx.db.get("users", p.userId);
-        const meta = (p.metadata ?? {}) as Record<string, unknown>;
+        const meta = (p.metadata ?? {}) as Record<string, string>;
         const platformShareUsd =
-          typeof meta.platformShareUsd === "number" ? meta.platformShareUsd : null;
+          Number.isFinite(Number(meta.platformShareUsd))
+            ? Number(meta.platformShareUsd)
+            : null;
         return {
           id: p._id,
           userEmail: user?.email ?? null,
-          planName: typeof meta.planName === "string" ? meta.planName : null,
+          planName: meta.planName ?? null,
           amountUsd: p.amountUsd,
           platformShareUsd,
           createdAt: new Date(p.createdAt).toISOString(),

@@ -1,15 +1,41 @@
 import { v } from "convex/values";
 import type { QueryCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
+import { paymentMetadataValidator } from "./validators";
 
-export function mapPayment(payment: Doc<"payments">, userClerkId: string) {
-  const meta = (payment.metadata ?? {}) as Record<string, unknown>;
+export type PaymentMetadata = Record<string, string>;
+
+function asPaymentMetadata(metadata: Doc<"payments">["metadata"]): PaymentMetadata {
+  if (!metadata) return {};
+  return Object.fromEntries(
+    Object.entries(metadata).map(([key, value]) => [key, String(value)])
+  );
+}
+
+export function mapPayment(
+  payment: Doc<"payments">,
+  userClerkId: string
+): {
+  id: string;
+  userId: string;
+  subscriptionId: string | null;
+  amountUsd: number;
+  amountTiyin: number;
+  currency: string;
+  status: string;
+  provider: string;
+  providerRefId: string | null;
+  idempotencyKey: string;
+  serviceType: string;
+  metadata: PaymentMetadata;
+} {
+  const meta = asPaymentMetadata(payment.metadata);
   return {
     id: payment._id,
     userId: userClerkId,
     subscriptionId: payment.subscriptionId ?? null,
     amountUsd: payment.amountUsd,
-    amountTiyin: Number(meta.amountTiyin ?? 0),
+    amountTiyin: Number(meta.amountTiyin ?? "0"),
     currency: payment.currency,
     status: payment.status,
     provider: payment.provider,
@@ -42,7 +68,7 @@ export const paymentRecordValidator = v.union(
     providerRefId: v.union(v.string(), v.null()),
     idempotencyKey: v.string(),
     serviceType: v.string(),
-    metadata: v.any(),
+    metadata: paymentMetadataValidator,
   }),
   v.null()
 );

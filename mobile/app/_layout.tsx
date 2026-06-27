@@ -6,6 +6,7 @@ import { initSentry } from "../lib/sentry";
 import { AuthProvider, useAuth } from "../lib/auth/context";
 import { useAuthDeepLink } from "../lib/auth/deep-link";
 import { AppQueryProvider } from "../lib/query-client";
+import { setupPushNotificationRouting } from "../lib/notifications";
 import {
   GuestCarousel,
   hasSeenGuestCarousel,
@@ -19,6 +20,10 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const [showCarousel, setShowCarousel] = useState(false);
 
   useAuthDeepLink();
+
+  useEffect(() => {
+    return setupPushNotificationRouting(router);
+  }, [router]);
 
   useEffect(() => {
     void hasSeenGuestCarousel().then((seen) => {
@@ -72,6 +77,7 @@ export default function RootLayout() {
             <Stack.Screen name="(legal)" />
             <Stack.Screen name="(app)" />
             <Stack.Screen name="subscription/return" />
+            <Stack.Screen name="mobile" />
           </Stack>
         </AuthGuard>
       </AppQueryProvider>

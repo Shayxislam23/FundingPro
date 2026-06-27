@@ -42,6 +42,9 @@ export function isAllowedCheckoutReturnUrl(url: string): boolean {
     if (!ALLOWED_WEB_HOSTS.has(host)) {
       return false;
     }
+    if (parsed.pathname === "/mobile/subscription/return") {
+      return true;
+    }
     return parsed.pathname.startsWith("/dashboard/subscription");
   } catch {
     return false;

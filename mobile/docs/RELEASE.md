@@ -18,7 +18,7 @@ See `mobile/docs/CLAY-VERIFY.md` for local UI verification and `mobile/docs/EAS-
 
 ## Prerequisites (user action required)
 
-1. **EAS**: Run `eas login` and `eas init` — replace `projectId` in `app.json` (`REPLACE_AFTER_eas_init`)
+1. **EAS**: Project linked — `app.json` → `extra.eas.projectId` (`57edb446-5583-4f1a-9540-6b812beb5467`)
 2. **Env**: Set `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` in EAS secrets
 3. **Clerk**: Add redirect URL `fundingpro://auth/callback` in Clerk Dashboard → Paths; JWT template `convex`
 4. **Push**: EAS build configures Expo push credentials automatically; physical device required to test token registration
@@ -43,7 +43,7 @@ Custom scheme `fundingpro://` works for development. For production, configure v
 2. Host `https://www.fundingpro.uz/.well-known/assetlinks.json` with your signing certificate SHA-256
 3. Test: `adb shell am start -a android.intent.action.VIEW -d "https://www.fundingpro.uz/mobile/auth/callback"`
 
-Deep link handler validates `fundingpro://auth/callback` and Clerk session before granting app access.
+Deep link handler validates `fundingpro://auth/callback`, `https://www.fundingpro.uz/mobile/auth/callback`, and payment return paths before granting app access.
 
 ## App Store compliance
 

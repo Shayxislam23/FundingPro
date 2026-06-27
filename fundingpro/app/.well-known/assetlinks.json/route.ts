@@ -1,23 +1,30 @@
 import { NextResponse } from "next/server";
-
-/** Replace SHA256 fingerprint with EAS/Play signing cert before enabling autoVerify. */
-const ANDROID_PACKAGE = "uz.fundingpro.app";
-
-const assetLinks = [
-  {
-    relation: ["delegate_permission/common.handle_all_urls"],
-    target: {
-      namespace: "android_app",
-      package_name: ANDROID_PACKAGE,
-      sha256_cert_fingerprints: ["REPLACE_WITH_SHA256_CERT_FINGERPRINT"],
-    },
-  },
-];
+import {
+  appLinksConfigStatus,
+  getAndroidPackage,
+  getAndroidReleaseSha256Fingerprints,
+} from "@/lib/mobile-app-links";
 
 export function GET() {
-  return NextResponse.json(assetLinks, {
-    headers: {
-      "Content-Type": "application/json",
+  const status = appLinksConfigStatus();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (!status.androidReady) {
+    headers["X-App-Links-Config"] = "incomplete";
+    headers["X-App-Links-Missing"] = status.missing.join(",");
+  }
+
+  const assetLinks = [
+    {
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: {
+        namespace: "android_app",
+        package_name: getAndroidPackage(),
+        sha256_cert_fingerprints: getAndroidReleaseSha256Fingerprints(),
+      },
     },
-  });
+  ];
+
+  return NextResponse.json(assetLinks, { headers });
 }

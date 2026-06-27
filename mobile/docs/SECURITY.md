@@ -1,6 +1,6 @@
 # Безопасность FundingPro Mobile
 
-Документ описывает текущую модель безопасности мобильного приложения (v0.3.0+) и результаты аудита после hardening-релиза.
+Документ описывает текущую модель безопасности мобильного приложения (v0.4.0+) и результаты аудита после hardening-релиза.
 
 ## Краткое резюме
 
@@ -10,7 +10,7 @@
 | API | Bearer Convex JWT, `X-Client-Version`, серверная авторизация на всех `/api/v1/*` |
 | Платежи | `returnUrl` только на сервере (`platform=mobile` → фиксированный deeplink) |
 | Админ-панель | **Не в mobile** — только web (`fundingpro` dashboard) |
-| Deep links | Валидация схемы/пути и формата токенов перед установкой сессии |
+| Deep links | Валидация схемы/пути и формата токенов; `fundingpro://` + `https://www.fundingpro.uz/mobile/*` App Links |
 | Транспорт | HTTPS к API и Clerk |
 | Секреты | Нет service role / webhook secret в клиенте; Clerk publishable key — публичный по дизайну |
 
@@ -22,7 +22,7 @@ Clerk Expo → getToken({ template: "convex" }) → Authorization: Bearer <jwt> 
 
 - Сессия управляется Clerk; refresh и logout через Clerk SDK.
 - Токены кэшируются в SecureStore через `chunkedSecureStoreAdapter` (лимит Expo 2048 байт на ключ).
-- Redirect после входа: `fundingpro://auth/callback` (настроить в Clerk Dashboard).
+- Redirect после входа: `fundingpro://auth/callback` или `https://www.fundingpro.uz/mobile/auth/callback` (настроить в Clerk Dashboard).
 
 ## Находки (после исправлений)
 
@@ -46,8 +46,8 @@ Clerk Expo → getToken({ template: "convex" }) → Authorization: Bearer <jwt> 
 
 | ID | Описание | Статус |
 |----|----------|--------|
-| M-02 | Custom scheme без Universal/App Links (hijack risk на Android) | **Открыто** — см. `docs/RELEASE.md` |
-| M-03 | Нет certificate pinning для API | **Открыто** — roadmap |
+| M-02 | Custom scheme без Universal/App Links (hijack risk на Android) | **Открыто** — `.well-known` + env на web; device verify pending — см. `fundingpro/docs/SECURITY-ROADMAP.md` |
+| M-03 | Нет certificate pinning для API | **Открыто** — ADR в Track 6 (`fundingpro/docs/SECURITY-ROADMAP.md`) |
 | M-04 | Push token регистрация на backend | **Исправлено** — `registerAndSyncPushToken()` после Clerk login → `POST /me/push-token` |
 | M-05 | Offline cache грантов в AsyncStorage (не секреты, но без шифрования) | **Принято** — публичные данные |
 
@@ -56,7 +56,7 @@ Clerk Expo → getToken({ template: "convex" }) → Authorization: Bearer <jwt> 
 | ID | Описание | Статус |
 |----|----------|--------|
 | L-01 | `unsafe-inline` в CSP (Next.js) | **Принято** — ограничение фреймворка |
-| L-02 | Нет in-app удаления аккаунта | **Открыто** — через поддержку, см. RELEASE |
+| L-02 | In-app удаление аккаунта | **Частично закрыто** — `POST /api/v1/me/delete-request` из профиля; fallback support ticket — см. SECURITY-ROADMAP |
 | L-03 | Sentry DSN в клиенте (публичный по дизайну) | **Принято** |
 
 ### Снято с mobile (v0.3.0)
@@ -83,11 +83,11 @@ Clerk Expo → getToken({ template: "convex" }) → Authorization: Bearer <jwt> 
 
 ## Оставшиеся риски и roadmap
 
-1. **Universal Links / App Links** — настроить `.well-known` на `fundingpro.uz` и associated domains (см. RELEASE.md).
-2. **SSL pinning** — рассмотреть для production API (trade-off с ротацией сертификатов).
-3. **Account deletion** — in-app flow + backend erase (GDPR/App Store).
-4. **Rate limiting** — на уровне API gateway / Vercel для мобильного клиента.
-5. **Pen-test** — повторить после App Links и pinning.
+1. **Universal Links / App Links** — задайте `APPLE_TEAM_ID` и `ANDROID_RELEASE_SHA256` в Vercel; проверьте `.well-known` на device. Статус: **M-02 открыт** — [`fundingpro/docs/SECURITY-ROADMAP.md`](../../fundingpro/docs/SECURITY-ROADMAP.md).
+2. **SSL pinning** — рассмотреть для production API (trade-off с ротацией сертификатов). Статус: **M-03 открыт**.
+3. **Account deletion** — профиль вызывает `POST /api/v1/me/delete-request`; при сбое API — тикет в поддержку. Полный cascade + Clerk delete — backlog Track 6. Статус: **L-02 частично закрыт**.
+4. **Rate limiting** — middleware на `/api/v1/ai/*` и `/api/v1/auth/*` (IP buckets + per-user AI limits). DB-backed buckets — backlog.
+5. **Pen-test** — повторить после App Links live на device.
 
 ## Проверки для релиза
 

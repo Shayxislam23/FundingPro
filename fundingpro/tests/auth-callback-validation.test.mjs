@@ -2,15 +2,38 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 // Mirrors mobile/lib/auth/callback-validation.ts
-const AUTH_CALLBACK_PATH = /^fundingpro:\/\/auth\/callback\/?$/i;
+const AUTH_CALLBACK_SCHEME = /^fundingpro:\/\/auth\/callback\/?$/i;
+const AUTH_CALLBACK_HTTPS = /^https:\/\/(www\.)?fundingpro\.uz\/mobile\/auth\/callback\/?$/i;
+const SUBSCRIPTION_RETURN_SCHEME = /^fundingpro:\/\/subscription\/return\/?$/i;
+const SUBSCRIPTION_RETURN_HTTPS =
+  /^https:\/\/(www\.)?fundingpro\.uz\/mobile\/subscription\/return\/?$/i;
 const JWT_PART = /^[A-Za-z0-9_-]+$/;
 const TOKEN_HASH = /^[A-Za-z0-9_-]{16,256}$/;
+const PAYMENT_ID = /^[a-zA-Z0-9_-]{8,128}$/;
 const OTP_TYPES = new Set(["recovery", "email", "signup", "invite", "magiclink", "email_change"]);
+
+function basePath(url) {
+  return url.split("#")[0]?.split("?")[0] ?? "";
+}
+
+function queryString(url) {
+  if (!url.includes("?")) return undefined;
+  return url.split("?").slice(1).join("?").split("#")[0];
+}
 
 function isValidAuthCallbackUrl(url) {
   try {
-    const base = url.split("#")[0]?.split("?")[0] ?? "";
-    return AUTH_CALLBACK_PATH.test(base);
+    const base = basePath(url);
+    return AUTH_CALLBACK_SCHEME.test(base) || AUTH_CALLBACK_HTTPS.test(base);
+  } catch {
+    return false;
+  }
+}
+
+function isValidSubscriptionReturnUrl(url) {
+  try {
+    const base = basePath(url);
+    return SUBSCRIPTION_RETURN_SCHEME.test(base) || SUBSCRIPTION_RETURN_HTTPS.test(base);
   } catch {
     return false;
   }
@@ -35,7 +58,7 @@ function parseAuthCallbackUrl(url) {
     }
   }
 
-  const query = url.includes("?") ? url.split("?")[1]?.split("#")[0] : undefined;
+  const query = queryString(url);
   if (query) {
     const params = new URLSearchParams(query);
     const token_hash = params.get("token_hash") ?? "";
@@ -48,11 +71,26 @@ function parseAuthCallbackUrl(url) {
   return null;
 }
 
+function parseSubscriptionReturnUrl(url) {
+  if (!isValidSubscriptionReturnUrl(url)) return null;
+  const query = queryString(url);
+  if (!query) return null;
+  const paymentId = new URLSearchParams(query).get("paymentId") ?? "";
+  if (!PAYMENT_ID.test(paymentId)) return null;
+  return { paymentId };
+}
+
 const sampleJwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
 
 describe("auth callback deep link validation", () => {
   it("accepts valid session callback", () => {
     const url = `fundingpro://auth/callback#access_token=${sampleJwt}&refresh_token=${sampleJwt}`;
+    const payload = parseAuthCallbackUrl(url);
+    assert.equal(payload?.kind, "session");
+  });
+
+  it("accepts HTTPS App Link auth callback", () => {
+    const url = `https://www.fundingpro.uz/mobile/auth/callback#access_token=${sampleJwt}&refresh_token=${sampleJwt}`;
     const payload = parseAuthCallbackUrl(url);
     assert.equal(payload?.kind, "session");
   });
@@ -71,5 +109,26 @@ describe("auth callback deep link validation", () => {
     const url = "fundingpro://auth/callback?token_hash=abcdefghijklmnopqrst&type=recovery";
     const payload = parseAuthCallbackUrl(url);
     assert.equal(payload?.kind, "otp");
+  });
+});
+
+describe("subscription return deep link validation", () => {
+  it("accepts custom scheme return", () => {
+    const payload = parseSubscriptionReturnUrl(
+      "fundingpro://subscription/return?paymentId=pay_12345678"
+    );
+    assert.equal(payload?.paymentId, "pay_12345678");
+  });
+
+  it("accepts HTTPS App Link return", () => {
+    const payload = parseSubscriptionReturnUrl(
+      "https://www.fundingpro.uz/mobile/subscription/return?paymentId=pay_12345678"
+    );
+    assert.equal(payload?.paymentId, "pay_12345678");
+  });
+
+  it("rejects missing or invalid paymentId", () => {
+    assert.equal(parseSubscriptionReturnUrl("fundingpro://subscription/return"), null);
+    assert.equal(parseSubscriptionReturnUrl("fundingpro://subscription/return?paymentId=short"), null);
   });
 });

@@ -55,3 +55,14 @@ Reload the mobile app — DemoBanner «Примеры из каталога» sh
 | `CONVEX_DEPLOY_KEY is required` | Add key to `.env.production.local` or `export CONVEX_DEPLOY_KEY=…` |
 | Plans API still empty after seed | Confirm deploy key targets **production** deployment, not dev |
 | Seed skipped | Donors already exist — check Convex dashboard data |
+| Plan limits mismatch for Consulting | Seed slug is `plan-ngo-consulting` (aligned with `lib/plan-limits.ts`); re-seed or patch slug in Convex if an older `plan-consulting` row exists |
+
+## App Links (web)
+
+Set on Vercel production (bundle id defaults from `mobile/app.json`):
+
+| Variable | Purpose |
+|----------|---------|
+| `APPLE_TEAM_ID` | iOS Universal Links — AASA `appIDs` |
+| `ANDROID_RELEASE_SHA256` | Android App Links — release signing cert fingerprint(s), comma-separated |
+| `IOS_BUNDLE_ID` | Optional override (default `uz.fundingpro.app`) |

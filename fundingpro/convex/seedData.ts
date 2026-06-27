@@ -69,7 +69,7 @@ export const SEED_PLANS = [
     features: ["Безлимитные AI-проверки", "10 черновиков", "Хранилище документов"],
   },
   {
-    slug: "plan-consulting",
+    slug: "plan-ngo-consulting",
     name: "Consulting",
     nameRu: "Консалтинг",
     targetType: "NGO",

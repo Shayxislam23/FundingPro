@@ -28,7 +28,7 @@ const FALLBACK_PLAN_SEED = [
     features: ["Безлимитные AI-проверки", "10 черновиков", "Хранилище документов"],
   },
   {
-    slug: "plan-consulting",
+    slug: "plan-ngo-consulting",
     name: "Consulting",
     nameRu: "Консалтинг",
     targetType: "NGO",

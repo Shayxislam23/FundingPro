@@ -44,9 +44,7 @@ cd mobile
 eas init
 ```
 
-Команда создаст или привяжет Expo project и запишет `projectId` в `app.json` → `expo.extra.eas.projectId`.
-
-> **Важно:** не запускайте `eas init` без своих credentials. Если в репозитории всё ещё placeholder `REPLACE_AFTER_eas_init` — выполните `eas init` локально после `eas login`; до этого EAS build не будет работать.
+Команда создаст или привяжет Expo project и запишет `projectId` в `app.json` → `expo.extra.eas.projectId` (в репозитории уже привязан: `57edb446-5583-4f1a-9540-6b812beb5467`).
 
 ### 3. EAS Secrets (Clerk)
 
@@ -132,12 +130,14 @@ npm run contract:mobile-api     # требует запущенный fundingpro
 
 ## Deep links
 
-Scheme: `fundingpro://`
+Scheme: `fundingpro://` · App Links: `https://www.fundingpro.uz/mobile/*`
 
 | Path | Назначение |
 |------|------------|
-| `fundingpro://auth/callback` | Clerk auth callback |
+| `fundingpro://auth/callback` | Clerk auth callback (custom scheme) |
+| `https://www.fundingpro.uz/mobile/auth/callback` | Clerk auth callback (Universal / App Links) |
 | `fundingpro://subscription/return?paymentId=` | Uzum payment return |
+| `https://www.fundingpro.uz/mobile/subscription/return?paymentId=` | Payment return (App Links) |
 
 ## App structure
 

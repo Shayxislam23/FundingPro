@@ -1,12 +1,37 @@
-const AUTH_CALLBACK_PATH = /^fundingpro:\/\/auth\/callback\/?$/i;
+const AUTH_CALLBACK_SCHEME = /^fundingpro:\/\/auth\/callback\/?$/i;
+const AUTH_CALLBACK_HTTPS = /^https:\/\/(www\.)?fundingpro\.uz\/mobile\/auth\/callback\/?$/i;
+
+const SUBSCRIPTION_RETURN_SCHEME = /^fundingpro:\/\/subscription\/return\/?$/i;
+const SUBSCRIPTION_RETURN_HTTPS =
+  /^https:\/\/(www\.)?fundingpro\.uz\/mobile\/subscription\/return\/?$/i;
+
 const JWT_PART = /^[A-Za-z0-9_-]+$/;
 const TOKEN_HASH = /^[A-Za-z0-9_-]{16,256}$/;
+const PAYMENT_ID = /^[a-zA-Z0-9_-]{8,128}$/;
 const OTP_TYPES = new Set(["recovery", "email", "signup", "invite", "magiclink", "email_change"]);
+
+function basePath(url: string): string {
+  return url.split("#")[0]?.split("?")[0] ?? "";
+}
+
+function queryString(url: string): string | undefined {
+  if (!url.includes("?")) return undefined;
+  return url.split("?").slice(1).join("?").split("#")[0];
+}
 
 export function isValidAuthCallbackUrl(url: string): boolean {
   try {
-    const base = url.split("#")[0]?.split("?")[0] ?? "";
-    return AUTH_CALLBACK_PATH.test(base);
+    const base = basePath(url);
+    return AUTH_CALLBACK_SCHEME.test(base) || AUTH_CALLBACK_HTTPS.test(base);
+  } catch {
+    return false;
+  }
+}
+
+export function isValidSubscriptionReturnUrl(url: string): boolean {
+  try {
+    const base = basePath(url);
+    return SUBSCRIPTION_RETURN_SCHEME.test(base) || SUBSCRIPTION_RETURN_HTTPS.test(base);
   } catch {
     return false;
   }
@@ -37,7 +62,7 @@ export function parseAuthCallbackUrl(url: string): AuthCallbackPayload | null {
     }
   }
 
-  const query = url.includes("?") ? url.split("?")[1]?.split("#")[0] : undefined;
+  const query = queryString(url);
   if (query) {
     const params = new URLSearchParams(query);
     const token_hash = params.get("token_hash") ?? "";
@@ -48,4 +73,20 @@ export function parseAuthCallbackUrl(url: string): AuthCallbackPayload | null {
   }
 
   return null;
+}
+
+export function parseSubscriptionReturnUrl(url: string): { paymentId: string } | null {
+  if (!isValidSubscriptionReturnUrl(url)) return null;
+
+  const query = queryString(url);
+  if (!query) return null;
+
+  const paymentId = new URLSearchParams(query).get("paymentId") ?? "";
+  if (!isPlausiblePaymentId(paymentId)) return null;
+
+  return { paymentId };
+}
+
+export function isPlausiblePaymentId(paymentId: string): boolean {
+  return PAYMENT_ID.test(paymentId);
 }

@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
+import {
+  appLinksConfigStatus,
+  getIosAppId,
+} from "@/lib/mobile-app-links";
 
-/** Replace TEAM_ID with your Apple Developer Team ID before production submit. */
-const IOS_BUNDLE_ID = "uz.fundingpro.app";
-const IOS_APP_ID = `TEAM_ID.${IOS_BUNDLE_ID}`;
-
-const association = {
+const association = (appId: string) => ({
   applinks: {
     apps: [],
     details: [
       {
-        appIDs: [IOS_APP_ID],
+        appIDs: [appId],
         components: [
           { "/": "/mobile/auth/callback" },
           { "/": "/mobile/subscription/return*" },
@@ -18,12 +18,17 @@ const association = {
       },
     ],
   },
-};
+});
 
 export function GET() {
-  return NextResponse.json(association, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+  const status = appLinksConfigStatus();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (!status.iosReady) {
+    headers["X-App-Links-Config"] = "incomplete";
+    headers["X-App-Links-Missing"] = status.missing.join(",");
+  }
+
+  return NextResponse.json(association(getIosAppId()), { headers });
 }

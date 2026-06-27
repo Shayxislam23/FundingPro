@@ -58,8 +58,9 @@ Requires [Maestro CLI](https://maestro.mobile.dev/) installed.
 
 ## Checklist before production
 
-- Replace `TEAM_ID` in AASA route (`fundingpro/app/.well-known/apple-app-site-association/route.ts`)
-- Replace SHA256 in `assetlinks.json` route with release signing cert
+- Set Vercel env: `APPLE_TEAM_ID`, `ANDROID_RELEASE_SHA256` (bundle id reads from `mobile/app.json` or `IOS_BUNDLE_ID`)
+- Verify `.well-known` — no `X-App-Links-Config: incomplete` header when env is set
+- Run preview smoke: `mobile/docs/EAS-SMOKE.md`
 - Run `eas build --profile production` then `eas submit`
 
 See also `mobile/docs/RELEASE.md` and `mobile/CHANGELOG.md`.

@@ -2,15 +2,27 @@ import { useClerk } from "@clerk/clerk-expo";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
-import { isValidAuthCallbackUrl } from "./callback-validation";
+import {
+  isValidAuthCallbackUrl,
+  parseSubscriptionReturnUrl,
+} from "./callback-validation";
 
-/** Handle Clerk auth deep links: fundingpro://auth/callback */
+/** Handle Clerk auth + payment return deep links (custom scheme and App Links). */
 export function useAuthDeepLink() {
   const clerk = useClerk();
   const router = useRouter();
 
   useEffect(() => {
     async function handleUrl(url: string) {
+      const paymentReturn = parseSubscriptionReturnUrl(url);
+      if (paymentReturn) {
+        router.replace({
+          pathname: "/(app)/subscription/return",
+          params: { paymentId: paymentReturn.paymentId },
+        });
+        return;
+      }
+
       if (!isValidAuthCallbackUrl(url)) return;
 
       try {

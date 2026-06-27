@@ -29,7 +29,7 @@
     "pilot:check": "node scripts/pilot-check.mjs",
     "telegram:digest": "node scripts/telegram-grants-digest.mjs",
     "deploy:check": "node scripts/deploy-check.mjs",
-    "deploy:prep": "npm run check && npm run lint && npm run deploy:check",
+    "deploy:prep": "npm run check && npm run lint && npm run deploy:check && npm run build",
     "deploy:env": "node scripts/vercel-env-push.mjs",
     "deploy:production": "node scripts/production-next-steps.mjs",
     "deploy:setup-env": "node scripts/setup-production-env.mjs",
@@ -41,7 +41,7 @@
     "contract:mobile-api": "node scripts/mobile-api-contract.mjs"
   },
   "dependencies": {
-    "@clerk/nextjs": "^5.7.6",
+    "@clerk/nextjs": "5.7.6",
     "@fundingpro/shared": "^0.1.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -78,7 +78,7 @@
     "@typescript-eslint/parser": "^8.59.3",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",
-    "postcss": "^8",
+    "postcss": "^8.5.10",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }

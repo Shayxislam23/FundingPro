@@ -19,35 +19,46 @@ import { ArrowLeft, Calendar, MapPin, DollarSign, ExternalLink } from "lucide-re
 type PageProps = { params: { id: string } };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const grant = await getPublicGrantById(params.id);
-  if (!grant) return { title: "Грант не найден" };
+  try {
+    const grant = await getPublicGrantById(params.id);
+    if (!grant) return { title: "Грант не найден" };
 
-  const title = grant.title_ru ?? grant.title;
-  const description =
-    (grant.description_ru ?? grant.description)?.slice(0, 160) ??
-    `Грант от ${grant.donor.name_ru ?? grant.donor.name}`;
+    const title = grant.title_ru ?? grant.title;
+    const description =
+      (grant.description_ru ?? grant.description)?.slice(0, 160) ??
+      `Грант от ${grant.donor.name_ru ?? grant.donor.name}`;
 
-  const grantPath = `/grants/${params.id}`;
+    const grantPath = `/grants/${params.id}`;
 
-  return {
-    title,
-    description,
-    alternates: hreflangAlternates(grantPath),
-    openGraph: {
-      ...openGraphPage(title, description, grantPath),
-      type: "article",
-    },
-    twitter: {
-      card: "summary_large_image",
+    return {
       title,
       description,
-      images: [defaultOgImageUrl],
-    },
-  };
+      alternates: hreflangAlternates(grantPath),
+      openGraph: {
+        ...openGraphPage(title, description, grantPath),
+        type: "article",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [defaultOgImageUrl],
+      },
+    };
+  } catch {
+    return { title: "Грант не найден" };
+  }
 }
 
 export default async function PublicGrantDetailPage({ params }: PageProps) {
-  const grant = await getPublicGrantById(params.id);
+  let grant: Awaited<ReturnType<typeof getPublicGrantById>> = null;
+
+  try {
+    grant = await getPublicGrantById(params.id);
+  } catch {
+    notFound();
+  }
+
   if (!grant) notFound();
 
   const title = grant.title_ru ?? grant.title;

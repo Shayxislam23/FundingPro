@@ -28,6 +28,7 @@ const steps = [
   ["typecheck + unit tests", ["run", "check"]],
   ["lint", ["run", "lint"]],
   ["deploy env check", ["run", "deploy:check"]],
+  ["production build", ["run", "build"]],
 ];
 
 let failed = 0;

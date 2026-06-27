@@ -3,7 +3,8 @@ import Link from "next/link";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { listPublicDonors } from "@/lib/public-donors";
+import { listPublicDonors, type PublicDonor } from "@/lib/public-donors";
+import { seedDonorFallback } from "@/lib/seo/donor-fallback";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl, hreflangAlternates, openGraphPage, siteConfig } from "@/lib/seo/site";
 import { ArrowRight, Globe } from "lucide-react";
@@ -24,8 +25,19 @@ export const metadata: Metadata = {
   alternates: hreflangAlternates("/donors"),
 };
 
+export const revalidate = 3600;
+
 export default async function DonorsPage() {
-  const donors = await listPublicDonors();
+  let donors: PublicDonor[] = [];
+
+  try {
+    donors = await listPublicDonors();
+    if (donors.length === 0) {
+      donors = seedDonorFallback();
+    }
+  } catch {
+    donors = seedDonorFallback();
+  }
 
   const itemListJsonLd = {
     "@context": "https://schema.org",

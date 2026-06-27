@@ -4,20 +4,46 @@ import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { listPublicDonors } from "@/lib/public-donors";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { absoluteUrl, openGraphPage, siteConfig } from "@/lib/seo/site";
 import { ArrowRight, Globe } from "lucide-react";
 
+const pageTitle = "Доноры и фонды";
+const pageDescription =
+  "Международные доноры и фонды, гранты которых доступны в каталоге FundingPro: ПРООН, ЕС, GIZ, Всемирный банк и другие.";
+
 export const metadata: Metadata = {
-  title: "Доноры и фонды",
-  description:
-    "Международные доноры и фонды, гранты которых доступны в каталоге FundingPro: ПРООН, ЕС, GIZ, Всемирный банк и другие.",
+  title: pageTitle,
+  description: pageDescription,
+  openGraph: openGraphPage(pageTitle, pageDescription, "/donors"),
+  twitter: {
+    card: "summary_large_image",
+    title: `${pageTitle} | ${siteConfig.name}`,
+    description: pageDescription,
+  },
   alternates: { canonical: "/donors" },
 };
 
 export default async function DonorsPage() {
   const donors = await listPublicDonors();
 
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: pageTitle,
+    description: pageDescription,
+    url: absoluteUrl("/donors"),
+    numberOfItems: donors.length,
+    itemListElement: donors.slice(0, 10).map((donor, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: donor.nameRu ?? donor.name,
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-funding-light-bg flex flex-col">
+      <JsonLd data={itemListJsonLd} />
       <header className="bg-white border-b border-gray-100 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           <Link href="/">

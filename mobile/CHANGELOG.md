@@ -1,5 +1,28 @@
 # Changelog — FundingPro Mobile
 
+## [0.4.0] — Clay-lite UI + release prep
+
+### Added
+- **Clay-lite design**: canvas `#E8F0EA`, clay cards/pills, floating tab dock, hero gradient without clay overlay
+- **App Links stubs**: iOS `associatedDomains` + Android `intentFilters` for `https://www.fundingpro.uz/mobile/*`
+- **Account deletion**: in-app request flow via support ticket from profile screen
+- **Web SEO**: metadata, Open Graph, JSON-LD on landing, grants, donors, pricing pages
+- **Universal Links hosting**: `.well-known/apple-app-site-association` and `assetlinks.json` on web
+
+### Changed
+- Version bump `0.3.0` → `0.4.0`
+
+### User action required (EAS preview — not run in CI)
+```bash
+cd mobile
+eas secret:create --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value "<key>"
+eas secret:create --name EXPO_PUBLIC_API_URL --value "https://www.fundingpro.uz"
+eas build --profile preview --platform ios
+eas build --profile preview --platform android
+maestro test mobile/maestro/
+```
+Replace `TEAM_ID` in web AASA and SHA256 in `assetlinks.json` before production submit.
+
 ## [0.3.0] — Feature parity + push + dashboard polish
 
 ### Added

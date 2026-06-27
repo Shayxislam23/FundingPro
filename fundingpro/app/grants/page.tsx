@@ -11,12 +11,23 @@ import {
   getDeadlineUrgency,
 } from "@/lib/format-grant";
 import { translateSector } from "@/lib/sector-labels";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { absoluteUrl, openGraphPage, siteConfig } from "@/lib/seo/site";
 import { ArrowRight } from "lucide-react";
 
+const pageTitle = "Каталог грантов";
+const pageDescription =
+  "Актуальные международные гранты для организаций и бизнеса в Узбекистане. Фильтр по стране, сектору и дедлайну.";
+
 export const metadata: Metadata = {
-  title: "Каталог грантов",
-  description:
-    "Актуальные международные гранты для организаций и бизнеса в Узбекистане. Фильтр по стране, сектору и дедлайну.",
+  title: pageTitle,
+  description: pageDescription,
+  openGraph: openGraphPage(pageTitle, pageDescription, "/grants"),
+  twitter: {
+    card: "summary_large_image",
+    title: `${pageTitle} | ${siteConfig.name}`,
+    description: pageDescription,
+  },
   alternates: { canonical: "/grants" },
 };
 
@@ -50,8 +61,24 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
     grants = [];
   }
 
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: pageTitle,
+    description: pageDescription,
+    url: absoluteUrl("/grants"),
+    numberOfItems: total,
+    itemListElement: grants.slice(0, 10).map((grant, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: absoluteUrl(`/grants/${grant.id}`),
+      name: grant.title_ru ?? grant.title,
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-funding-light-bg flex flex-col">
+      <JsonLd data={itemListJsonLd} />
       <header className="bg-white border-b border-gray-100 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <Link href="/">

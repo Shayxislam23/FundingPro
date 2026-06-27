@@ -37,6 +37,7 @@ jobs:
 
       - name: Convex codegen
         run: |
+          echo "CLERK_JWT_ISSUER_DOMAIN=https://placeholder.clerk.accounts.dev" >> .env.local
           CONVEX_AGENT_MODE=anonymous npx convex dev --once
           npm run convex:codegen
 

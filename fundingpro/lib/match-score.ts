@@ -21,8 +21,10 @@ function scoreGrants(
   rows: Record<string, unknown>[],
   ctx: { sectorTerms: string[]; country: string; orgType: string }
 ): { grantId: string; score: number }[] {
+  // Scores start at 0 so an irrelevant grant reads as a genuinely low match —
+  // no baseline inflation that would make every grant look "40% relevant".
   const scored = rows.map((row) => {
-    let score = 40;
+    let score = 0;
     const sectors = (row.sectors as string[]) ?? [];
     const countries = (row.country_scope as string[]) ?? [];
     const applicantTypes = (row.applicant_types as string[]) ?? [];
@@ -31,7 +33,7 @@ function scoreGrants(
       const sectorHit = ctx.sectorTerms.some((t) =>
         sectors.some((s) => s.toLowerCase().includes(t) || t.includes(s.toLowerCase()))
       );
-      if (sectorHit) score += 25;
+      if (sectorHit) score += 40;
     }
 
     if (
@@ -41,22 +43,22 @@ function scoreGrants(
           ctx.country.toLowerCase().includes(c.toLowerCase())
       )
     ) {
-      score += 20;
+      score += 30;
     }
 
     if (
       applicantTypes.length === 0 ||
       applicantTypes.some((t) => t.toUpperCase().includes(ctx.orgType.toUpperCase().slice(0, 3)))
     ) {
-      score += 10;
+      score += 15;
     }
 
     if (row.deadline) {
       const days = (new Date(String(row.deadline)).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-      if (days > 30) score += 5;
+      if (days > 30) score += 15;
     }
 
-    return { grantId: String(row.id), score: Math.min(score, 99) };
+    return { grantId: String(row.id), score: Math.min(score, 100) };
   });
 
   return scored.sort((a, b) => b.score - a.score);

@@ -29,20 +29,26 @@ export const match = authedQuery({
       ctx.db.query("grants").withIndex("by_active", (q) => q.eq("isActive", true))
     );
 
+    // Scores start at 0 so an irrelevant grant reads as a genuinely low match —
+    // no baseline inflation that would make every grant look "50% relevant".
     const scored = grants.map((grant) => {
-      let score = 50;
+      let score = 0;
       const reasons: string[] = [];
       if (sector && grant.sectors.includes(sector)) {
-        score += 25;
+        score += 45;
         reasons.push("Совпадение по сектору");
       }
       if (country && grant.countryScope.includes(country)) {
-        score += 20;
+        score += 35;
         reasons.push("Совпадение по стране");
       }
       if (grant.isFeatured) {
-        score += 5;
+        score += 10;
         reasons.push("Рекомендуемый грант");
+      }
+      if (grant.deadline && grant.deadline - Date.now() > 30 * 24 * 60 * 60 * 1000) {
+        score += 10;
+        reasons.push("Достаточный срок до дедлайна");
       }
       return { grant, score: Math.min(score, 100), reasons };
     });

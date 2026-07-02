@@ -1,35 +1,65 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const SECTOR_MAP = {
-  education: ["education", "youth", "research"],
-};
+// Import the real module (tsx loader) so the tests cover production scoring,
+// not a copy that can silently drift from lib/match-score.ts.
+import { buildMatchScoreMap } from "../lib/match-score.ts";
 
-function normalizeSector(value) {
-  const key = value.toLowerCase();
-  for (const [profileKey, sectors] of Object.entries(SECTOR_MAP)) {
-    if (key.includes(profileKey) || sectors.some((s) => key.includes(s))) return sectors;
-  }
-  return [key];
-}
+const profile = { sector: "education", country: "Uzbekistan", org_type: "NGO" };
 
-function scoreGrant(row, ctx) {
-  let score = 40;
-  const sectors = row.sectors ?? [];
-  const countries = row.country_scope ?? [];
-  if (ctx.sectorTerms.length > 0) {
-    const sectorHit = ctx.sectorTerms.some((t) =>
-      sectors.some((s) => s.toLowerCase().includes(t) || t.includes(s.toLowerCase()))
-    );
-    if (sectorHit) score += 25;
-  }
-  if (countries.some((c) => c.toLowerCase().includes(ctx.country.toLowerCase()))) score += 20;
-  return Math.min(score, 99);
-}
+const farDeadline = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
-test("sector match increases grant score", () => {
-  const ctx = { sectorTerms: normalizeSector("education"), country: "Uzbekistan" };
-  const matched = scoreGrant({ sectors: ["education"], country_scope: ["Uzbekistan"] }, ctx);
-  const other = scoreGrant({ sectors: ["defense"], country_scope: ["Germany"] }, ctx);
-  assert.ok(matched > other);
+test("fully matching grant scores high", () => {
+  const scores = buildMatchScoreMap(
+    [
+      {
+        id: "match",
+        sectors: ["education"],
+        country_scope: ["Uzbekistan"],
+        applicant_types: ["NGO"],
+        deadline: farDeadline,
+      },
+    ],
+    profile
+  );
+  assert.ok(scores.get("match") >= 85, `expected >= 85, got ${scores.get("match")}`);
+});
+
+test("irrelevant grant scores low instead of inflated baseline", () => {
+  const scores = buildMatchScoreMap(
+    [
+      {
+        id: "irrelevant",
+        sectors: ["defense"],
+        country_scope: ["Germany"],
+        applicant_types: ["Government"],
+        deadline: null,
+      },
+    ],
+    profile
+  );
+  assert.ok(scores.get("irrelevant") < 20, `expected < 20, got ${scores.get("irrelevant")}`);
+});
+
+test("sector match ranks above country-only match", () => {
+  const scores = buildMatchScoreMap(
+    [
+      {
+        id: "sector-hit",
+        sectors: ["education"],
+        country_scope: ["Germany"],
+        applicant_types: [],
+        deadline: null,
+      },
+      {
+        id: "country-only",
+        sectors: ["defense"],
+        country_scope: ["Uzbekistan"],
+        applicant_types: [],
+        deadline: null,
+      },
+    ],
+    profile
+  );
+  assert.ok(scores.get("sector-hit") > scores.get("country-only"));
 });

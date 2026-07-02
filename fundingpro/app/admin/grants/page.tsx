@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { BookOpen, Plus, Loader2, RefreshCcw, Pencil, X, Check } from "lucide-react";
+import { BookOpen, Plus, Loader2, RefreshCcw, Pencil, X, Check, Sparkles, Upload } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
 
 type Grant = {
@@ -53,6 +53,14 @@ export default function AdminGrantsPage() {
   const [requirements, setRequirements] = useState<{ id: string; text: string; requirementType: string; required: boolean }[]>([]);
   const [newReqText, setNewReqText] = useState("");
   const [reqLoading, setReqLoading] = useState(false);
+  const [showExtract, setShowExtract] = useState(false);
+  const [extractText, setExtractText] = useState("");
+  const [extracting, setExtracting] = useState(false);
+  const [extractNote, setExtractNote] = useState<{ donorName: string | null; donorFound: boolean; requirements: string[] } | null>(null);
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ inserted: number; skipped: number; skippedItems: { title: string; reason: string }[] } | null>(null);
 
   const openRequirements = async (grantId: string) => {
     setReqGrantId(grantId);
@@ -118,6 +126,100 @@ export default function AdminGrantsPage() {
     setEditing(null);
     setForm({ ...emptyForm, donorId: donors[0]?.id ?? "" });
     setShowForm(true);
+  };
+
+  const runExtract = async () => {
+    if (extractText.trim().length < 80) {
+      setError("Вставьте текст объявления (минимум 80 символов)");
+      return;
+    }
+    setExtracting(true);
+    setError("");
+    setExtractNote(null);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/v1/admin/grants/extract", {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ announcementText: extractText }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error?.message ?? "Ошибка AI-разбора");
+
+      const draft = json.data?.draft;
+      if (!draft) throw new Error("Пустой ответ AI");
+
+      const donorMatch = draft.donorName
+        ? donors.find((d) => {
+            const key = String(draft.donorName).trim().toLowerCase();
+            return (
+              d.name.trim().toLowerCase() === key ||
+              (d.nameRu && d.nameRu.trim().toLowerCase() === key)
+            );
+          })
+        : undefined;
+
+      setEditing(null);
+      setForm({
+        title: draft.title ?? "",
+        titleRu: draft.titleRu ?? "",
+        description: draft.descriptionRu ?? draft.description ?? "",
+        donorId: donorMatch?.id ?? "",
+        sectors: (draft.sectors ?? []).join(", "),
+        countryScope: (draft.countryScope ?? []).join(", ") || "Uzbekistan",
+        amountMin: draft.amountMin != null ? String(draft.amountMin) : "",
+        amountMax: draft.amountMax != null ? String(draft.amountMax) : "",
+        deadline: draft.deadline ?? "",
+        sourceUrl: draft.sourceUrl ?? "",
+        isActive: true,
+        isFeatured: false,
+      });
+      setExtractNote({
+        donorName: draft.donorName ?? null,
+        donorFound: Boolean(donorMatch),
+        requirements: draft.requirements ?? [],
+      });
+      setShowForm(true);
+      setShowExtract(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка AI-разбора");
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const runImport = async () => {
+    setImporting(true);
+    setError("");
+    setImportResult(null);
+    try {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(importText);
+      } catch {
+        throw new Error("Невалидный JSON. Ожидается массив объектов с title и donorName.");
+      }
+      const items = Array.isArray(parsed) ? parsed : (parsed as { grants?: unknown[] })?.grants;
+      if (!Array.isArray(items) || items.length === 0) {
+        throw new Error("Ожидается непустой массив грантов");
+      }
+
+      const headers = await getAuthHeaders();
+      const res = await fetch("/api/v1/admin/grants/import", {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ grants: items }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error?.message ?? "Ошибка импорта");
+
+      setImportResult(json.data ?? null);
+      await fetchData();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка импорта");
+    } finally {
+      setImporting(false);
+    }
   };
 
   const openEdit = (g: Grant) => {
@@ -201,6 +303,20 @@ export default function AdminGrantsPage() {
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
           </button>
           <button
+            onClick={() => { setShowImport(!showImport); setShowExtract(false); }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:border-funding-green hover:text-funding-green transition-colors"
+          >
+            <Upload className="w-4 h-4" />
+            Импорт
+          </button>
+          <button
+            onClick={() => { setShowExtract(!showExtract); setShowImport(false); }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-funding-green/40 text-sm font-semibold text-funding-green hover:bg-funding-light-green transition-colors"
+          >
+            <Sparkles className="w-4 h-4" />
+            AI-разбор
+          </button>
+          <button
             onClick={openCreate}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold"
             style={{ background: "#008A2E" }}
@@ -225,14 +341,118 @@ export default function AdminGrantsPage() {
         />
       </div>
 
+      {showExtract && (
+        <div className="bg-white rounded-2xl border border-funding-green/30 p-5 mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-funding-black flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-funding-green" />
+              AI-разбор объявления
+            </h2>
+            <button onClick={() => setShowExtract(false)} className="p-1 text-gray-400 hover:text-gray-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mb-3">
+            Вставьте текст объявления о гранте (со страницы донора, из рассылки или PDF). AI заполнит форму
+            черновиком — проверьте каждое поле перед сохранением.
+          </p>
+          <textarea
+            value={extractText}
+            onChange={(e) => setExtractText(e.target.value)}
+            rows={8}
+            placeholder="Текст объявления о гранте..."
+            className="w-full px-3 py-2 rounded-xl border text-sm resize-y"
+          />
+          <button
+            onClick={runExtract}
+            disabled={extracting}
+            className="mt-3 flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
+            style={{ background: "#008A2E" }}
+          >
+            {extracting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            Разобрать
+          </button>
+        </div>
+      )}
+
+      {showImport && (
+        <div className="bg-white rounded-2xl border border-funding-green/30 p-5 mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-funding-black flex items-center gap-2">
+              <Upload className="w-4 h-4 text-funding-green" />
+              Массовый импорт (JSON)
+            </h2>
+            <button onClick={() => setShowImport(false)} className="p-1 text-gray-400 hover:text-gray-600">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mb-3">
+            Массив до 100 объектов. Обязательные поля: <code>title</code>, <code>donorName</code>. Опциональные:
+            titleRu, description, sectors[], countryScope[], applicantTypes[], amountMin, amountMax, currency,
+            deadline (YYYY-MM-DD), sourceUrl. Дубликаты по sourceUrl и названию пропускаются.
+          </p>
+          <textarea
+            value={importText}
+            onChange={(e) => setImportText(e.target.value)}
+            rows={8}
+            placeholder='[{"title": "Climate Grant", "donorName": "UNDP", "deadline": "2026-12-31"}]'
+            className="w-full px-3 py-2 rounded-xl border text-sm font-mono resize-y"
+          />
+          <button
+            onClick={runImport}
+            disabled={importing}
+            className="mt-3 flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
+            style={{ background: "#008A2E" }}
+          >
+            {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            Импортировать
+          </button>
+          {importResult && (
+            <div className="mt-4 px-4 py-3 bg-funding-light-green rounded-xl text-sm text-funding-black">
+              Добавлено: <b>{importResult.inserted}</b>, пропущено: <b>{importResult.skipped}</b>
+              {importResult.skippedItems.length > 0 && (
+                <ul className="mt-2 text-xs text-gray-600 space-y-1">
+                  {importResult.skippedItems.map((s, i) => (
+                    <li key={i}>
+                      {s.title} — {s.reason === "duplicate_source_url" ? "дубликат по ссылке" : s.reason === "duplicate_title" ? "дубликат по названию" : s.reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {showForm && (
         <div className="bg-white rounded-2xl border border-funding-green/30 p-5 mb-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-funding-black">{editing ? "Редактировать грант" : "Новый грант"}</h2>
-            <button onClick={() => setShowForm(false)} className="p-1 text-gray-400 hover:text-gray-600">
+            <button onClick={() => { setShowForm(false); setExtractNote(null); }} className="p-1 text-gray-400 hover:text-gray-600">
               <X className="w-4 h-4" />
             </button>
           </div>
+          {extractNote && (
+            <div className="mb-4 px-4 py-3 bg-funding-light-green rounded-xl text-xs text-funding-black space-y-1">
+              <p className="font-semibold">Черновик заполнен AI — проверьте каждое поле.</p>
+              {extractNote.donorName && !extractNote.donorFound && (
+                <p>
+                  Донор «{extractNote.donorName}» не найден в справочнике — выберите вручную или создайте на
+                  странице доноров.
+                </p>
+              )}
+              {extractNote.requirements.length > 0 && (
+                <div>
+                  <p className="font-semibold mt-1">Требования из объявления (добавьте после сохранения):</p>
+                  <ul className="list-disc pl-4">
+                    {extractNote.requirements.map((r, i) => (
+                      <li key={i}>{r}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           <div className="grid md:grid-cols-2 gap-4">
             <input placeholder="Название (EN) *" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="px-3 py-2 rounded-xl border text-sm" />
             <input placeholder="Название (RU)" value={form.titleRu} onChange={(e) => setForm({ ...form, titleRu: e.target.value })} className="px-3 py-2 rounded-xl border text-sm" />
@@ -247,6 +467,7 @@ export default function AdminGrantsPage() {
             <input placeholder="Сумма max ($)" value={form.amountMax} onChange={(e) => setForm({ ...form, amountMax: e.target.value })} className="px-3 py-2 rounded-xl border text-sm" />
             <input placeholder="Секторы (через запятую)" value={form.sectors} onChange={(e) => setForm({ ...form, sectors: e.target.value })} className="px-3 py-2 rounded-xl border text-sm md:col-span-2" />
             <input placeholder="Страны (через запятую)" value={form.countryScope} onChange={(e) => setForm({ ...form, countryScope: e.target.value })} className="px-3 py-2 rounded-xl border text-sm md:col-span-2" />
+            <input placeholder="Ссылка на источник (https://...)" value={form.sourceUrl} onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })} className="px-3 py-2 rounded-xl border text-sm md:col-span-2" />
             <textarea placeholder="Описание" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="px-3 py-2 rounded-xl border text-sm md:col-span-2 resize-none" />
           </div>
           <div className="flex items-center gap-4 mt-4">

@@ -8,7 +8,7 @@ import { GrantCard } from "@/components/design/GrantCard";
 import { Search, Loader2 } from "lucide-react";
 import { translateSector } from "@fundingpro/shared";
 import { getAuthHeaders } from "@/lib/client-auth";
-import { buildMatchScoreMap } from "@/lib/match-score";
+import { buildMatchScoreDetails, type MatchScoreDetails } from "@/lib/match-score";
 import {
   formatGrantAmount,
   formatDeadlineDisplay,
@@ -89,7 +89,7 @@ function GrantsPageContent() {
   const [showExpired, setShowExpired] = useState(false);
   const [saved, setSaved] = useState<string[]>([]);
   const [orgProfile, setOrgProfile] = useState<Record<string, unknown> | null>(null);
-  const [matchScores, setMatchScores] = useState<Map<string, number>>(new Map());
+  const [matchScores, setMatchScores] = useState<Map<string, MatchScoreDetails>>(new Map());
 
   const [grants, setGrants] = useState<Grant[]>([]);
   const [total, setTotal] = useState(0);
@@ -153,7 +153,7 @@ function GrantsPageContent() {
       return;
     }
     setMatchScores(
-      buildMatchScoreMap(
+      buildMatchScoreDetails(
         grants.map((g) => ({
           id: g.id,
           sectors: g.sectors,
@@ -331,7 +331,8 @@ function GrantsPageContent() {
                         deadlineUrgency={expired ? null : urgency}
                         country={g.country_scope.join(", ")}
                         sector={getSector(g.sectors)}
-                        matchScore={matchScores.get(g.id)}
+                        matchScore={matchScores.get(g.id)?.score}
+                        matchReasons={matchScores.get(g.id)?.reasons}
                         isSaved={saved.includes(g.id)}
                         onSave={toggleSave}
                         variant="light"

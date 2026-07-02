@@ -13,6 +13,8 @@ interface GrantCardProps {
   country?: string;
   sector?: string;
   matchScore?: number;
+  /** Human-readable breakdown of the match score, shown as a tooltip. */
+  matchReasons?: string[];
   isSaved?: boolean;
   onSave?: (id: string) => void;
   variant?: "dark" | "light";
@@ -29,6 +31,7 @@ export function GrantCard({
   country,
   sector,
   matchScore,
+  matchReasons,
   isSaved,
   onSave,
   variant = "light",
@@ -47,7 +50,14 @@ export function GrantCard({
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex-1 min-w-0">
           {matchScore !== undefined && (
-            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-funding-light-green text-funding-green text-xs font-semibold mb-2">
+            <div
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-funding-light-green text-funding-green text-xs font-semibold mb-2"
+              title={
+                matchReasons && matchReasons.length > 0
+                  ? `Из чего сложилась оценка:\n${matchReasons.join("\n")}`
+                  : undefined
+              }
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-funding-accent" />
               {matchScore}% совпадение
             </div>

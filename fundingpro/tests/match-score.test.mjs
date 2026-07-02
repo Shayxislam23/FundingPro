@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 // Import the real module (tsx loader) so the tests cover production scoring,
 // not a copy that can silently drift from lib/match-score.ts.
-import { buildMatchScoreMap } from "../lib/match-score.ts";
+import { buildMatchScoreDetails, buildMatchScoreMap } from "../lib/match-score.ts";
 
 const profile = { sector: "education", country: "Uzbekistan", org_type: "NGO" };
 
@@ -39,6 +39,32 @@ test("irrelevant grant scores low instead of inflated baseline", () => {
     profile
   );
   assert.ok(scores.get("irrelevant") < 20, `expected < 20, got ${scores.get("irrelevant")}`);
+});
+
+test("details expose the reasons behind the score", () => {
+  const details = buildMatchScoreDetails(
+    [
+      {
+        id: "match",
+        sectors: ["education"],
+        country_scope: ["Uzbekistan"],
+        applicant_types: ["NGO"],
+        deadline: farDeadline,
+      },
+      {
+        id: "irrelevant",
+        sectors: ["defense"],
+        country_scope: ["Germany"],
+        applicant_types: ["Government"],
+        deadline: null,
+      },
+    ],
+    profile
+  );
+  const match = details.get("match");
+  assert.equal(match.reasons.length, 4);
+  assert.ok(match.reasons.some((r) => r.includes("сектор")));
+  assert.equal(details.get("irrelevant").reasons.length, 0);
 });
 
 test("sector match ranks above country-only match", () => {

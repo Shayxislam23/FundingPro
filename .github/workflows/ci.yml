@@ -15,7 +15,7 @@ jobs:
     env:
       CONVEX_AGENT_MODE: anonymous
       NEXT_PUBLIC_CONVEX_URL: "https://placeholder.convex.cloud"
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_Y2xlcmsuZGV2JHRlc3Qk"
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_Zm9vLWJhci0xMy5jbGVyay5hY2NvdW50cy5kZXYk"
       CLERK_SECRET_KEY: "sk_test_Y2xlcmsuZGV2JHRlc3Qk"
       CLERK_JWT_ISSUER_DOMAIN: "https://placeholder.clerk.accounts.dev"
       RESEND_API_KEY: "re_placeholder"
@@ -80,11 +80,14 @@ jobs:
         working-directory: fundingpro
     env:
       NEXT_PUBLIC_CONVEX_URL: "https://placeholder.convex.cloud"
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_Y2xlcmsuZGV2JHRlc3Qk"
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_Zm9vLWJhci0xMy5jbGVyay5hY2NvdW50cy5kZXYk"
       CLERK_SECRET_KEY: "sk_test_Y2xlcmsuZGV2JHRlc3Qk"
       RESEND_API_KEY: "re_placeholder"
       RESEND_FROM_EMAIL: "info@fundingpro.uz"
       ADMIN_EMAILS: "admin@fundingpro.uz"
+      # No live Convex in CI: serve seed catalog for public endpoints so the
+      # API contract can be exercised (see lib/db/catalog-fallback.ts).
+      PUBLIC_API_SEED_FALLBACK: "1"
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4

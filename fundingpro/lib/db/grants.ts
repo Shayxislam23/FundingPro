@@ -10,9 +10,25 @@ export type { GrantDetail, GrantListItem, ListGrantsParams, ListGrantsResult };
 export type GrantListParams = ListGrantsParams;
 
 export async function listGrants(params: ListGrantsParams): Promise<ListGrantsResult> {
-  if (params.cursor) {
-    const limit = params.limit ?? 20;
-    const result = await convexPublicQuery(api.grants.list, {
+  try {
+    if (params.cursor) {
+      const limit = params.limit ?? 20;
+      const result = await convexPublicQuery(api.grants.list, {
+        search: params.search,
+        sector: params.sector,
+        country: params.country,
+        donorId: params.donorId,
+        deadlineBefore: params.deadlineBefore,
+        deadlineAfter: params.deadlineAfter,
+        activeOnly: params.activeOnly,
+        featured: params.featured,
+        today: params.today,
+        paginationOpts: { numItems: limit, cursor: params.cursor },
+      });
+      return result;
+    }
+
+    return await convexPublicQuery(api.grants.list, {
       search: params.search,
       sector: params.sector,
       country: params.country,
@@ -22,28 +38,24 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
       activeOnly: params.activeOnly,
       featured: params.featured,
       today: params.today,
-      paginationOpts: { numItems: limit, cursor: params.cursor },
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
     });
-    return result;
+  } catch (err) {
+    const { isSeedFallbackEnabled, seedFallbackGrantsList } = await import("./catalog-fallback");
+    if (isSeedFallbackEnabled()) return seedFallbackGrantsList(params);
+    throw err;
   }
-
-  return convexPublicQuery(api.grants.list, {
-    search: params.search,
-    sector: params.sector,
-    country: params.country,
-    donorId: params.donorId,
-    deadlineBefore: params.deadlineBefore,
-    deadlineAfter: params.deadlineAfter,
-    activeOnly: params.activeOnly,
-    featured: params.featured,
-    today: params.today,
-    page: params.page ?? 1,
-    limit: params.limit ?? 20,
-  });
 }
 
 export async function getGrantById(id: string): Promise<GrantDetail | null> {
-  return convexPublicQuery(api.grants.getById, { id });
+  try {
+    return await convexPublicQuery(api.grants.getById, { id });
+  } catch (err) {
+    const { isSeedFallbackEnabled, seedFallbackGrantDetail } = await import("./catalog-fallback");
+    if (isSeedFallbackEnabled()) return seedFallbackGrantDetail(id);
+    throw err;
+  }
 }
 
 export async function grantsHealthCheck() {

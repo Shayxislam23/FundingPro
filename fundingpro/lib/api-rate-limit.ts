@@ -43,6 +43,17 @@ const WEBHOOK_MAX_REQUESTS = Number(process.env.WEBHOOK_RATE_LIMIT_MAX ?? 30);
 
 /** Edge/middleware rate limit for selected /api/v1/* routes (IP-based, Convex-backed). */
 export async function applyApiRateLimit(req: NextRequest): Promise<NextResponse | null> {
+  try {
+    return await applyApiRateLimitInner(req);
+  } catch (err) {
+    // Fail open: a rate-limiter backend outage must not take down the API
+    // (these paths include payment provider webhooks).
+    console.error("applyApiRateLimit degraded (fail-open):", err);
+    return null;
+  }
+}
+
+async function applyApiRateLimitInner(req: NextRequest): Promise<NextResponse | null> {
   const { pathname } = req.nextUrl;
   const ip = getClientIp(req);
 

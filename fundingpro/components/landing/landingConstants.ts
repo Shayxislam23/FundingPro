@@ -27,7 +27,7 @@ export const LANDING_FEATURES: {
   {
     icon: Search,
     title: "Поиск грантов",
-    desc: "База 1 000+ международных грантов с фильтрами по сектору, сумме, дедлайну и стране.",
+    desc: "База международных грантов с фильтрами по сектору, сумме, дедлайну и стране.",
   },
   {
     icon: CheckCircle2,
@@ -60,5 +60,7 @@ export function formatGrantCountLabel(grantTotal: number | null): string {
   if (grantTotal !== null && grantTotal > 0) {
     return grantTotal >= 1000 ? `${Math.floor(grantTotal / 100) * 100}+` : String(grantTotal);
   }
-  return "1,000+";
+  // While the live total is loading (or unavailable) show a neutral
+  // placeholder — never a fabricated count.
+  return "—";
 }

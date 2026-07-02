@@ -5,7 +5,7 @@ import { writeAuditLog } from "@/lib/auth-helpers";
 import { checkAiRateLimitAsync } from "@/lib/ai-rate-limit";
 import { ensureInternalUser } from "@/lib/db/users";
 import { logAiRequest, saveProposalProject } from "@/lib/db/proposals";
-import { callAi, PROMPTS, redactPii as redactPiiHelper } from "@/lib/ai-gateway";
+import { AiUnavailableError, callAi, PROMPTS, redactPii as redactPiiHelper } from "@/lib/ai-gateway";
 import { validateProposalContent } from "@/lib/ai-validation";
 import { filterProposalSections } from "@/lib/proposal-sections";
 import { checkProposalLimit } from "@/lib/plan-limits";
@@ -45,9 +45,29 @@ export const POST = withActiveUser(async (req, authUser) => {
   let lastIsMock = true;
   let totalTokens = 0;
 
+  // In production a provider outage must fail the request before any quota
+  // is consumed — paying users must never receive mock text as a proposal.
+  const strictAi = process.env.NODE_ENV === "production";
+
   for (const sectionType of allowedSections) {
     const prompt = PROMPTS["proposal-generate"](sectionType, donorFormat, safeIdea);
-    const result = await callAi(prompt, { module: "proposal-generate", userId: authUser.userId });
+    let result;
+    try {
+      result = await callAi(prompt, {
+        module: "proposal-generate",
+        userId: authUser.userId,
+        strict: strictAi,
+      });
+    } catch (err) {
+      if (err instanceof AiUnavailableError) {
+        return apiError(
+          "AI-сервис временно недоступен. Попробуйте позже — лимит не израсходован.",
+          503,
+          "AI_UNAVAILABLE"
+        );
+      }
+      throw err;
+    }
     const validation = validateProposalContent(result.content);
     if (!validation.valid) {
       return apiError(`AI output invalid for section ${sectionType}`, 502, "AI_OUTPUT_INVALID");

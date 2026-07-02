@@ -8,7 +8,10 @@
 
 const PII_PATTERNS: { name: string; pattern: RegExp }[] = [
   { name: "email", pattern: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g },
-  { name: "phone", pattern: /(\+?[\d\s\-().]{7,})/g },
+  // Phone patterns are deliberately narrow: proposals are full of legitimate
+  // numbers (budgets, deadlines, KPIs) that must survive redaction intact.
+  { name: "phone", pattern: /\+?998[\s\-.]?\(?\d{2}\)?[\s\-.]?\d{3}[\s\-.]?\d{2}[\s\-.]?\d{2}/g },
+  { name: "phone_intl", pattern: /\+\d{9,15}\b/g },
   { name: "pinfl", pattern: /\b\d{14}\b/g },
   { name: "passport", pattern: /\b[A-Z]{2}\d{7}\b/g },
   { name: "fullname_ru", pattern: /[А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+/g },
@@ -131,10 +134,23 @@ function callMock(prompt: string): AiResponse {
 
 // ── GATEWAY ───────────────────────────────────────────────────────────────────
 
+/**
+ * Thrown in strict mode instead of silently degrading to the mock provider,
+ * so quota-consuming routes can refuse the request before charging the user.
+ */
+export class AiUnavailableError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "AiUnavailableError";
+  }
+}
+
 export type AiCallOptions = {
   module: string;
   userId?: string;
   skipRedaction?: boolean;
+  /** When true, provider errors and missing configuration throw AiUnavailableError instead of returning mock output. */
+  strict?: boolean;
 };
 
 export async function callAi(
@@ -156,11 +172,18 @@ export async function callAi(
     } else if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
       response = await callAnthropic(redacted);
     } else {
+      if (opts.strict) {
+        throw new AiUnavailableError(`AI provider not configured (AI_PROVIDER=${provider})`);
+      }
       response = callMock(redacted);
     }
   } catch (err) {
-    // Fallback to mock on error
+    if (err instanceof AiUnavailableError) throw err;
     console.error(`AI provider error (${provider}):`, err);
+    if (opts.strict) {
+      throw new AiUnavailableError(`AI provider ${provider} failed`, { cause: err });
+    }
+    // Fallback to mock on error
     response = callMock(redacted);
   }
 

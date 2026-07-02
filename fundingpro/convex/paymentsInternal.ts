@@ -295,6 +295,12 @@ export const setStatus = internalMutation({
   },
 });
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function billingPeriodMs(billingPeriod: string | undefined): number {
+  return billingPeriod === "yearly" ? 365 * DAY_MS : 30 * DAY_MS;
+}
+
 export const activateSubscription = internalMutation({
   args: { paymentId: v.string() },
   returns: v.null(),
@@ -304,9 +310,14 @@ export const activateSubscription = internalMutation({
     if (payment.status === "SUCCESS") return null;
 
     const now = Date.now();
+    const subscription = await ctx.db.get("subscriptions", payment.subscriptionId);
+    const plan = subscription ? await ctx.db.get("plans", subscription.planId) : null;
+    // Renewal payments extend the current paid period instead of resetting it.
+    const extendFrom = Math.max(now, subscription?.endDate ?? 0);
     await ctx.db.patch("subscriptions", payment.subscriptionId, {
       status: "ACTIVE",
-      startDate: now,
+      startDate: subscription?.startDate ?? now,
+      endDate: extendFrom + billingPeriodMs(plan?.billingPeriod),
       updatedAt: now,
     });
     await ctx.db.patch("payments", payment._id, {
@@ -315,6 +326,31 @@ export const activateSubscription = internalMutation({
       updatedAt: now,
     });
     return null;
+  },
+});
+
+const EXPIRE_BATCH_SIZE = 50;
+
+export const expireSubscriptions = internalMutation({
+  args: {},
+  returns: v.object({ expired: v.number() }),
+  handler: async (ctx) => {
+    const now = Date.now();
+    // endDate > 0 skips legacy ACTIVE rows that predate expiry tracking.
+    const due = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_status_endDate", (q) =>
+        q.eq("status", "ACTIVE").gt("endDate", 0).lt("endDate", now)
+      )
+      .take(EXPIRE_BATCH_SIZE);
+
+    for (const subscription of due) {
+      await ctx.db.patch("subscriptions", subscription._id, {
+        status: "EXPIRED",
+        updatedAt: now,
+      });
+    }
+    return { expired: due.length };
   },
 });
 

@@ -17,4 +17,11 @@ crons.interval(
   {}
 );
 
+crons.interval(
+  "expire subscriptions",
+  { hours: 1 },
+  internal.paymentsInternal.expireSubscriptions,
+  {}
+);
+
 export default crons;

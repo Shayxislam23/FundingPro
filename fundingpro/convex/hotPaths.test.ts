@@ -239,6 +239,151 @@ describe("paymentsInternal.insertEvent", () => {
   });
 });
 
+describe("subscription lifecycle", () => {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+
+  async function seedSubscriptionWithPayment(
+    ctx: MutationCtx,
+    userId: Id<"users">,
+    overrides: { status?: string; endDate?: number } = {}
+  ) {
+    const now = Date.now();
+    const planId = await ctx.db.insert("plans", {
+      slug: `plan-test-${now}-${Math.random()}`,
+      name: "Basic",
+      targetType: "NGO",
+      priceUsd: 30,
+      billingPeriod: "monthly",
+      features: ["test"],
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const subscriptionId = await ctx.db.insert("subscriptions", {
+      userId,
+      planId,
+      status: overrides.status ?? "PENDING",
+      endDate: overrides.endDate,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const paymentId = await ctx.db.insert("payments", {
+      userId,
+      subscriptionId,
+      amountUsd: 30,
+      currency: "UZS",
+      status: "PENDING",
+      provider: "payme",
+      idempotencyKey: `sub-${now}-${Math.random()}`,
+      serviceType: "subscription",
+      createdAt: now,
+      updatedAt: now,
+    });
+    return { planId, subscriptionId, paymentId };
+  }
+
+  test("activateSubscription sets endDate one billing period ahead", async () => {
+    const t = convexTest(schema, modules);
+    let subscriptionId = "" as Id<"subscriptions">;
+    let paymentId = "" as Id<"payments">;
+
+    await t.run(async (ctx) => {
+      const userId = await seedUser(ctx, `sub|${Date.now()}`, `clerk-sub-${Date.now()}`);
+      const seeded = await seedSubscriptionWithPayment(ctx, userId);
+      subscriptionId = seeded.subscriptionId;
+      paymentId = seeded.paymentId;
+    });
+
+    const before = Date.now();
+    await t.mutation(internal.paymentsInternal.activateSubscription, { paymentId });
+
+    const subscription = await t.run(async (ctx) => ctx.db.get("subscriptions", subscriptionId));
+    expect(subscription?.status).toBe("ACTIVE");
+    expect(subscription?.endDate).toBeGreaterThanOrEqual(before + 30 * DAY_MS);
+    expect(subscription?.endDate).toBeLessThan(before + 31 * DAY_MS);
+  });
+
+  test("renewal payment extends endDate instead of resetting it", async () => {
+    const t = convexTest(schema, modules);
+    const futureEnd = Date.now() + 10 * DAY_MS;
+    let subscriptionId = "" as Id<"subscriptions">;
+    let paymentId = "" as Id<"payments">;
+
+    await t.run(async (ctx) => {
+      const userId = await seedUser(ctx, `sub-renew|${Date.now()}`, `clerk-sub-renew-${Date.now()}`);
+      const seeded = await seedSubscriptionWithPayment(ctx, userId, {
+        status: "ACTIVE",
+        endDate: futureEnd,
+      });
+      subscriptionId = seeded.subscriptionId;
+      paymentId = seeded.paymentId;
+    });
+
+    await t.mutation(internal.paymentsInternal.activateSubscription, { paymentId });
+
+    const subscription = await t.run(async (ctx) => ctx.db.get("subscriptions", subscriptionId));
+    expect(subscription?.endDate).toBeGreaterThanOrEqual(futureEnd + 30 * DAY_MS);
+  });
+
+  test("expireSubscriptions flips overdue ACTIVE rows and skips legacy rows without endDate", async () => {
+    const t = convexTest(schema, modules);
+    let overdueId = "" as Id<"subscriptions">;
+    let currentId = "" as Id<"subscriptions">;
+    let legacyId = "" as Id<"subscriptions">;
+
+    await t.run(async (ctx) => {
+      const userId = await seedUser(ctx, `sub-exp|${Date.now()}`, `clerk-sub-exp-${Date.now()}`);
+      overdueId = (
+        await seedSubscriptionWithPayment(ctx, userId, {
+          status: "ACTIVE",
+          endDate: Date.now() - DAY_MS,
+        })
+      ).subscriptionId;
+      currentId = (
+        await seedSubscriptionWithPayment(ctx, userId, {
+          status: "ACTIVE",
+          endDate: Date.now() + DAY_MS,
+        })
+      ).subscriptionId;
+      legacyId = (
+        await seedSubscriptionWithPayment(ctx, userId, { status: "ACTIVE" })
+      ).subscriptionId;
+    });
+
+    const result = await t.mutation(internal.paymentsInternal.expireSubscriptions, {});
+    expect(result.expired).toBe(1);
+
+    const [overdue, current, legacy] = await t.run(async (ctx) =>
+      Promise.all([
+        ctx.db.get("subscriptions", overdueId),
+        ctx.db.get("subscriptions", currentId),
+        ctx.db.get("subscriptions", legacyId),
+      ])
+    );
+    expect(overdue?.status).toBe("EXPIRED");
+    expect(current?.status).toBe("ACTIVE");
+    expect(legacy?.status).toBe("ACTIVE");
+  });
+
+  test("users.getSubscription hides ACTIVE rows past endDate before cron runs", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `sub-hide|${Date.now()}`;
+    const clerkId = `clerk-sub-hide-${Date.now()}`;
+
+    await t.run(async (ctx) => {
+      const userId = await seedUser(ctx, tokenIdentifier, clerkId);
+      await seedSubscriptionWithPayment(ctx, userId, {
+        status: "ACTIVE",
+        endDate: Date.now() - DAY_MS,
+      });
+    });
+
+    const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const subscription = await authed.query(api.users.getSubscription, {});
+    expect(subscription).toBeNull();
+  });
+});
+
 describe("adminStats.dashboard", () => {
   test("reads refreshed platform stats for admin dashboard", async () => {
     const t = convexTest(schema, modules);

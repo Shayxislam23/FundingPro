@@ -77,6 +77,9 @@ export const getSubscription = authedQuery({
       .first();
 
     if (!subscription) return null;
+    // Defense in depth: treat past-endDate rows as expired even if the
+    // hourly expiry cron has not flipped their status yet.
+    if (subscription.endDate && subscription.endDate < Date.now()) return null;
 
     const plan = await ctx.db.get("plans", subscription.planId);
     return {

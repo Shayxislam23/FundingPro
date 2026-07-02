@@ -54,6 +54,32 @@ export const PROMPTS = {
 
   "budget-narrative-generate": (activities: string, totalBudget: string) =>
     `Write a budget narrative for these grant activities.\n\nActivities: ${activities}\nTotal budget: ${totalBudget} USD\n\nRespond in Russian. Be specific about cost justifications.`,
+
+  "grant-extract": (announcement: string) =>
+    `You are a data-entry assistant for a grants catalog. Extract structured fields from this grant announcement.
+
+Announcement:
+"""
+${announcement}
+"""
+
+Respond with ONLY a JSON object (no markdown fences, no commentary) with these fields:
+- title (string, English or original language)
+- titleRu (string or null, Russian translation of the title)
+- description (string or null, 1-3 sentence summary in the original language)
+- descriptionRu (string or null, 1-3 sentence summary in Russian)
+- donorName (string or null, funding organization name)
+- sectors (array of lowercase English keywords, e.g. ["education", "climate"])
+- countryScope (array of country names in English, e.g. ["Uzbekistan"])
+- applicantTypes (array from: "NGO", "Business", "Government", "Academic", "Individual")
+- amountMin (number or null, in the announcement currency)
+- amountMax (number or null)
+- currency (3-letter code string, e.g. "USD", or null)
+- deadline (string "YYYY-MM-DD" or null)
+- sourceUrl (string or null, only if a URL appears in the announcement)
+- requirements (array of strings, key eligibility requirements)
+
+STRICT RULES: use null for anything not stated in the announcement. Never invent amounts, deadlines, URLs or requirements.`,
 } as const;
 
 export type PromptKey = keyof typeof PROMPTS;

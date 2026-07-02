@@ -24,4 +24,11 @@ crons.interval(
   {}
 );
 
+crons.interval(
+  "close expired grants",
+  { hours: 6 },
+  internal.adminGrants.closeExpiredGrants,
+  {}
+);
+
 export default crons;

@@ -11,16 +11,25 @@ export async function listAdminGrants(
   return convexQuery(api.adminGrants.list, params, accessToken);
 }
 
+function toDeadlineMs(deadline: string | number | null | undefined): number | undefined {
+  if (deadline == null || deadline === "") return undefined;
+  const ms = new Date(deadline).getTime();
+  return Number.isNaN(ms) ? undefined : ms;
+}
+
 export async function createGrant(
   input: {
     title: string;
     titleRu?: string;
     description?: string;
+    descriptionRu?: string;
     donorId: string;
     sectors?: string[];
     countryScope?: string[];
+    applicantTypes?: string[];
     amountMin?: number | null;
     amountMax?: number | null;
+    currency?: string;
     deadline?: string | number | null;
     sourceUrl?: string;
     isActive?: boolean;
@@ -28,21 +37,64 @@ export async function createGrant(
   },
   accessToken: string
 ) {
-  const deadlineMs =
-    input.deadline != null && input.deadline !== ""
-      ? new Date(input.deadline).getTime()
-      : undefined;
   return convexMutation(
     api.adminGrants.create,
     {
       title: input.title,
+      titleRu: input.titleRu,
       donorId: input.donorId,
       description: input.description,
+      descriptionRu: input.descriptionRu,
       sectors: input.sectors,
       countryScope: input.countryScope,
+      applicantTypes: input.applicantTypes,
       amountMin: input.amountMin ?? undefined,
       amountMax: input.amountMax ?? undefined,
-      deadline: deadlineMs,
+      currency: input.currency,
+      deadline: toDeadlineMs(input.deadline),
+      sourceUrl: input.sourceUrl,
+      isActive: input.isActive,
+      isFeatured: input.isFeatured,
+    },
+    accessToken
+  );
+}
+
+export type ImportGrantInput = {
+  title: string;
+  donorName: string;
+  titleRu?: string;
+  description?: string;
+  descriptionRu?: string;
+  sectors?: string[];
+  countryScope?: string[];
+  applicantTypes?: string[];
+  amountMin?: number;
+  amountMax?: number;
+  currency?: string;
+  deadline?: string | number | null;
+  sourceUrl?: string;
+};
+
+export async function bulkImportGrants(grants: ImportGrantInput[], accessToken: string) {
+  return convexMutation(
+    api.adminGrants.bulkImport,
+    {
+      grants: grants.map((g) => ({
+        title: g.title,
+        donorName: g.donorName,
+        titleRu: g.titleRu,
+        description: g.description,
+        descriptionRu: g.descriptionRu,
+        sectors: g.sectors,
+        countryScope: g.countryScope,
+        applicantTypes: g.applicantTypes,
+        amountMin: g.amountMin,
+        amountMax: g.amountMax,
+        currency: g.currency,
+        deadline: toDeadlineMs(g.deadline),
+        sourceUrl: g.sourceUrl,
+      })),
     },
     accessToken
   );

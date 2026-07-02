@@ -105,6 +105,7 @@ export default defineSchema({
     .index("by_active", ["isActive"])
     .index("by_deadline", ["deadline"])
     .index("by_featured", ["isFeatured"])
+    .index("by_sourceUrl", ["sourceUrl"])
     .index("by_active_status_deadline", ["isActive", "status", "deadline"]),
 
   grantRequirements: defineTable({

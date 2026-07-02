@@ -645,6 +645,109 @@ describe("onboarding.getStatus", () => {
   });
 });
 
+describe("adminGrants.bulkImport", () => {
+  test("inserts new grants, reuses donors, dedupes by sourceUrl and title", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `admin-import|${Date.now()}`;
+    const clerkId = `clerk-admin-import-${Date.now()}`;
+
+    await t.run(async (ctx) => {
+      await seedUser(ctx, tokenIdentifier, clerkId, "admin");
+      await seedCatalog(ctx); // seeds donor "Test Donor" + grant "Climate Adaptation Grant"
+    });
+
+    const authedAdmin = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const result = await authedAdmin.mutation(api.adminGrants.bulkImport, {
+      grants: [
+        {
+          title: "New Water Grant",
+          donorName: "Test Donor",
+          sectors: ["water"],
+          countryScope: ["Uzbekistan"],
+          sourceUrl: "https://example.org/water",
+        },
+        // duplicate sourceUrl of the row above
+        {
+          title: "Water Grant Copy",
+          donorName: "Test Donor",
+          sourceUrl: "https://example.org/water",
+        },
+        // duplicate title within the same donor (case-insensitive)
+        { title: "climate adaptation grant", donorName: "Test Donor" },
+        // new donor should be created on the fly
+        { title: "Fresh Donor Grant", donorName: "Brand New Fund" },
+      ],
+    });
+
+    expect(result.inserted).toBe(2);
+    expect(result.skipped).toBe(2);
+    expect(result.skippedItems.map((s) => s.reason).sort()).toEqual([
+      "duplicate_source_url",
+      "duplicate_title",
+    ]);
+
+    const donors = await t.run(async (ctx) => ctx.db.query("donors").collect());
+    expect(donors.some((d) => d.name === "Brand New Fund")).toBe(true);
+  });
+});
+
+describe("adminGrants.closeExpiredGrants", () => {
+  test("closes active grants past deadline, keeps future and closed ones", async () => {
+    const t = convexTest(schema, modules);
+    const now = Date.now();
+    const DAY = 24 * 60 * 60 * 1000;
+    let expiredId = "" as Id<"grants">;
+    let futureId = "" as Id<"grants">;
+
+    await t.run(async (ctx) => {
+      const { donorId } = await seedCatalog(ctx);
+      const base = {
+        donorId,
+        sectors: [] as string[],
+        countryScope: [] as string[],
+        applicantTypes: [] as string[],
+        currency: "USD",
+        isFeatured: false,
+        lastUpdatedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+      expiredId = await ctx.db.insert("grants", {
+        ...base,
+        title: "Expired grant",
+        status: "open",
+        isActive: true,
+        deadline: now - DAY,
+      });
+      futureId = await ctx.db.insert("grants", {
+        ...base,
+        title: "Future grant",
+        status: "open",
+        isActive: true,
+        deadline: now + DAY,
+      });
+      await ctx.db.insert("grants", {
+        ...base,
+        title: "Already closed grant",
+        status: "closed",
+        isActive: false,
+        deadline: now - 2 * DAY,
+      });
+    });
+
+    const result = await t.mutation(internal.adminGrants.closeExpiredGrants, {});
+    expect(result.closed).toBe(1);
+
+    const [expired, future] = await t.run(async (ctx) =>
+      Promise.all([ctx.db.get("grants", expiredId), ctx.db.get("grants", futureId)])
+    );
+    expect(expired?.isActive).toBe(false);
+    expect(expired?.status).toBe("closed");
+    expect(future?.isActive).toBe(true);
+    expect(future?.status).toBe("open");
+  });
+});
+
 describe("adminGrants admin lists", () => {
   test("listDonors and listRequirements use paginated reads", async () => {
     const t = convexTest(schema, modules);

@@ -20,6 +20,7 @@ import {
   ClipboardList,
   TrendingUp,
   Shield,
+  GraduationCap,
 } from "lucide-react";
 import {
   AppShellSidebar,
@@ -30,6 +31,7 @@ import {
 const adminNav: AppNavItem[] = [
   { label: "Главная", href: "/admin", icon: LayoutDashboard },
   { label: "Пользователи", href: "/admin/users", icon: Users },
+  { label: "Opportunities Lab", href: "/admin/lab", icon: GraduationCap },
   { label: "Воронка", href: "/admin/funnel", icon: TrendingUp },
   { label: "Заявки", href: "/admin/applications", icon: ClipboardList },
   { label: "Согласия", href: "/admin/consents", icon: Shield },

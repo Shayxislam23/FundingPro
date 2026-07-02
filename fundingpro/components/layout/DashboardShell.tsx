@@ -7,6 +7,7 @@ import {
   Bell,
   LayoutDashboard,
   FileText,
+  GraduationCap,
   BookOpen,
   CheckSquare,
   FolderOpen,
@@ -31,6 +32,7 @@ import { ShellNavLink, isNavItemActive } from "@/components/layout/AppShell";
 const navItems = [
   { label: "Главная", href: "/dashboard", icon: LayoutDashboard },
   { label: "Гранты", href: "/dashboard/grants", icon: BookOpen },
+  { label: "Opportunities Lab", href: "/dashboard/lab", icon: GraduationCap },
   { label: "Проверка соответствия", href: "/dashboard/eligibility", icon: CheckSquare },
   { label: "AI Предложение", href: "/dashboard/ai-writer", icon: FileText },
   { label: "Мои заявки", href: "/dashboard/tracker", icon: BarChart3 },

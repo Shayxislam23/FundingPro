@@ -6,6 +6,7 @@ import { SectionLabel } from "@/components/design/SectionLabel";
 import { GrantCard } from "@/components/design/GrantCard";
 import { OrgOnboardingBanner } from "@/components/design/OrgOnboardingBanner";
 import { OnboardingChecklist } from "@/components/design/OnboardingChecklist";
+import { LabJourneySummaryCard } from "@/components/lab/LabJourneySummaryCard";
 import { ReconsentBanner } from "@/components/legal/ReconsentBanner";
 import { BookOpen, BarChart3, CheckCircle2, FileText, ArrowRight, Sparkles, Target, Loader2, Building2 } from "lucide-react";
 import { translateSector } from "@fundingpro/shared";
@@ -109,6 +110,8 @@ export default function DashboardHome() {
           totalSteps={onboardingProgress.total}
         />
       )}
+
+      <LabJourneySummaryCard />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

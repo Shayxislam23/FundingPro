@@ -27,6 +27,7 @@ import type * as lib_customFunctions from "../lib/customFunctions.js";
 import type * as lib_pagination from "../lib/pagination.js";
 import type * as lib_paymentHelpers from "../lib/paymentHelpers.js";
 import type * as lib_validators from "../lib/validators.js";
+import type * as labJourney from "../labJourney.js";
 import type * as matchGrants from "../matchGrants.js";
 import type * as onboarding from "../onboarding.js";
 import type * as organizations from "../organizations.js";
@@ -74,6 +75,7 @@ declare const fullApi: ApiFromModules<{
   "lib/pagination": typeof lib_pagination;
   "lib/paymentHelpers": typeof lib_paymentHelpers;
   "lib/validators": typeof lib_validators;
+  labJourney: typeof labJourney;
   matchGrants: typeof matchGrants;
   onboarding: typeof onboarding;
   organizations: typeof organizations;

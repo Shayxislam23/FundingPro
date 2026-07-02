@@ -172,6 +172,9 @@ async function resolveDonorId(
   return donorId;
 }
 
+/** Bounded read: title dedupe covers the first 500 grants per donor. */
+const DONOR_TITLES_READ_LIMIT = 500;
+
 async function donorTitles(
   ctx: MutationCtx,
   donorId: Id<"donors">,
@@ -182,7 +185,7 @@ async function donorTitles(
   const grants = await ctx.db
     .query("grants")
     .withIndex("by_donor", (q) => q.eq("donorId", donorId))
-    .collect();
+    .take(DONOR_TITLES_READ_LIMIT);
   const titles = new Set(grants.map((g) => g.title.trim().toLowerCase()));
   cache.set(donorId, titles);
   return titles;
@@ -200,13 +203,13 @@ export const bulkImport = adminMutation({
       throw new Error(`grants must contain 1-${IMPORT_BATCH_LIMIT} items`);
     }
 
-    // One read of the donor catalog for the whole batch (Convex allows a
-    // single .paginate() per execution, so avoid paginateAll in loops).
+    // One bounded read of the donor catalog for the whole batch (Convex allows
+    // a single .paginate() per execution, so avoid paginateAll in loops).
     const donorsByName = new Map<string, Id<"donors">>();
     const activeDonors = await ctx.db
       .query("donors")
       .withIndex("by_active", (q) => q.eq("isActive", true))
-      .collect();
+      .take(1000);
     for (const donor of activeDonors) {
       for (const name of [donor.name, donor.nameRu, donor.shortName]) {
         if (name) donorsByName.set(name.trim().toLowerCase(), donor._id);

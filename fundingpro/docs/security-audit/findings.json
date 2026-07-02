@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-06-27T14:04:51.481Z",
+  "generatedAt": "2026-07-02T13:30:50.247Z",
   "project": "FundingPro",
   "totalFindings": 0,
   "bySeverity": {},
   "findings": [],
   "routeStats": {
-    "routeFiles": 64,
+    "routeFiles": 66,
     "wrapperPatterns": {
       "withPublic": 9,
       "withActiveUser": 28,
-      "withAdmin": 18,
+      "withAdmin": 20,
       "withPaymentWebhook": 1,
       "merchantAuth": 8,
       "custom": 0

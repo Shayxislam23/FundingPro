@@ -74,22 +74,40 @@ export const SEED_DONORS = [
     website: "https://www.unesco.org",
     description: "Программы ЮНЕСКО в области образования, науки, культуры и молодёжи",
   },
+  {
+    key: "a1000001-0000-4000-8000-000000000009",
+    name: "EBRD",
+    nameRu: "ЕБРР",
+    shortName: "EBRD",
+    country: "International",
+    website: "https://www.ebrd.com",
+    description: "Европейский банк реконструкции и развития — поддержка МСБ и предпринимателей в Узбекистане",
+  },
+  {
+    key: "a1000001-0000-4000-8000-000000000010",
+    name: "IT Park Uzbekistan",
+    nameRu: "IT Park Узбекистан",
+    shortName: "IT Park",
+    country: "Uzbekistan",
+    website: "https://it-park.uz",
+    description: "Государственный оператор IT-экосистемы Узбекистана: IT Park Ventures и программы поддержки стартапов",
+  },
 ] as const;
 
 export const SEED_PLANS = [
   {
     slug: "plan-ngo-basic",
     name: "Basic",
-    nameRu: "НКО / Физлица Basic",
+    nameRu: "Молодёжь / Физлица Basic",
     targetType: "NGO",
     priceUsd: 30,
     priceUzs: 384000,
-    features: ["Доступ к базе грантов", "5 AI-проверок", "2 черновика заявок"],
+    features: ["Доступ к базе грантов, стипендий и конкурсов", "5 AI-проверок", "2 черновика заявок"],
   },
   {
     slug: "plan-ngo-pro",
     name: "Pro",
-    nameRu: "НКО / Физлица Pro",
+    nameRu: "Молодёжь / Физлица Pro",
     targetType: "NGO",
     priceUsd: 50,
     priceUzs: 640000,
@@ -137,6 +155,7 @@ export const SEED_SETTINGS = [
   { key: "paymentsIntegrationStatus", value: "pending", category: "integrations" },
   { key: "aiProviderStatus", value: "mock", category: "integrations" },
   { key: "paymentIntegrationStatus", value: "pending_integration", category: "integrations" },
+  { key: "successFeePercent", value: "3", category: "billing" },
   {
     key: "appDisclaimer",
     value:
@@ -288,6 +307,12 @@ export const SEED_GRANTS: GrantSeed[] = [
   { key: "b2000001-0000-4000-8000-000000000035", title: "UNESCO Global Youth Grant Scheme", titleRu: "Глобальная молодёжная грантовая схема ЮНЕСКО", description: "UNESCO scheme supporting youth-led actions and research worldwide, building capacities of young people and youth organizations.", descriptionRu: "Схема ЮНЕСКО в поддержку молодёжных инициатив и исследований по всему миру, развитие потенциала молодёжи и молодёжных организаций.", donorKey: "a1000001-0000-4000-8000-000000000008", sectors: ["youth", "education", "research"], countryScope: ["Uzbekistan", "International"], applicantTypes: ["Individual", "NGO"], amountMin: null, amountMax: null, deadline: null, sourceUrl: "https://www.unesco.org/en/youth/global-grant-scheme", isFeatured: false },
   { key: "b2000001-0000-4000-8000-000000000036", title: "EU Calls for Proposals — Civil Society Uzbekistan", titleRu: "Конкурсы ЕС для гражданского общества Узбекистана", description: "Recurring EU Delegation calls supporting civil society organizations in Uzbekistan: inclusive development, gender equality, Green Agenda. Current calls are published on the EU Funding & Tenders portal.", descriptionRu: "Регулярные конкурсы Представительства ЕС для организаций гражданского общества Узбекистана: инклюзивное развитие, гендерное равенство, «зелёная» повестка. Актуальные конкурсы — на портале EU Funding & Tenders.", donorKey: "a1000001-0000-4000-8000-000000000002", sectors: ["civil_society", "gender", "climate"], countryScope: ["Uzbekistan"], applicantTypes: ["NGO"], amountMin: null, amountMax: null, deadline: null, sourceUrl: "https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/home", isFeatured: false },
   { key: "b2000001-0000-4000-8000-000000000037", title: "Erasmus+ Capacity Building in Higher Education (CBHE)", titleRu: "Erasmus+ Развитие потенциала высшего образования (CBHE)", description: "Annual EU calls for higher education institutions in Central Asia (Region 6): modernization of universities, Green Deal, digital transformation, sustainable growth. Uzbekistan HEIs apply in consortia with EU universities; current calls via the National Erasmus+ Office and the EU Funding & Tenders portal.", descriptionRu: "Ежегодные конкурсы ЕС для вузов Центральной Азии (Регион 6): модернизация университетов, «зелёная» повестка, цифровая трансформация. Вузы Узбекистана участвуют в консорциумах с университетами ЕС; актуальные конкурсы — через Национальный офис Erasmus+ и портал EU Funding & Tenders.", donorKey: "a1000001-0000-4000-8000-000000000002", sectors: ["education", "research"], countryScope: ["Uzbekistan", "Kazakhstan", "Kyrgyzstan", "Tajikistan"], applicantTypes: ["Academic"], amountMin: null, amountMax: null, deadline: null, sourceUrl: "https://erasmus-plus.ec.europa.eu/programme-guide/part-b/key-action-2/capacity-building-higher-education", isFeatured: false },
+
+  // ── Business & entrepreneurship programmes (real, verified sources) ────────
+  { key: "b2000001-0000-4000-8000-000000000038", title: "IT Park Ventures — Seed to Series A Investment", titleRu: "IT Park Ventures — инвестиции от идеи до Series A", description: "$30M venture fund investing $10,000-$1,000,000 in Uzbekistan and Central Asian tech startups (AI/ML, GreenTech, EdTech, FinTech, GameDev), plus mentorship and government co-financing.", descriptionRu: "Венчурный фонд на $30 млн: инвестиции от $10 000 до $1 000 000 в технологические стартапы Узбекистана и Центральной Азии (AI/ML, GreenTech, EdTech, FinTech, GameDev), менторская поддержка и государственное софинансирование.", donorKey: "a1000001-0000-4000-8000-000000000010", sectors: ["technology", "business", "innovation"], countryScope: ["Uzbekistan"], applicantTypes: ["Business"], amountMin: 10000, amountMax: 1000000, deadline: null, sourceUrl: "https://itparkventures.uz/en", isFeatured: true },
+  { key: "b2000001-0000-4000-8000-000000000039", title: "IT Park Digital Startups Program", titleRu: "IT Park — Программа поддержки цифровых стартапов", description: "State program matching foreign investment raised by startups up to $100,000, partial reimbursement of acceleration/incubation costs, and collateral-free loans up to 300M UZS.", descriptionRu: "Госпрограмма: удвоение привлечённых стартапом иностранных инвестиций до $100 000, частичная компенсация расходов на акселерацию/инкубацию, льготные займы без залога до 300 млн сум.", donorKey: "a1000001-0000-4000-8000-000000000010", sectors: ["technology", "business"], countryScope: ["Uzbekistan"], applicantTypes: ["Business"], amountMin: null, amountMax: 100000, deadline: null, sourceUrl: "https://it-park.uz/en/itpark/news/presentation-of-the-digital-startups-program-support-for-startups", isFeatured: true },
+  { key: "b2000001-0000-4000-8000-000000000040", title: "EBRD Youth in Business Programme (Central Asia)", titleRu: "Программа ЕБРР «Молодёжь в бизнесе» (Центральная Азия)", description: "EBRD credit line and advisory for micro, small and medium enterprises led by entrepreneurs under 35, delivered through partner banks in Uzbekistan.", descriptionRu: "Кредитная линия и консультационная поддержка ЕБРР для микро-, малого и среднего бизнеса, которым руководят предприниматели до 35 лет, через банки-партнёры в Узбекистане.", donorKey: "a1000001-0000-4000-8000-000000000009", sectors: ["business", "finance"], countryScope: ["Uzbekistan"], applicantTypes: ["Business", "Individual"], amountMin: null, amountMax: null, deadline: null, sourceUrl: "https://www.ebrd.com/home/news-and-events/news/2024/ebrd-offers-support-to-young-entrepreneurs-and-smes-in-uzbekistan.html", isFeatured: true },
+  { key: "b2000001-0000-4000-8000-000000000041", title: "EBRD Advice for Small Businesses", titleRu: "ЕБРР — консультации для малого бизнеса", description: "Free and subsidized business advisory, training and networking for eligible SMEs to improve performance and access finance.", descriptionRu: "Бесплатные и субсидируемые консультации, обучение и networking для МСБ — повышение эффективности бизнеса и доступ к финансированию.", donorKey: "a1000001-0000-4000-8000-000000000009", sectors: ["business"], countryScope: ["Uzbekistan"], applicantTypes: ["Business"], amountMin: null, amountMax: null, deadline: null, sourceUrl: "https://www.ebrd.com/home/what-we-do/products-and-services/support-for-start-ups-and-msmes/access-business-advice.html", isFeatured: false },
 ];
 
 export const SEED_GRANT_REQUIREMENTS = [

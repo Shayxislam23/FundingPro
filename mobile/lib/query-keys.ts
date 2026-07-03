@@ -15,6 +15,7 @@ export const queryKeys = {
   me: ["me"] as const,
   consentStatus: ["consent-status"] as const,
   onboarding: ["onboarding"] as const,
+  labJourney: ["lab-journey"] as const,
   grants: (params?: GrantsQueryKeyParams) => ["grants", params] as const,
   grant: (id: string) => ["grant", id] as const,
   applications: (params?: Record<string, unknown>) => ["applications", params] as const,

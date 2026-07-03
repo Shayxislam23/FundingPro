@@ -17,6 +17,13 @@ import { ErrorState, LoadingState } from "../../../components/ui/States";
 import { api } from "../../../lib/api/client";
 import { queryKeys } from "../../../lib/query-keys";
 
+const SUCCESS_FEE_STATUS_LABELS: Record<string, string> = {
+  pending: "Ожидает",
+  invoiced: "Выставлен счёт",
+  paid: "Оплачено",
+  waived: "Списано",
+};
+
 export default function TrackerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const queryClient = useQueryClient();
@@ -97,6 +104,19 @@ export default function TrackerDetailScreen() {
             {getStatusLabel(status)}
           </Text>
         </View>
+
+        {app.success_fee ? (
+          <View className="mt-4 rounded-xl border border-funding-green/20 bg-green-50 p-3">
+            <Text className="text-sm font-semibold text-funding-black">Success fee</Text>
+            <Text className="text-xs text-gray-500 mt-1">
+              {app.success_fee.feePercent}% от ${app.success_fee.wonAmountUsd.toLocaleString("en-US")} = $
+              {app.success_fee.feeAmountUsd.toLocaleString("en-US")}
+            </Text>
+            <Text className="text-xs text-funding-green mt-1">
+              Статус: {SUCCESS_FEE_STATUS_LABELS[app.success_fee.status] ?? app.success_fee.status}
+            </Text>
+          </View>
+        ) : null}
 
         {nextStatuses.length > 0 ? (
           <View className="mt-4">

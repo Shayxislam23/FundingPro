@@ -1,4 +1,5 @@
 import { api, convexMutation, convexQuery } from "@/lib/convex-server";
+import { getMySuccessFee } from "@/lib/db/success-fees";
 
 export type ApplicationRow = {
   id: string;
@@ -14,6 +15,13 @@ export type ApplicationRow = {
     amount_min: number | null;
     amount_max: number | null;
     donor: { name: string | null; name_ru: string | null };
+  } | null;
+  success_fee?: {
+    id: string;
+    wonAmountUsd: number;
+    feePercent: number;
+    feeAmountUsd: number;
+    status: string;
   } | null;
 };
 
@@ -40,7 +48,15 @@ export async function getApplicationForUser(
   applicationId: string,
   accessToken: string
 ) {
-  return convexQuery(api.applications.getForUser, { applicationId }, accessToken);
+  const app = await convexQuery(api.applications.getForUser, { applicationId }, accessToken);
+  if (!app || "forbidden" in app) return app;
+
+  // Only "won" applications can ever have a fee record — skip the extra
+  // round trip otherwise.
+  if (app.status.toLowerCase() !== "won") return app;
+
+  const successFee = await getMySuccessFee(applicationId, accessToken);
+  return { ...app, success_fee: successFee };
 }
 
 export async function updateApplication(

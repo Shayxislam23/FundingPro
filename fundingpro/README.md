@@ -279,6 +279,15 @@ API: `GET /api/v1/legal`, `POST /api/v1/legal/consent`, `GET /api/v1/legal/conse
 
 ---
 
+## President Tech Award / President AI Award 2026
+
+Стратегия и подготовка к обеим госпрограммам на awards.gov.uz:
+[docs/AWARDS_STRATEGY_2026.md](docs/AWARDS_STRATEGY_2026.md) ·
+[docs/JUDGE_EVIDENCE_PACKET.md](docs/JUDGE_EVIDENCE_PACKET.md) ·
+[docs/AWARDS_SUBMISSION_PLAYBOOK.md](docs/AWARDS_SUBMISSION_PLAYBOOK.md)
+
+---
+
 ## Дисклеймер
 
 FundingPro не гарантирует получение гранта. Платформа помогает найти подходящие возможности, проверить требования и подготовить заявку.

@@ -250,6 +250,16 @@ export const applicationGrantSummarySchema = z.object({
   }),
 });
 
+export const successFeeRecordSchema = z.object({
+  id: z.string(),
+  wonAmountUsd: z.number(),
+  feePercent: z.number(),
+  feeAmountUsd: z.number(),
+  status: z.string(),
+});
+
+export type SuccessFeeRecord = z.infer<typeof successFeeRecordSchema>;
+
 export const applicationDetailSchema = z.object({
   id: z.string(),
   status: z.string(),
@@ -257,6 +267,7 @@ export const applicationDetailSchema = z.object({
   created_at: z.string(),
   updated_at: z.string(),
   grant: z.union([applicationGrantSummarySchema, z.null()]),
+  success_fee: z.union([successFeeRecordSchema, z.null()]).optional(),
 });
 
 export type ApplicationDetail = z.infer<typeof applicationDetailSchema>;
@@ -265,6 +276,55 @@ export const applicationUpdateResultSchema = z.object({
   applicationId: z.string(),
   status: z.string(),
 });
+
+// ── Opportunities Lab (guided onboarding for business + youth participants) ──
+
+export const labStepStateSchema = z.enum([
+  "not_started",
+  "in_progress",
+  "submitted",
+  "needs_revision",
+  "completed",
+]);
+
+export const labStepSchema = z.object({
+  id: z.string(),
+  state: labStepStateSchema,
+  done: z.boolean(),
+});
+
+export const labProfileSchema = z.object({
+  fullName: z.union([z.string(), z.null()]),
+  age: z.union([z.number(), z.null()]),
+  city: z.union([z.string(), z.null()]),
+  telegram: z.union([z.string(), z.null()]),
+  educationStatus: z.union([z.string(), z.null()]),
+  interests: z.array(z.string()),
+  cvStatus: z.union([z.string(), z.null()]),
+  linkedinUrl: z.union([z.string(), z.null()]),
+  motivationLetterStatus: z.union([z.string(), z.null()]),
+  chosenGrantId: z.union([z.string(), z.null()]),
+  applicationProofStatus: z.union([z.string(), z.null()]),
+});
+
+export const labCertificateSchema = z.object({
+  eligible: z.boolean(),
+  requirements: z.array(z.object({ id: z.string(), done: z.boolean() })),
+});
+
+export const labJourneySchema = z.object({
+  steps: z.array(labStepSchema),
+  progressPercent: z.number(),
+  nextStepId: z.union([z.string(), z.null()]),
+  certificate: labCertificateSchema,
+  profile: labProfileSchema,
+  savedGrantsCount: z.number(),
+  opportunitiesTarget: z.number(),
+});
+
+export type LabStepState = z.infer<typeof labStepStateSchema>;
+export type LabStep = z.infer<typeof labStepSchema>;
+export type LabJourney = z.infer<typeof labJourneySchema>;
 
 export const eligibilityResultSchema = z.object({
   eligible: z.boolean(),

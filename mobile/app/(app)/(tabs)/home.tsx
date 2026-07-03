@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { GrantCard } from "../../../components/design/GrantCard";
 import { SectionHeader } from "../../../components/design/SectionHeader";
 import { OnboardingChecklist } from "../../../components/onboarding/OnboardingChecklist";
+import { LabJourneySummaryCard } from "../../../components/lab/LabJourneySummaryCard";
 import { ReconsentBanner } from "../../../components/legal/ReconsentBanner";
 import { ClaySurface } from "../../../components/clay/ClaySurface";
 import { Card } from "../../../components/ui/Card";
@@ -190,6 +191,8 @@ export default function DashboardHome() {
             totalSteps={onboarding.totalSteps}
           />
         )}
+
+        <LabJourneySummaryCard />
 
         <View className="flex-row flex-wrap justify-between mt-4">
           <StatCard icon="document-text" title="Грантов" value={String(totalGrants)} subtitle="в базе" />

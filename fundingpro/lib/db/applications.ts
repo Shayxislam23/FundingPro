@@ -45,7 +45,7 @@ export async function getApplicationForUser(
 
 export async function updateApplication(
   applicationId: string,
-  update: { status?: string; notes?: string | null },
+  update: { status?: string; notes?: string | null; wonAmountUsd?: number },
   accessToken: string
 ) {
   return convexMutation(

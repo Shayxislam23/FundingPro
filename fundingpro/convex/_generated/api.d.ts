@@ -40,6 +40,7 @@ import type * as platformStats from "../platformStats.js";
 import type * as proposals from "../proposals.js";
 import type * as pushNotifications from "../pushNotifications.js";
 import type * as pushTokens from "../pushTokens.js";
+import type * as successFee from "../successFee.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as savedGrants from "../savedGrants.js";
 import type * as seed from "../seed.js";
@@ -88,6 +89,7 @@ declare const fullApi: ApiFromModules<{
   proposals: typeof proposals;
   pushNotifications: typeof pushNotifications;
   pushTokens: typeof pushTokens;
+  successFee: typeof successFee;
   rateLimits: typeof rateLimits;
   savedGrants: typeof savedGrants;
   seed: typeof seed;

@@ -418,6 +418,26 @@ export default defineSchema({
     resetAt: v.number(),
   }).index("by_key", ["key"]),
 
+  /** Success-fee tracking (2-5% on won grants, per legal/success-fee) — additive. */
+  successFeeRecords: defineTable({
+    applicationId: v.id("applications"),
+    grantId: v.id("grants"),
+    userId: v.id("users"),
+    wonAmountUsd: v.number(),
+    feePercent: v.number(),
+    feeAmountUsd: v.number(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("invoiced"),
+      v.literal("paid"),
+      v.literal("waived")
+    ),
+    ...timestamps,
+  })
+    .index("by_application", ["applicationId"])
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"]),
+
   /** Opportunities Lab onboarding layer — additive, all journey fields optional. */
   labParticipants: defineTable({
     userId: v.id("users"),

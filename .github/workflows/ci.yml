@@ -167,6 +167,28 @@ jobs:
             echo "Maestro not installed; skipping mobile UI smoke."
           fi
 
+  production-deploy-check:
+    # Only after a real push to main — not on PR runs, and not before the
+    # commit that's supposed to be live actually exists on the branch.
+    # Verifies the deployed site reflects this commit instead of assuming
+    # "merged to main" implies "deployed" (see docs/JUDGE_EVIDENCE_PACKET.md
+    # council-audit history: three rounds of fixes sat merged-but-unshipped).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: web
+    defaults:
+      run:
+        working-directory: fundingpro
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
+
+      - name: Wait for production to reflect this commit
+        run: node scripts/production-content-check.mjs
+
   security:
     runs-on: ubuntu-latest
     steps:

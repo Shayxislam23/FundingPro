@@ -306,25 +306,30 @@ export const adminList = adminQuery({
   handler: async (ctx) => {
     const participants = await ctx.db.query("labParticipants").order("desc").take(ADMIN_LIST_LIMIT);
 
-    const rows = [];
-    for (const p of participants) {
-      const user = await ctx.db.get("users", p.userId);
-      const journey = await computeJourney(ctx, p.userId, p);
-      rows.push({
-        id: p._id,
-        email: user?.email ?? null,
-        fullName: p.fullName ?? null,
-        telegram: p.telegram ?? null,
-        mentorStatus: p.mentorStatus ?? null,
-        mentorNotes: p.mentorNotes ?? null,
-        attendanceOk: p.attendanceOk === true,
-        steps: journey.steps,
-        progressPercent: journey.progressPercent,
-        certificateEligible: journey.certificate.eligible,
-        nextAction: mentorNextAction(journey.nextStepId),
-        updatedAt: new Date(p.updatedAt).toISOString(),
-      });
-    }
+    // Fan out per-participant reads instead of awaiting them one at a time —
+    // at ADMIN_LIST_LIMIT rows a sequential loop was ~6 round trips each.
+    const rows = await Promise.all(
+      participants.map(async (p) => {
+        const [user, journey] = await Promise.all([
+          ctx.db.get("users", p.userId),
+          computeJourney(ctx, p.userId, p),
+        ]);
+        return {
+          id: p._id,
+          email: user?.email ?? null,
+          fullName: p.fullName ?? null,
+          telegram: p.telegram ?? null,
+          mentorStatus: p.mentorStatus ?? null,
+          mentorNotes: p.mentorNotes ?? null,
+          attendanceOk: p.attendanceOk === true,
+          steps: journey.steps,
+          progressPercent: journey.progressPercent,
+          certificateEligible: journey.certificate.eligible,
+          nextAction: mentorNextAction(journey.nextStepId),
+          updatedAt: new Date(p.updatedAt).toISOString(),
+        };
+      })
+    );
     return rows;
   },
 });

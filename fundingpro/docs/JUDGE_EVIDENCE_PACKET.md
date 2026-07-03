@@ -30,7 +30,7 @@ AI-платформа для поиска грантов, тендеров и и
 
 | Метрика | Значение | Где проверить |
 |---|---|---|
-| Автотесты | **132** (101 unit/integration + 31 Convex) | `npm test`, `npm run test:convex` |
+| Автотесты | **139** (108 unit/integration + 31 Convex) | `npm test`, `npm run test:convex` |
 | CI | 4 джобы (web/mobile/security/integration), все зелёные | `.github/workflows/ci.yml`, вкладка Actions |
 | Typecheck | 0 ошибок по всему монорепо | `npm run typecheck` |
 | Lint | 0 warnings (`--max-warnings=0`) | `npm run lint` |
@@ -92,7 +92,7 @@ AI-платформа для поиска грантов, тендеров и и
 
 | | President Tech Award (прошлый сезон) | Сейчас |
 |---|---|---|
-| Продукт | Слабый, по отзыву жюри | 132 теста, зелёный CI, 0 открытых security findings |
+| Продукт | Слабый, по отзыву жюри | 139 тестов, зелёный CI, 0 открытых security findings |
 | Трекшн | Отсутствовал | Идёт pilot-набор реальных бизнес-пользователей |
 | Монетизация | Декларативная (текст без функции) | Success-fee — реальный ledger в БД |
 | Позиционирование | Размыто | Два чётких трека: Business (PTA/Incubation) и Youth/Education (President AI Award) |

@@ -10,12 +10,34 @@ import {
   getRateLimitSnapshotAsync,
 } from "./ai-rate-limit";
 
+// Loose but bounded IPv4/IPv6 shape check — not full RFC validation. The
+// goal is defense in depth: reject obviously-forged or malformed header
+// values (arbitrary strings, oversized payloads) before they become a
+// rate-limit bucket key, rather than assuming the deployment platform's
+// edge always sanitizes this header for us.
+const IP_SHAPE = /^[0-9a-fA-F:.]{2,45}$/;
+
+function sanitizeIp(value: string | null): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  return IP_SHAPE.test(trimmed) ? trimmed : null;
+}
+
+/**
+ * On Vercel, `x-forwarded-for` is set by the edge network to reflect the
+ * real connecting client and is not attacker-controllable end to end.
+ * Off Vercel (self-hosted, behind a different proxy) that guarantee does
+ * not automatically hold — this function only adds shape validation, it
+ * does not itself establish a trusted-proxy chain.
+ */
 export function getClientIp(req: NextRequest): string {
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
-    return forwarded.split(",")[0]?.trim() ?? "unknown";
+    const first = forwarded.split(",")[0] ?? "";
+    const sanitized = sanitizeIp(first);
+    if (sanitized) return sanitized;
   }
-  return req.headers.get("x-real-ip") ?? "unknown";
+  return sanitizeIp(req.headers.get("x-real-ip")) ?? "unknown";
 }
 
 function rateLimitHeaders(key: string, maxRequests: number): Promise<Record<string, string>> {
@@ -43,6 +65,17 @@ const WEBHOOK_MAX_REQUESTS = Number(process.env.WEBHOOK_RATE_LIMIT_MAX ?? 30);
 
 /** Edge/middleware rate limit for selected /api/v1/* routes (IP-based, Convex-backed). */
 export async function applyApiRateLimit(req: NextRequest): Promise<NextResponse | null> {
+  try {
+    return await applyApiRateLimitInner(req);
+  } catch (err) {
+    // Fail open: a rate-limiter backend outage must not take down the API
+    // (these paths include payment provider webhooks).
+    console.error("applyApiRateLimit degraded (fail-open):", err);
+    return null;
+  }
+}
+
+async function applyApiRateLimitInner(req: NextRequest): Promise<NextResponse | null> {
   const { pathname } = req.nextUrl;
   const ip = getClientIp(req);
 

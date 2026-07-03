@@ -3,6 +3,7 @@ import { type QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { authedMutation, authedQuery, adminQuery } from "./lib/customFunctions";
 import type { Doc, Id } from "./_generated/dataModel";
+import { recordWinIfNeeded } from "./successFee";
 
 const APPLICATION_STATUS_LABELS: Record<string, string> = {
   SAVED: "Сохранена",
@@ -206,6 +207,7 @@ export const update = authedMutation({
     applicationId: v.string(),
     status: v.optional(v.string()),
     notes: v.optional(v.union(v.string(), v.null())),
+    wonAmountUsd: v.optional(v.number()),
   },
   returns: v.union(v.object({ id: v.string(), status: v.string() }), v.null()),
   handler: async (ctx, args) => {
@@ -218,6 +220,17 @@ export const update = authedMutation({
     if (args.status !== undefined) patch.status = args.status;
     if (args.notes !== undefined) patch.notes = args.notes ?? undefined;
     await ctx.db.patch("applications", app._id, patch);
+
+    // Success fee (2-5% of the won amount, /legal/success-fee) becomes a
+    // real ledger entry the moment a "won" application reports an amount.
+    if (nextStatus === "won" && args.wonAmountUsd !== undefined) {
+      await recordWinIfNeeded(ctx, {
+        applicationId: app._id,
+        grantId: app.grantId,
+        userId: app.userId,
+        wonAmountUsd: args.wonAmountUsd,
+      });
+    }
 
     if (args.status !== undefined && args.status !== previousStatus) {
       const label = APPLICATION_STATUS_LABELS[args.status] ?? args.status;

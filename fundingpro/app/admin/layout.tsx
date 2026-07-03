@@ -17,9 +17,11 @@ import {
   ShieldCheck,
   ScrollText,
   Briefcase,
+  DollarSign,
   ClipboardList,
   TrendingUp,
   Shield,
+  GraduationCap,
 } from "lucide-react";
 import {
   AppShellSidebar,
@@ -30,6 +32,7 @@ import {
 const adminNav: AppNavItem[] = [
   { label: "Главная", href: "/admin", icon: LayoutDashboard },
   { label: "Пользователи", href: "/admin/users", icon: Users },
+  { label: "Opportunities Lab", href: "/admin/lab", icon: GraduationCap },
   { label: "Воронка", href: "/admin/funnel", icon: TrendingUp },
   { label: "Заявки", href: "/admin/applications", icon: ClipboardList },
   { label: "Согласия", href: "/admin/consents", icon: Shield },
@@ -38,6 +41,7 @@ const adminNav: AppNavItem[] = [
   { label: "Доноры", href: "/admin/donors", icon: Landmark },
   { label: "Заказы консультантов", href: "/admin/consultant-orders", icon: Briefcase },
   { label: "Платежи", href: "/admin/payments", icon: CreditCard },
+  { label: "Success fee", href: "/admin/success-fees", icon: DollarSign },
   { label: "AI-запросы", href: "/admin/ai-logs", icon: Bot },
   { label: "Поддержка", href: "/admin/support", icon: HelpCircle },
   { label: "Аудит", href: "/admin/audit", icon: ScrollText },

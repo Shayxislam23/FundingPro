@@ -44,7 +44,7 @@ export const PATCH = withActiveUser(async (req, authUser, ctx) => {
   if ("forbidden" in app) return apiError("Forbidden", 403, "FORBIDDEN");
 
   const body = await req.json();
-  const { status, notes } = body;
+  const { status, notes, wonAmountUsd } = body;
 
   if (status !== undefined && typeof status !== "string") {
     return apiError("Invalid status", 400, "INVALID_STATUS");
@@ -57,11 +57,19 @@ export const PATCH = withActiveUser(async (req, authUser, ctx) => {
     return apiError("Invalid status", 400, "INVALID_STATUS");
   }
 
+  if (
+    wonAmountUsd !== undefined &&
+    (typeof wonAmountUsd !== "number" || !Number.isFinite(wonAmountUsd) || wonAmountUsd <= 0)
+  ) {
+    return apiError("wonAmountUsd must be a positive number", 400, "INVALID_AMOUNT");
+  }
+
   const updated = await updateApplication(
     id,
     {
       status: status ? status.toLowerCase() : undefined,
       notes: notes !== undefined ? notes.trim() || null : undefined,
+      wonAmountUsd,
     },
     authUser.accessToken
   );

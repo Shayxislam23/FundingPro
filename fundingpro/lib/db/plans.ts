@@ -12,7 +12,13 @@ export type PlanRow = {
 };
 
 export async function listPlans(): Promise<PlanRow[]> {
-  return convexPublicQuery(api.plans.list, {});
+  try {
+    return await convexPublicQuery(api.plans.list, {});
+  } catch (err) {
+    const { isSeedFallbackEnabled, seedFallbackPlans } = await import("./catalog-fallback");
+    if (isSeedFallbackEnabled()) return seedFallbackPlans();
+    throw err;
+  }
 }
 
 export function groupPlansByTarget(plans: PlanRow[]) {

@@ -8,7 +8,10 @@
 
 const PII_PATTERNS: { name: string; pattern: RegExp }[] = [
   { name: "email", pattern: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g },
-  { name: "phone", pattern: /(\+?[\d\s\-().]{7,})/g },
+  // Phone patterns are deliberately narrow: proposals are full of legitimate
+  // numbers (budgets, deadlines, KPIs) that must survive redaction intact.
+  { name: "phone", pattern: /\+?998[\s\-.]?\(?\d{2}\)?[\s\-.]?\d{3}[\s\-.]?\d{2}[\s\-.]?\d{2}/g },
+  { name: "phone_intl", pattern: /\+\d{9,15}\b/g },
   { name: "pinfl", pattern: /\b\d{14}\b/g },
   { name: "passport", pattern: /\b[A-Z]{2}\d{7}\b/g },
   { name: "fullname_ru", pattern: /[А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+ [А-ЯЁ][а-яё]+/g },
@@ -51,6 +54,32 @@ export const PROMPTS = {
 
   "budget-narrative-generate": (activities: string, totalBudget: string) =>
     `Write a budget narrative for these grant activities.\n\nActivities: ${activities}\nTotal budget: ${totalBudget} USD\n\nRespond in Russian. Be specific about cost justifications.`,
+
+  "grant-extract": (announcement: string) =>
+    `You are a data-entry assistant for a grants catalog. Extract structured fields from this grant announcement.
+
+Announcement:
+"""
+${announcement}
+"""
+
+Respond with ONLY a JSON object (no markdown fences, no commentary) with these fields:
+- title (string, English or original language)
+- titleRu (string or null, Russian translation of the title)
+- description (string or null, 1-3 sentence summary in the original language)
+- descriptionRu (string or null, 1-3 sentence summary in Russian)
+- donorName (string or null, funding organization name)
+- sectors (array of lowercase English keywords, e.g. ["education", "climate"])
+- countryScope (array of country names in English, e.g. ["Uzbekistan"])
+- applicantTypes (array from: "NGO", "Business", "Government", "Academic", "Individual")
+- amountMin (number or null, in the announcement currency)
+- amountMax (number or null)
+- currency (3-letter code string, e.g. "USD", or null)
+- deadline (string "YYYY-MM-DD" or null)
+- sourceUrl (string or null, only if a URL appears in the announcement)
+- requirements (array of strings, key eligibility requirements)
+
+STRICT RULES: use null for anything not stated in the announcement. Never invent amounts, deadlines, URLs or requirements.`,
 } as const;
 
 export type PromptKey = keyof typeof PROMPTS;
@@ -131,10 +160,23 @@ function callMock(prompt: string): AiResponse {
 
 // ── GATEWAY ───────────────────────────────────────────────────────────────────
 
+/**
+ * Thrown in strict mode instead of silently degrading to the mock provider,
+ * so quota-consuming routes can refuse the request before charging the user.
+ */
+export class AiUnavailableError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "AiUnavailableError";
+  }
+}
+
 export type AiCallOptions = {
   module: string;
   userId?: string;
   skipRedaction?: boolean;
+  /** When true, provider errors and missing configuration throw AiUnavailableError instead of returning mock output. */
+  strict?: boolean;
 };
 
 export async function callAi(
@@ -156,11 +198,18 @@ export async function callAi(
     } else if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
       response = await callAnthropic(redacted);
     } else {
+      if (opts.strict) {
+        throw new AiUnavailableError(`AI provider not configured (AI_PROVIDER=${provider})`);
+      }
       response = callMock(redacted);
     }
   } catch (err) {
-    // Fallback to mock on error
+    if (err instanceof AiUnavailableError) throw err;
     console.error(`AI provider error (${provider}):`, err);
+    if (opts.strict) {
+      throw new AiUnavailableError(`AI provider ${provider} failed`, { cause: err });
+    }
+    // Fallback to mock on error
     response = callMock(redacted);
   }
 

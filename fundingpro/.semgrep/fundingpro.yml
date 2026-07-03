@@ -19,12 +19,9 @@ rules:
     languages: [typescript, javascript]
 
   - id: convex-deploy-key-in-client
-    pattern-either:
-      - pattern: |
-          NEXT_PUBLIC_$... = $KEY
-      - pattern: |
-          process.env.NEXT_PUBLIC_...SERVICE...
-    message: Service role keys must not be exposed to the client
+    patterns:
+      - pattern-regex: 'NEXT_PUBLIC_[A-Z0-9_]*(SECRET|SERVICE_ROLE|DEPLOY_KEY|PRIVATE)[A-Z0-9_]*'
+    message: Service/secret keys must not be exposed to the client via NEXT_PUBLIC_
     severity: ERROR
     languages: [typescript, javascript]
 

@@ -105,6 +105,7 @@ export default defineSchema({
     .index("by_active", ["isActive"])
     .index("by_deadline", ["deadline"])
     .index("by_featured", ["isFeatured"])
+    .index("by_sourceUrl", ["sourceUrl"])
     .index("by_active_status_deadline", ["isActive", "status", "deadline"]),
 
   grantRequirements: defineTable({
@@ -218,7 +219,8 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_plan", ["planId"])
-    .index("by_user_status", ["userId", "status"]),
+    .index("by_user_status", ["userId", "status"])
+    .index("by_status_endDate", ["status", "endDate"]),
 
   subscriptionRequests: defineTable({
     userId: v.id("users"),
@@ -415,4 +417,48 @@ export default defineSchema({
     count: v.number(),
     resetAt: v.number(),
   }).index("by_key", ["key"]),
+
+  /** Success-fee tracking (2-5% on won grants, per legal/success-fee) — additive. */
+  successFeeRecords: defineTable({
+    applicationId: v.id("applications"),
+    grantId: v.id("grants"),
+    userId: v.id("users"),
+    wonAmountUsd: v.number(),
+    feePercent: v.number(),
+    feeAmountUsd: v.number(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("invoiced"),
+      v.literal("paid"),
+      v.literal("waived")
+    ),
+    ...timestamps,
+  })
+    .index("by_application", ["applicationId"])
+    .index("by_user", ["userId"])
+    .index("by_status", ["status"]),
+
+  /** Opportunities Lab onboarding layer — additive, all journey fields optional. */
+  labParticipants: defineTable({
+    userId: v.id("users"),
+    fullName: v.optional(v.string()),
+    age: v.optional(v.number()),
+    city: v.optional(v.string()),
+    telegram: v.optional(v.string()),
+    educationStatus: v.optional(v.string()),
+    interests: v.optional(v.array(v.string())),
+    cvStatus: v.optional(v.union(v.literal("uploaded"), v.literal("help_requested"))),
+    linkedinUrl: v.optional(v.string()),
+    motivationLetterStatus: v.optional(
+      v.union(v.literal("submitted"), v.literal("needs_revision"), v.literal("approved"))
+    ),
+    chosenGrantId: v.optional(v.id("grants")),
+    applicationProofStatus: v.optional(
+      v.union(v.literal("submitted"), v.literal("needs_revision"), v.literal("approved"))
+    ),
+    attendanceOk: v.optional(v.boolean()),
+    mentorStatus: v.optional(v.string()),
+    mentorNotes: v.optional(v.string()),
+    ...timestamps,
+  }).index("by_user", ["userId"]),
 });

@@ -5,7 +5,7 @@ import { writeAuditLog } from "@/lib/auth-helpers";
 import { checkAiRateLimitAsync } from "@/lib/ai-rate-limit";
 import { ensureInternalUser } from "@/lib/db/users";
 import { logAiRequest, saveProposalProject } from "@/lib/db/proposals";
-import { callAi, PROMPTS, redactPii as redactPiiHelper } from "@/lib/ai-gateway";
+import { AiUnavailableError, callAi, PROMPTS, redactPii as redactPiiHelper } from "@/lib/ai-gateway";
 import { validateProposalContent } from "@/lib/ai-validation";
 import { filterProposalSections } from "@/lib/proposal-sections";
 import { checkProposalLimit } from "@/lib/plan-limits";
@@ -40,22 +40,71 @@ export const POST = withActiveUser(async (req, authUser) => {
 
   const { redacted: safeIdea, fieldsFound } = redactPiiHelper(projectIdea);
 
+  // In production a provider outage must fail the request before any quota
+  // is consumed — paying users must never receive mock text as a proposal.
+  const strictAi = process.env.NODE_ENV === "production";
+
+  type SectionOutcome =
+    | { sectionType: string; ok: true; content: string; provider: string; isMock: boolean; tokensUsed: number }
+    | { sectionType: string; ok: false; kind: "unavailable" | "invalid" };
+
+  // Generate every section concurrently instead of one AI round-trip at a
+  // time — with 5+ sections the sequential version risked serverless
+  // function timeouts. Errors are still resolved in section order below so
+  // the response is deterministic regardless of which call finishes first.
+  const outcomes = await Promise.all(
+    allowedSections.map(async (sectionType): Promise<SectionOutcome> => {
+      const prompt = PROMPTS["proposal-generate"](sectionType, donorFormat, safeIdea);
+      let result;
+      try {
+        result = await callAi(prompt, {
+          module: "proposal-generate",
+          userId: authUser.userId,
+          strict: strictAi,
+        });
+      } catch (err) {
+        if (err instanceof AiUnavailableError) {
+          return { sectionType, ok: false, kind: "unavailable" };
+        }
+        throw err;
+      }
+      const validation = validateProposalContent(result.content);
+      if (!validation.valid) {
+        return { sectionType, ok: false, kind: "invalid" };
+      }
+      return {
+        sectionType,
+        ok: true,
+        content: result.content,
+        provider: result.provider,
+        isMock: result.isMock,
+        tokensUsed: result.tokensUsed ?? 0,
+      };
+    })
+  );
+
+  for (const outcome of outcomes) {
+    if (outcome.ok) continue;
+    if (outcome.kind === "unavailable") {
+      return apiError(
+        "AI-сервис временно недоступен. Попробуйте позже — лимит не израсходован.",
+        503,
+        "AI_UNAVAILABLE"
+      );
+    }
+    return apiError(`AI output invalid for section ${outcome.sectionType}`, 502, "AI_OUTPUT_INVALID");
+  }
+
   const sectionContents: Record<string, string> = {};
   let lastProvider = "mock";
   let lastIsMock = true;
   let totalTokens = 0;
-
-  for (const sectionType of allowedSections) {
-    const prompt = PROMPTS["proposal-generate"](sectionType, donorFormat, safeIdea);
-    const result = await callAi(prompt, { module: "proposal-generate", userId: authUser.userId });
-    const validation = validateProposalContent(result.content);
-    if (!validation.valid) {
-      return apiError(`AI output invalid for section ${sectionType}`, 502, "AI_OUTPUT_INVALID");
-    }
-    sectionContents[sectionType] = result.content;
-    lastProvider = result.provider;
-    lastIsMock = result.isMock;
-    totalTokens += result.tokensUsed ?? 0;
+  for (const outcome of outcomes) {
+    if (!outcome.ok) continue;
+    sectionContents[outcome.sectionType] = outcome.content;
+    lastProvider = outcome.provider;
+    lastIsMock = outcome.isMock;
+    totalTokens += outcome.tokensUsed;
   }
 
   const aiRequestId = await logAiRequest(

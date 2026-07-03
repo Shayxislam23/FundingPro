@@ -77,7 +77,9 @@ export const POST = withActiveUser(async (req, authUser) => {
     strengths,
     gaps,
     nextSteps,
-    aiNarrative: aiResult.content,
+    // The score above is computed locally; when the AI provider is down we
+    // degrade gracefully by omitting the narrative instead of shipping mock text.
+    aiNarrative: aiResult.isMock ? null : aiResult.content,
     aiProvider: aiResult.provider,
     isMockAi: aiResult.isMock,
   });

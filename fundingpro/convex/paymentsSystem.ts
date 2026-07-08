@@ -1,6 +1,11 @@
 import { v, type Infer } from "convex/values";
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
+/**
+ * Server-only payment bridge actions. Every export requires `systemSecret === CONVEX_SYSTEM_SECRET`.
+ * Called from Next.js via `convexSystemAction` — never expose to clients.
+ * See docs/SECURITY_AUDIT_REPORT.md § Convex system surfaces.
+ */
 import {
   paymentRecordValidator,
   uzumTransactionValidator,

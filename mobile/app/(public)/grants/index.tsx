@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "expo-router";
-import { FlashList } from "@shopify/flash-list";
+import { Link, router } from "expo-router";
+import { FlashListSized, FLASH_LIST_ITEM_SIZE } from "../../../components/ui/FlashListSized";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, RefreshControl, Text, View } from "react-native";
 import type { GrantListItem } from "@fundingpro/api-types";
@@ -16,6 +16,9 @@ import { api } from "../../../lib/api/client";
 import { loadGrantsCache, saveGrantsCache } from "../../../lib/offline/grants-cache";
 import { withGrantsFallback } from "../../../lib/public-fallback";
 import { queryKeys } from "../../../lib/query-keys";
+import { t } from "../../../lib/i18n";
+
+const GRANT_ROW_HEIGHT = FLASH_LIST_ITEM_SIZE.grant;
 
 export default function PublicGrantsScreen() {
   const queryClient = useQueryClient();
@@ -103,8 +106,10 @@ export default function PublicGrantsScreen() {
 
   return (
     <Screen title="Публичные гранты" largeTitle>
-      <FlashList<GrantListItem>
+      <FlashListSized<GrantListItem>
         data={grants}
+        estimatedItemSize={GRANT_ROW_HEIGHT}
+        keyExtractor={(item) => item.id}
         ListHeaderComponent={listHeader}
         refreshControl={
           <RefreshControl refreshing={grantsQuery.isRefetching} onRefresh={() => grantsQuery.refetch()} />
@@ -116,10 +121,8 @@ export default function PublicGrantsScreen() {
             description="Пока нет грантов по выбранным фильтрам. Потяните вниз для обновления или войдите для полного каталога."
             action={
               <View className="gap-3 w-full max-w-xs">
-                <Button title="Обновить" variant="secondary" onPress={() => grantsQuery.refetch()} />
-                <Link href="/(auth)/login" asChild>
-                  <Button title="Войти" haptic />
-                </Link>
+                <Button title={t.retry} variant="secondary" onPress={() => grantsQuery.refetch()} />
+                <Button title={t.login} haptic onPress={() => router.push("/(auth)/login")} />
               </View>
             }
           />

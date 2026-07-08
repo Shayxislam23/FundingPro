@@ -11,18 +11,21 @@ function jsonRpcEnvelope(
   body: { result?: Record<string, unknown>; error?: PaymeJsonRpcResponse["error"] }
 ): PaymeJsonRpcResponse {
   return {
-    jsonrpc: "2.0",
     id,
     ...body,
   };
 }
 
+function paymeJson(
+  id: number | string | null,
+  body: { result?: Record<string, unknown>; error?: PaymeJsonRpcResponse["error"] }
+) {
+  return NextResponse.json(jsonRpcEnvelope(id, body), { status: 200 });
+}
+
 export async function POST(req: NextRequest) {
   if (!isPaymentsEnabled() || !isPaymeConfigured()) {
-    return NextResponse.json(
-      jsonRpcEnvelope(null, { error: paymeError("INTERNAL_ERROR") }),
-      { status: 503 }
-    );
+    return paymeJson(null, { error: paymeError("INTERNAL_ERROR") });
   }
 
   try {
@@ -32,28 +35,33 @@ export async function POST(req: NextRequest) {
       e instanceof PaymeAuthError
         ? paymeError("INSUFFICIENT_PRIVILEGE")
         : paymeError("INTERNAL_ERROR");
-    return NextResponse.json(jsonRpcEnvelope(null, { error: err }), { status: 401 });
+    return paymeJson(null, { error: err });
   }
 
   let payload: PaymeJsonRpcRequest;
   try {
     payload = (await req.json()) as PaymeJsonRpcRequest;
   } catch {
-    return NextResponse.json(jsonRpcEnvelope(null, { error: paymeError("INVALID_JSON") }), {
-      status: 400,
-    });
+    return paymeJson(null, { error: paymeError("INVALID_JSON") });
   }
 
   const rpcId = payload.id ?? null;
+  if (!payload || typeof payload.method !== "string") {
+    return paymeJson(rpcId, { error: paymeError("INVALID_PARAMS") });
+  }
+
   const response = await handlePaymeRpc({
     method: payload.method,
     params: payload.params ?? {},
     id: rpcId ?? 0,
+  }).catch((err) => {
+    console.error("Payme Merchant API error:", err);
+    return { id: rpcId, error: paymeError("INTERNAL_ERROR") } as const;
   });
 
   if ("error" in response) {
-    return NextResponse.json(jsonRpcEnvelope(response.id, { error: response.error }), { status: 200 });
+    return paymeJson(response.id, { error: response.error });
   }
 
-  return NextResponse.json(jsonRpcEnvelope(response.id, { result: response.result }));
+  return paymeJson(response.id, { result: response.result });
 }

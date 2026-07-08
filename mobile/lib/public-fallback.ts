@@ -12,17 +12,17 @@ const FALLBACK_PLAN_SEED = [
   {
     slug: "plan-ngo-basic",
     name: "Basic",
-    nameRu: "Молодёжь / Физлица Basic",
-    targetType: "NGO",
+    nameRu: "Basic — физлица",
+    targetType: "INDIVIDUAL",
     priceUsd: 30,
     priceUzs: 384000,
-    features: ["Доступ к базе грантов, стипендий и конкурсов", "5 AI-проверок", "2 черновика заявок"],
+    features: ["Доступ к базе грантов", "5 AI-проверок", "2 черновика заявок"],
   },
   {
     slug: "plan-ngo-pro",
     name: "Pro",
-    nameRu: "Молодёжь / Физлица Pro",
-    targetType: "NGO",
+    nameRu: "Pro — физлица",
+    targetType: "INDIVIDUAL",
     priceUsd: 50,
     priceUzs: 640000,
     features: ["Безлимитные AI-проверки", "10 черновиков", "Хранилище документов"],
@@ -65,6 +65,8 @@ const FALLBACK_PLAN_SEED = [
   },
 ] as const;
 
+// Highlights the individuals-first Pro plan and business Pro plan.
+// "plan-ngo-pro" slug is legacy; targetType is INDIVIDUAL ("Pro — физлица").
 const HIGHLIGHTED_PLAN_SLUGS = new Set(["plan-ngo-pro", "plan-business-pro"]);
 
 const FALLBACK_USD_UZS_RATE = 12800;
@@ -82,6 +84,7 @@ const FALLBACK_PLANS: Plan[] = FALLBACK_PLAN_SEED.map((plan) => ({
 
 function groupFallbackPlans(plans: Plan[]) {
   return {
+    individual: plans.filter((p) => p.targetType === "INDIVIDUAL"),
     ngo: plans.filter((p) => p.targetType === "NGO"),
     business: plans.filter(
       (p) => p.targetType === "BUSINESS" || p.targetType === "ENTERPRISE"

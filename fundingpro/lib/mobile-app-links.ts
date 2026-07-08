@@ -62,7 +62,12 @@ export function getIosAppId(): string {
   return `${teamId}.${getIosBundleId()}`;
 }
 
-/** Release signing cert SHA-256 for Android App Links. Set `ANDROID_RELEASE_SHA256` in Vercel. */
+/**
+ * Release signing cert SHA-256 for Android App Links. Set `ANDROID_RELEASE_SHA256` in Vercel.
+ *
+ * Normalises the fingerprint(s) to the `AA:BB:CC:…` colon-separated format that Android
+ * assetlinks.json requires, regardless of whether the env value arrives with or without colons.
+ */
 export function getAndroidReleaseSha256Fingerprints(): string[] {
   const raw = process.env.ANDROID_RELEASE_SHA256?.trim();
   if (!raw) {
@@ -70,7 +75,11 @@ export function getAndroidReleaseSha256Fingerprints(): string[] {
   }
   return raw
     .split(",")
-    .map((f) => f.trim().replace(/:/g, "").toUpperCase())
+    .map((f) => {
+      const hex = f.trim().replace(/:/g, "").toUpperCase();
+      // Re-insert colons every two hex chars (AA:BB:CC:…) as required by Android.
+      return hex.match(/.{1,2}/g)?.join(":") ?? hex;
+    })
     .filter(Boolean);
 }
 

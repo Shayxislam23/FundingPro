@@ -19,6 +19,13 @@ export async function setUserActive(
   return convexMutation(api.users.setUserActive, { userId, isActive }, accessToken);
 }
 
+export async function listLabParticipantJourney(
+  opts: { limit: number },
+  accessToken: string
+) {
+  return convexQuery(api.onboarding.listJourneyForAdmin, opts, accessToken);
+}
+
 export async function listAiRequests(
   opts: { page: number; limit: number },
   accessToken: string

@@ -6,6 +6,7 @@ import {
   paymentEventPayloadValidator,
   paymentMetadataValidator,
   planFeaturesValidator,
+  userModeValidator,
 } from "./lib/validators";
 
 const timestamps = {
@@ -23,6 +24,7 @@ export default defineSchema({
     isActive: v.boolean(),
     isBanned: v.boolean(),
     platformRole: v.union(v.literal("user"), v.literal("admin")),
+    userMode: v.optional(userModeValidator),
     ...timestamps,
     deletedAt: v.optional(v.number()),
     deletionRequestedAt: v.optional(v.number()),
@@ -41,6 +43,214 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_provider", ["provider", "providerId"]),
+
+  labParticipants: defineTable({
+    userId: v.id("users"),
+    fullName: v.optional(v.string()),
+    telegramUsername: v.optional(v.string()),
+    cityOrDistrict: v.optional(v.string()),
+    educationStatus: v.optional(v.string()),
+    interests: v.optional(v.array(v.string())),
+    cvStatus: v.optional(v.union(
+      v.literal("not_started"),
+      v.literal("in_progress"),
+      v.literal("submitted"),
+      v.literal("needs_revision"),
+      v.literal("completed"),
+      v.literal("help_requested")
+    )),
+    linkedinUrl: v.optional(v.string()),
+    selectedOpportunityCount: v.optional(v.number()),
+    motivationLetterStatus: v.optional(v.union(
+      v.literal("not_started"),
+      v.literal("in_progress"),
+      v.literal("submitted"),
+      v.literal("needs_revision"),
+      v.literal("completed")
+    )),
+    chosenOpportunityStatus: v.optional(v.union(
+      v.literal("not_started"),
+      v.literal("in_progress"),
+      v.literal("submitted"),
+      v.literal("needs_revision"),
+      v.literal("completed")
+    )),
+    applicationProofStatus: v.optional(v.union(
+      v.literal("not_started"),
+      v.literal("in_progress"),
+      v.literal("submitted"),
+      v.literal("needs_revision"),
+      v.literal("completed")
+    )),
+    attendancePercent: v.optional(v.number()),
+    participantStatus: v.optional(v.union(
+      v.literal("new_applicant"),
+      v.literal("registered"),
+      v.literal("onboarding_incomplete"),
+      v.literal("active_participant"),
+      v.literal("needs_reminder"),
+      v.literal("strong_participant"),
+      v.literal("application_submitted"),
+      v.literal("completed"),
+      v.literal("dropped")
+    )),
+    mentorNotes: v.optional(v.string()),
+    ...timestamps,
+  })
+    .index("by_user", ["userId"])
+    .index("by_status", ["participantStatus"]),
+
+  labTasks: defineTable({
+    userId: v.id("users"),
+    cohortId: v.optional(v.id("labCohorts")),
+    taskType: v.union(
+      v.literal("profile"),
+      v.literal("interests"),
+      v.literal("cv"),
+      v.literal("linkedin"),
+      v.literal("opportunities_10"),
+      v.literal("motivation_letter"),
+      v.literal("chosen_opportunity"),
+      v.literal("application_submitted"),
+      v.literal("proof_uploaded")
+    ),
+    studentStatus: v.union(
+      v.literal("not_started"),
+      v.literal("in_progress"),
+      v.literal("submitted")
+    ),
+    mentorStatus: v.union(
+      v.literal("pending_review"),
+      v.literal("needs_revision"),
+      v.literal("approved"),
+      v.literal("rejected")
+    ),
+    evidenceDocumentId: v.optional(v.id("documents")),
+    submittedAt: v.optional(v.number()),
+    reviewedAt: v.optional(v.number()),
+    reviewedBy: v.optional(v.id("users")),
+    revisionNote: v.optional(v.string()),
+    ...timestamps,
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_taskType", ["userId", "taskType"])
+    .index("by_cohort", ["cohortId"])
+    .index("by_mentorStatus", ["mentorStatus"])
+    .index("by_user_and_mentorStatus", ["userId", "mentorStatus"]),
+
+  labCohorts: defineTable({
+    slug: v.string(),
+    name: v.string(),
+    startsAt: v.number(),
+    endsAt: v.optional(v.number()),
+    firstLessonAt: v.optional(v.number()),
+    firstLessonUrl: v.optional(v.string()),
+    priceUzs: v.number(),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("enrolling"),
+      v.literal("active"),
+      v.literal("completed"),
+      v.literal("archived")
+    ),
+    certificatePolicyVersion: v.string(),
+    ...timestamps,
+  })
+    .index("by_slug", ["slug"])
+    .index("by_status", ["status"]),
+
+  labEnrollments: defineTable({
+    userId: v.id("users"),
+    cohortId: v.id("labCohorts"),
+    status: v.union(
+      v.literal("pending_payment"),
+      v.literal("manual_review"),
+      v.literal("paid"),
+      v.literal("failed"),
+      v.literal("refunded")
+    ),
+    amountUzs: v.number(),
+    paymentId: v.optional(v.id("payments")),
+    manualProofDocumentId: v.optional(v.id("documents")),
+    paidAt: v.optional(v.number()),
+    reviewedAt: v.optional(v.number()),
+    reviewedBy: v.optional(v.id("users")),
+    notes: v.optional(v.string()),
+    ...timestamps,
+  })
+    .index("by_user", ["userId"])
+    .index("by_cohort", ["cohortId"])
+    .index("by_status", ["status"])
+    .index("by_user_and_cohort", ["userId", "cohortId"]),
+
+  labOpportunityApplications: defineTable({
+    userId: v.id("users"),
+    cohortId: v.optional(v.id("labCohorts")),
+    title: v.string(),
+    opportunityUrl: v.optional(v.string()),
+    submissionMethod: v.union(
+      v.literal("google_form"),
+      v.literal("email"),
+      v.literal("external_portal"),
+      v.literal("pdf_upload"),
+      v.literal("other")
+    ),
+    status: v.union(
+      v.literal("planned"),
+      v.literal("preparing"),
+      v.literal("submitted"),
+      v.literal("proof_uploaded"),
+      v.literal("approved"),
+      v.literal("needs_revision"),
+      v.literal("rejected")
+    ),
+    proofDocumentId: v.optional(v.id("documents")),
+    submittedAt: v.optional(v.number()),
+    reviewedAt: v.optional(v.number()),
+    reviewedBy: v.optional(v.id("users")),
+    mentorNotes: v.optional(v.string()),
+    ...timestamps,
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_status", ["userId", "status"])
+    .index("by_status", ["status"])
+    .index("by_cohort", ["cohortId"]),
+
+  labCertificateDecisions: defineTable({
+    userId: v.id("users"),
+    cohortId: v.optional(v.id("labCohorts")),
+    status: v.union(v.literal("issued"), v.literal("blocked")),
+    policyVersion: v.string(),
+    requiredChecks: v.array(v.string()),
+    blockedReasons: v.array(v.string()),
+    decidedBy: v.id("users"),
+    decidedAt: v.number(),
+    ...timestamps,
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_status", ["userId", "status"])
+    .index("by_cohort", ["cohortId"])
+    .index("by_status", ["status"])
+    .index("by_decidedAt", ["decidedAt"]),
+
+  labCohortStats: defineTable({
+    cohortId: v.id("labCohorts"),
+    totalEnrollments: v.number(),
+    paidEnrollments: v.number(),
+    manualReviewEnrollments: v.number(),
+    pendingPaymentEnrollments: v.number(),
+    failedEnrollments: v.number(),
+    refundedEnrollments: v.number(),
+    totalParticipants: v.number(),
+    certificateReady: v.number(),
+    needsMentorReview: v.number(),
+    needsReminder: v.number(),
+    collectedUzs: v.number(),
+    computedAt: v.number(),
+    ...timestamps,
+  })
+    .index("by_cohort", ["cohortId"])
+    .index("by_computedAt", ["computedAt"]),
 
   organizations: defineTable({
     name: v.string(),
@@ -248,7 +458,8 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_idempotency", ["idempotencyKey"])
     .index("by_provider", ["provider"])
-    .index("by_provider_ref", ["providerRefId"]),
+    .index("by_provider_ref", ["providerRefId"])
+    .index("by_user_and_serviceType_and_status", ["userId", "serviceType", "status"]),
 
   paymentEvents: defineTable({
     paymentId: v.id("payments"),
@@ -268,7 +479,9 @@ export default defineSchema({
     confirmTime: v.optional(v.number()),
     reverseTime: v.optional(v.number()),
     ...timestamps,
-  }).index("by_transId", ["transId"]),
+  })
+    .index("by_transId", ["transId"])
+    .index("by_paymentId", ["paymentId"]),
 
   paymeTransactions: defineTable({
     paymeTransId: v.string(),
@@ -280,7 +493,10 @@ export default defineSchema({
     cancelTime: v.optional(v.number()),
     cancelReason: v.optional(v.number()),
     ...timestamps,
-  }).index("by_paymeTransId", ["paymeTransId"]),
+  })
+    .index("by_paymeTransId", ["paymeTransId"])
+    .index("by_paymentId", ["paymentId"])
+    .index("by_createTime", ["createTime"]),
 
   clickTransactions: defineTable({
     clickTransId: v.string(),
@@ -290,7 +506,9 @@ export default defineSchema({
     merchantPrepareId: v.optional(v.string()),
     merchantConfirmId: v.optional(v.string()),
     ...timestamps,
-  }).index("by_clickTransId", ["clickTransId"]),
+  })
+    .index("by_clickTransId", ["clickTransId"])
+    .index("by_paymentId", ["paymentId"]),
 
   aiRequests: defineTable({
     userId: v.id("users"),
@@ -438,27 +656,4 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_status", ["status"]),
 
-  /** Opportunities Lab onboarding layer — additive, all journey fields optional. */
-  labParticipants: defineTable({
-    userId: v.id("users"),
-    fullName: v.optional(v.string()),
-    age: v.optional(v.number()),
-    city: v.optional(v.string()),
-    telegram: v.optional(v.string()),
-    educationStatus: v.optional(v.string()),
-    interests: v.optional(v.array(v.string())),
-    cvStatus: v.optional(v.union(v.literal("uploaded"), v.literal("help_requested"))),
-    linkedinUrl: v.optional(v.string()),
-    motivationLetterStatus: v.optional(
-      v.union(v.literal("submitted"), v.literal("needs_revision"), v.literal("approved"))
-    ),
-    chosenGrantId: v.optional(v.id("grants")),
-    applicationProofStatus: v.optional(
-      v.union(v.literal("submitted"), v.literal("needs_revision"), v.literal("approved"))
-    ),
-    attendanceOk: v.optional(v.boolean()),
-    mentorStatus: v.optional(v.string()),
-    mentorNotes: v.optional(v.string()),
-    ...timestamps,
-  }).index("by_user", ["userId"]),
 });

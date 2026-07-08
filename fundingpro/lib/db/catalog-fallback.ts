@@ -38,6 +38,7 @@ export function seedFallbackPlans(): PlanRow[] {
 }
 
 function deadlineIso(deadline: string | null): string | null {
+  if (!deadline) return null;
   const ms = parseDeadline(deadline);
   return ms === undefined ? null : new Date(ms).toISOString();
 }

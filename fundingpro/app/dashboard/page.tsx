@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { GrantCard } from "@/components/design/GrantCard";
@@ -8,12 +8,25 @@ import { OrgOnboardingBanner } from "@/components/design/OrgOnboardingBanner";
 import { OnboardingChecklist } from "@/components/design/OnboardingChecklist";
 import { LabJourneySummaryCard } from "@/components/lab/LabJourneySummaryCard";
 import { ReconsentBanner } from "@/components/legal/ReconsentBanner";
-import { BookOpen, BarChart3, CheckCircle2, FileText, ArrowRight, Sparkles, Target, Loader2, Building2 } from "lucide-react";
+import { ErrorState } from "@/components/design/ErrorState";
+import { PmfSurvey } from "@/components/design/PmfSurvey";
+import { hasCompletedPmfSurvey } from "@/lib/analytics";
+import {
+  BookOpen,
+  BarChart3,
+  CheckCircle2,
+  FileText,
+  ArrowRight,
+  Sparkles,
+  Target,
+  Loader2,
+  FolderOpen,
+} from "lucide-react";
 import { translateSector } from "@fundingpro/shared";
 import { getAuthHeaders } from "@/lib/client-auth";
 import { formatGrantAmount, formatDeadlineDate, getDeadlineUrgency } from "@fundingpro/shared";
 import { getStatusLabel, getStatusStyle } from "@/lib/application-status";
-import type { OnboardingStepId } from "@/lib/db/onboarding";
+import type { OnboardingStatus } from "@/lib/db/onboarding";
 
 type Grant = {
   id: string;
@@ -39,54 +52,87 @@ export default function DashboardHome() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [totalGrants, setTotalGrants] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [hasOrganization, setHasOrganization] = useState(true);
-  const [orgName, setOrgName] = useState<string | null>(null);
-  const [onboardingSteps, setOnboardingSteps] = useState<Record<OnboardingStepId, boolean> | null>(null);
-  const [onboardingProgress, setOnboardingProgress] = useState({ completed: 0, total: 5 });
+  const [loadError, setLoadError] = useState("");
+  const [hasProfile, setHasProfile] = useState(true);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
+  const [showPmfSurvey, setShowPmfSurvey] = useState(false);
+
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
+    try {
+      const headers = await getAuthHeaders();
+      const [grantsRes, appsRes, meRes, onboardingRes] = await Promise.all([
+        fetch("/api/v1/grants?limit=4"),
+        fetch("/api/v1/applications?limit=3", { headers }),
+        fetch("/api/v1/me", { headers }),
+        fetch("/api/v1/onboarding/status", { headers }),
+      ]);
+
+      if (!meRes.ok) {
+        throw new Error("Не удалось загрузить профиль");
+      }
+
+      const [grantsData, appsData, meData, onboardingData] = await Promise.all([
+        grantsRes.json(),
+        appsRes.json(),
+        meRes.json(),
+        onboardingRes.json(),
+      ]);
+
+      setGrants(grantsData.data?.grants ?? []);
+      setTotalGrants(grantsData.data?.total ?? 0);
+      setApplications(appsData.data?.applications ?? []);
+      const labProfile = onboardingData.data?.steps?.profile;
+      const org = meData.data?.organization;
+      setHasProfile(!!labProfile || !!org?.name);
+      setDisplayName(
+        org?.name ?? meData.data?.email?.split("@")[0] ?? null
+      );
+
+      if (onboardingData.data?.steps) {
+        setOnboardingStatus(onboardingData.data as OnboardingStatus);
+        const status = onboardingData.data as OnboardingStatus;
+        const shouldAskPmf =
+          !hasCompletedPmfSurvey() &&
+          (status.certificateEligible || status.progressPercent >= 70 || status.isComplete);
+        setShowPmfSurvey(shouldAskPmf);
+      }
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Не удалось загрузить дашборд");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const headers = await getAuthHeaders();
-        const [grantsData, appsData, meData, onboardingData] = await Promise.all([
-          fetch("/api/v1/grants?limit=4").then((r) => r.json()),
-          fetch("/api/v1/applications?limit=3", { headers }).then((r) => r.json()),
-          fetch("/api/v1/me", { headers }).then((r) => r.json()),
-          fetch("/api/v1/onboarding/status", { headers }).then((r) => r.json()),
-        ]);
-        setGrants(grantsData.data?.grants ?? []);
-        setTotalGrants(grantsData.data?.total ?? 0);
-        setApplications(appsData.data?.applications ?? []);
-        setHasOrganization(!!meData.data?.organization);
-        setOrgName(meData.data?.organization?.name ?? null);
-        if (onboardingData.data?.steps) {
-          setOnboardingSteps(onboardingData.data.steps);
-          setOnboardingProgress({
-            completed: onboardingData.data.completedCount ?? 0,
-            total: onboardingData.data.totalSteps ?? 5,
-          });
-        }
-      } catch {
-        // ignore
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+    void loadDashboard();
+  }, [loadDashboard]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-funding-green" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return <ErrorState message={loadError} onRetry={() => void loadDashboard()} />;
+  }
 
   return (
     <div>
-      {/* Welcome */}
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl font-black text-funding-black mb-1">
-            {orgName ? `Добро пожаловать, ${orgName}` : "Добро пожаловать"}
+            {displayName ? `Добро пожаловать, ${displayName}` : "Добро пожаловать"}
           </h1>
           <p className="text-sm text-gray-500">
-            {totalGrants} грантов в базе
-            {onboardingProgress.completed < onboardingProgress.total
-              ? ` · ${onboardingProgress.completed}/${onboardingProgress.total} шагов онбординга`
-              : " · обновлено сегодня"}
+            {onboardingStatus
+              ? `${onboardingStatus.completedCount}/${onboardingStatus.totalSteps} шагов · ${onboardingStatus.progressPercent}% к заявке`
+              : `${totalGrants} грантов в базе · для физических лиц`}
           </p>
         </div>
         <Link
@@ -101,25 +147,39 @@ export default function DashboardHome() {
 
       <ReconsentBanner />
 
-      {!hasOrganization && <OrgOnboardingBanner />}
+      {showPmfSurvey && <PmfSurvey onDismiss={() => setShowPmfSurvey(false)} />}
 
-      {onboardingSteps && (
-        <OnboardingChecklist
-          steps={onboardingSteps}
-          completedCount={onboardingProgress.completed}
-          totalSteps={onboardingProgress.total}
-        />
-      )}
+      {!hasProfile && <OrgOnboardingBanner />}
+
+      {onboardingStatus && <OnboardingChecklist {...onboardingStatus} />}
 
       <LabJourneySummaryCard />
 
-      {/* Stats */}
+      
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { title: "Грантов в базе", value: String(totalGrants), subtitle: "актуальная база", icon: BookOpen },
-          { title: "Мои заявки", value: String(applications.length), subtitle: applications.length > 0 ? `${applications.filter(a => !["won","lost","closed"].includes(a.status)).length} активных` : "нет заявок", icon: BarChart3 },
-          { title: "AI-инструменты", value: "3", subtitle: "доступно", icon: CheckCircle2 },
-          { title: "Секторов", value: "15+", subtitle: "категорий", icon: FileText },
+          {
+            title: "Мои заявки",
+            value: String(applications.length),
+            subtitle:
+              applications.length > 0
+                ? `${applications.filter((a) => !["won", "lost", "closed"].includes(a.status)).length} активных`
+                : "нет заявок",
+            icon: BarChart3,
+          },
+          {
+            title: "Прогресс",
+            value: onboardingStatus ? `${onboardingStatus.progressPercent}%` : "0%",
+            subtitle: "путь к подаче",
+            icon: Target,
+          },
+          {
+            title: "Сертификат",
+            value: onboardingStatus?.certificateEligible ? "Готов" : "В процессе",
+            subtitle: onboardingStatus?.certificateEligible ? "все проверки" : "нужен ментор",
+            icon: CheckCircle2,
+          },
         ].map(({ title, value, subtitle, icon: Icon }) => (
           <div key={title} className="bg-white rounded-2xl border border-gray-100 p-4">
             <div className="flex items-center justify-between mb-2">
@@ -135,7 +195,6 @@ export default function DashboardHome() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Grants */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -147,43 +206,39 @@ export default function DashboardHome() {
             </Link>
           </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-5 h-5 animate-spin text-funding-green" />
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {grants.map((g) => (
-                <Link key={g.id} href={`/dashboard/grants/${g.id}`}>
-                  <GrantCard
-                    id={g.id}
-                    title={g.title_ru ?? g.title}
-                    donor={g.donor.name_ru ?? g.donor.name ?? "—"}
-                    amount={formatGrantAmount(g.amount_min, g.amount_max)}
-                    deadline={formatDeadlineDate(g.deadline)}
-                    deadlineUrgency={getDeadlineUrgency(g.deadline)}
-                    country={g.country_scope[0] ?? "—"}
-                    sector={g.sectors[0] ? translateSector(g.sectors[0]) : undefined}
-                    variant="light"
-                  />
-                </Link>
-              ))}
-            </div>
-          )}
+          <div className="space-y-3">
+            {grants.map((g) => (
+              <Link key={g.id} href={`/dashboard/grants/${g.id}`}>
+                <GrantCard
+                  id={g.id}
+                  title={g.title_ru ?? g.title}
+                  donor={g.donor.name_ru ?? g.donor.name ?? "—"}
+                  amount={formatGrantAmount(g.amount_min, g.amount_max)}
+                  deadline={formatDeadlineDate(g.deadline)}
+                  deadlineUrgency={getDeadlineUrgency(g.deadline)}
+                  country={g.country_scope[0] ?? "—"}
+                  sector={g.sectors[0] ? translateSector(g.sectors[0]) : undefined}
+                  variant="light"
+                />
+              </Link>
+            ))}
+          </div>
         </div>
 
-        {/* Right panel */}
         <div className="space-y-5">
-          {/* Applications */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-sm text-funding-black">Мои заявки</h3>
-              <Link href="/dashboard/tracker" className="text-xs font-semibold" style={{ color: "#008A2E" }}>Все →</Link>
+              <Link href="/dashboard/tracker" className="text-xs font-semibold" style={{ color: "#008A2E" }}>
+                Все →
+              </Link>
             </div>
             {applications.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center">
                 <p className="text-xs text-gray-400 mb-2">Нет активных заявок</p>
-                <Link href="/dashboard/grants" className="text-xs font-semibold text-funding-green">Найти грант →</Link>
+                <Link href="/dashboard/grants" className="text-xs font-semibold text-funding-green">
+                  Найти грант →
+                </Link>
               </div>
             ) : (
               <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -213,14 +268,15 @@ export default function DashboardHome() {
             )}
           </div>
 
-          {/* Quick actions */}
           <div>
             <h3 className="font-bold text-sm text-funding-black mb-3">Быстрые действия</h3>
             <div className="space-y-2">
               {[
+                { label: "Мой путь к заявке", href: "/dashboard/lab", icon: Target },
                 { label: "Найти гранты", href: "/dashboard/grants", icon: BookOpen },
-                { label: "Проверить соответствие", href: "/dashboard/eligibility", icon: Target },
-                { label: "Профиль организации", href: "/dashboard/profile", icon: Building2 },
+                { label: "Проверить соответствие", href: "/dashboard/eligibility", icon: CheckCircle2 },
+                { label: "Личный профиль", href: "/dashboard/profile", icon: FileText },
+                { label: "Загрузить документы", href: "/dashboard/documents", icon: FolderOpen },
                 { label: "Создать AI-предложение", href: "/dashboard/ai-writer", icon: Sparkles },
               ].map(({ label, href, icon: Icon }) => (
                 <Link

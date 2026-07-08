@@ -4,6 +4,9 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "node": "22.11.0"
+    },
     "development": {
       "developmentClient": true,
       "distribution": "internal",
@@ -34,6 +37,15 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "REPLACE_AFTER_APP_STORE_CONNECT_DRAFT",
+        "appleTeamId": "REPLACE_AFTER_APPLE_MEMBERSHIP"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./secrets/play-service-account.json",
+        "track": "internal"
+      }
+    }
   }
 }

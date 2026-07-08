@@ -250,3 +250,15 @@ eas build --profile development --platform android
 | `development` | Dev client + simulator/APK |
 | `preview` | Internal testing |
 | `production` | App Store / Play Store |
+
+## Store submission
+
+См. `mobile/docs/`:
+
+| Doc | Purpose |
+|-----|---------|
+| [`STORE-SUBMISSION-PLAN.md`](./docs/STORE-SUBMISSION-PLAN.md) | 10 фаз до Live |
+| [`STORE-LISTING-COPY.md`](./docs/STORE-LISTING-COPY.md) | RU-текст для консолей |
+| [`STORE-LAUNCH.md`](./docs/STORE-LAUNCH.md) | Скриншоты, review notes, Maestro |
+| [`APP-PRIVACY-DATA-SAFETY.md`](./docs/APP-PRIVACY-DATA-SAFETY.md) | App Privacy / Data Safety |
+| [`EAS-SUBMIT-CREDENTIALS.md`](./docs/EAS-SUBMIT-CREDENTIALS.md) | Что вписать в `eas.json → submit` |

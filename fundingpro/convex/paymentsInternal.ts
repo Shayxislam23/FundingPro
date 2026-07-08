@@ -11,11 +11,17 @@ import {
 } from "./lib/paymentHelpers";
 import { paymentEventPayloadValidator, paymentMetadataValidator } from "./lib/validators";
 
-function readTransId(payload: unknown): string | null {
-  if (payload && typeof payload === "object" && "transId" in payload) {
-    const transId = (payload as { transId?: unknown }).transId;
-    if (typeof transId === "string" && transId.length > 0) {
-      return transId;
+function readPaymentEventExternalId(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  for (const field of ["transId", "id", "click_trans_id"]) {
+    if (field in payload) {
+      const value = (payload as Record<string, unknown>)[field];
+      if (typeof value === "string" && value.length > 0) {
+        return value;
+      }
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return String(value);
+      }
     }
   }
   return null;
@@ -35,10 +41,10 @@ async function hasDuplicatePaymentEvent(
     )
     .take(50);
 
-  const transId = readTransId(payload);
+  const externalId = readPaymentEventExternalId(payload);
   return events.some((event) => {
-    if (transId) {
-      return readTransId(event.payload) === transId;
+    if (externalId) {
+      return readPaymentEventExternalId(event.payload) === externalId;
     }
     return event.source === source;
   });
@@ -160,6 +166,76 @@ export const getPaymeTransaction = internalQuery({
       cancelTime: row.cancelTime ?? null,
       cancelReason: row.cancelReason ?? null,
     };
+  },
+});
+
+export const getPaymeTransactionByPayment = internalQuery({
+  args: { paymentId: v.string() },
+  returns: paymeTransactionValidator,
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("paymeTransactions")
+      .withIndex("by_paymentId", (q) => q.eq("paymentId", args.paymentId as Id<"payments">))
+      .order("desc")
+      .first();
+    if (!row) return null;
+    return {
+      paymeTransId: row.paymeTransId,
+      paymentId: row.paymentId,
+      state: row.state,
+      amountTiyin: row.amountTiyin,
+      createTime: row.createTime ?? null,
+      performTime: row.performTime ?? null,
+      cancelTime: row.cancelTime ?? null,
+      cancelReason: row.cancelReason ?? null,
+    };
+  },
+});
+
+export const listPaymeTransactionsForStatement = internalQuery({
+  args: {
+    from: v.number(),
+    to: v.number(),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(
+    v.object({
+      id: v.string(),
+      time: v.number(),
+      amount: v.number(),
+      account: v.object({ order_id: v.string() }),
+      create_time: v.number(),
+      perform_time: v.number(),
+      cancel_time: v.number(),
+      transaction: v.string(),
+      state: v.number(),
+      reason: v.union(v.number(), v.null()),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const limit = Math.min(Math.max(args.limit ?? 200, 1), 500);
+    const rows = await ctx.db
+      .query("paymeTransactions")
+      .withIndex("by_createTime", (q) =>
+        q.gte("createTime", args.from).lte("createTime", args.to)
+      )
+      .order("asc")
+      .take(limit);
+
+    return rows
+      .filter((row) => typeof row.createTime === "number")
+      .map((row) => ({
+        id: row.paymeTransId,
+        time: row.createTime ?? 0,
+        amount: row.amountTiyin,
+        account: { order_id: row.paymentId },
+        create_time: row.createTime ?? 0,
+        perform_time: row.performTime ?? 0,
+        cancel_time: row.cancelTime ?? 0,
+        transaction: row.paymentId,
+        state: row.state,
+        reason: row.cancelReason ?? null,
+      }));
   },
 });
 
@@ -306,20 +382,38 @@ export const activateSubscription = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const payment = await ctx.db.get("payments", args.paymentId as Id<"payments">);
-    if (!payment?.subscriptionId) return null;
+    if (!payment) return null;
     if (payment.status === "SUCCESS") return null;
 
     const now = Date.now();
-    const subscription = await ctx.db.get("subscriptions", payment.subscriptionId);
-    const plan = subscription ? await ctx.db.get("plans", subscription.planId) : null;
-    // Renewal payments extend the current paid period instead of resetting it.
-    const extendFrom = Math.max(now, subscription?.endDate ?? 0);
-    await ctx.db.patch("subscriptions", payment.subscriptionId, {
-      status: "ACTIVE",
-      startDate: subscription?.startDate ?? now,
-      endDate: extendFrom + billingPeriodMs(plan?.billingPeriod),
-      updatedAt: now,
-    });
+    if (payment.subscriptionId) {
+      const subscription = await ctx.db.get("subscriptions", payment.subscriptionId);
+      const plan = subscription ? await ctx.db.get("plans", subscription.planId) : null;
+      // Renewal payments extend the current paid period instead of resetting it.
+      const extendFrom = Math.max(now, subscription?.endDate ?? 0);
+      await ctx.db.patch("subscriptions", payment.subscriptionId, {
+        status: "ACTIVE",
+        startDate: subscription?.startDate ?? now,
+        endDate: extendFrom + billingPeriodMs(plan?.billingPeriod),
+        updatedAt: now,
+      });
+    }
+    if (payment.serviceType === "lab_course") {
+      const labEnrollmentId = payment.metadata?.labEnrollmentId;
+      if (typeof labEnrollmentId === "string") {
+        const enrollment = await ctx.db.get("labEnrollments", labEnrollmentId as Id<"labEnrollments">);
+        if (enrollment) {
+          await ctx.db.patch("labEnrollments", enrollment._id, {
+            status: "paid",
+            paymentId: payment._id,
+            paidAt: now,
+            reviewedAt: now,
+            notes: "Paid via Payme",
+            updatedAt: now,
+          });
+        }
+      }
+    }
     await ctx.db.patch("payments", payment._id, {
       status: "SUCCESS",
       activatedAt: now,
@@ -359,15 +453,31 @@ export const reverseSubscription = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const payment = await ctx.db.get("payments", args.paymentId as Id<"payments">);
-    if (!payment?.subscriptionId) return null;
+    if (!payment) return null;
     if (payment.status === "REFUNDED") return null;
 
     const now = Date.now();
-    await ctx.db.patch("subscriptions", payment.subscriptionId, {
-      status: "CANCELLED",
-      cancelledAt: now,
-      updatedAt: now,
-    });
+    if (payment.subscriptionId) {
+      await ctx.db.patch("subscriptions", payment.subscriptionId, {
+        status: "CANCELLED",
+        cancelledAt: now,
+        updatedAt: now,
+      });
+    }
+    if (payment.serviceType === "lab_course") {
+      const labEnrollmentId = payment.metadata?.labEnrollmentId;
+      if (typeof labEnrollmentId === "string") {
+        const enrollment = await ctx.db.get("labEnrollments", labEnrollmentId as Id<"labEnrollments">);
+        if (enrollment?.status === "paid") {
+          await ctx.db.patch("labEnrollments", enrollment._id, {
+            status: "refunded",
+            reviewedAt: now,
+            notes: "Payme transaction cancelled",
+            updatedAt: now,
+          });
+        }
+      }
+    }
     await ctx.db.patch("payments", payment._id, {
       status: "REFUNDED",
       updatedAt: now,

@@ -1,10 +1,40 @@
 import { v } from "convex/values";
+import type { Doc } from "./_generated/dataModel";
 import { authedQuery } from "./lib/customFunctions";
-import { paginateAll } from "./lib/pagination";
+import { grantMatchProfileValidator } from "./lib/validators";
+
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 50;
+const MIN_CANDIDATES = 50;
+const MAX_CANDIDATES = 200;
+const FEATURED_CANDIDATES = 50;
+const MATCHABLE_STATUSES = ["open", "upcoming", "active"] as const;
+
+function clampLimit(limit: number | undefined) {
+  if (!Number.isFinite(limit)) return DEFAULT_LIMIT;
+  return Math.min(Math.max(Math.trunc(limit ?? DEFAULT_LIMIT), 1), MAX_LIMIT);
+}
+
+function candidateBudget(limit: number) {
+  return Math.min(Math.max(limit * 20, MIN_CANDIDATES), MAX_CANDIDATES);
+}
+
+function normalized(value: string | undefined) {
+  return value?.trim().toLowerCase();
+}
+
+function includesProfileValue(values: string[], value: string | undefined) {
+  const needle = normalized(value);
+  if (!needle) return false;
+  return values.some((entry) => {
+    const haystack = normalized(entry);
+    return !!haystack && (haystack === needle || haystack.includes(needle) || needle.includes(haystack));
+  });
+}
 
 export const match = authedQuery({
   args: {
-    profile: v.any(),
+    profile: grantMatchProfileValidator,
     limit: v.optional(v.number()),
   },
   returns: v.array(
@@ -20,35 +50,62 @@ export const match = authedQuery({
     })
   ),
   handler: async (ctx, args) => {
-    const limit = args.limit ?? 10;
-    const profile = args.profile as Record<string, unknown>;
-    const sector = typeof profile.sector === "string" ? profile.sector : undefined;
-    const country = typeof profile.country === "string" ? profile.country : undefined;
+    const limit = clampLimit(args.limit);
+    const budget = candidateBudget(limit);
+    const { sector, country, applicantType } = args.profile;
 
-    const grants = await paginateAll(
-      ctx.db.query("grants").withIndex("by_active", (q) => q.eq("isActive", true))
-    );
+    const candidates = new Map<string, Doc<"grants">>();
 
-    // Scores start at 0 so an irrelevant grant reads as a genuinely low match —
-    // no baseline inflation that would make every grant look "50% relevant".
-    const scored = grants.map((grant) => {
-      let score = 0;
+    const addCandidates = (grants: Doc<"grants">[]) => {
+      for (const grant of grants) {
+        if (grant.isActive) candidates.set(grant._id, grant);
+      }
+    };
+
+    for (const status of MATCHABLE_STATUSES) {
+      if (candidates.size >= budget) break;
+      const grants = await ctx.db
+        .query("grants")
+        .withIndex("by_active_status_deadline", (q) =>
+          q.eq("isActive", true).eq("status", status)
+        )
+        .order("asc")
+        .take(budget - candidates.size);
+      addCandidates(grants);
+    }
+
+    const featured = await ctx.db
+      .query("grants")
+      .withIndex("by_featured", (q) => q.eq("isFeatured", true))
+      .take(FEATURED_CANDIDATES);
+    addCandidates(featured);
+
+    if (candidates.size === 0) {
+      const fallback = await ctx.db
+        .query("grants")
+        .withIndex("by_active", (q) => q.eq("isActive", true))
+        .take(budget);
+      addCandidates(fallback);
+    }
+
+    const scored = [...candidates.values()].map((grant) => {
+      let score = 50;
       const reasons: string[] = [];
-      if (sector && grant.sectors.includes(sector)) {
-        score += 45;
+      if (includesProfileValue(grant.sectors, sector)) {
+        score += 25;
         reasons.push("Совпадение по сектору");
       }
-      if (country && grant.countryScope.includes(country)) {
-        score += 35;
+      if (includesProfileValue(grant.countryScope, country)) {
+        score += 20;
         reasons.push("Совпадение по стране");
       }
-      if (grant.isFeatured) {
+      if (includesProfileValue(grant.applicantTypes, applicantType)) {
         score += 10;
-        reasons.push("Рекомендуемый грант");
+        reasons.push("Совпадение по типу заявителя");
       }
-      if (grant.deadline && grant.deadline - Date.now() > 30 * 24 * 60 * 60 * 1000) {
-        score += 10;
-        reasons.push("Достаточный срок до дедлайна");
+      if (grant.isFeatured) {
+        score += 5;
+        reasons.push("Рекомендуемый грант");
       }
       return { grant, score: Math.min(score, 100), reasons };
     });

@@ -100,7 +100,7 @@ export default function StoriesScreen() {
           <EmptyState
             icon="newspaper-outline"
             title="Истории пока не опубликованы"
-            description="Скоро здесь появятся кейсы организаций, получивших финансирование."
+            description="Скоро здесь появятся кейсы людей, получивших финансирование."
           />
         ) : (
           stories.map((s) => {

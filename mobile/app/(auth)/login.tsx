@@ -1,5 +1,5 @@
 import { useSignIn, useSignUp } from "@clerk/clerk-expo";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -10,6 +10,7 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Input } from "../../components/ui/Input";
 import { safeNotificationSuccess } from "../../lib/haptics";
+import { t } from "../../lib/i18n";
 
 function clerkErrorMessage(err: unknown): string {
   if (err && typeof err === "object" && "errors" in err) {
@@ -164,9 +165,12 @@ export default function LoginScreen() {
           {error ? <Text className="mt-4 text-sm text-red-600 text-center">{error}</Text> : null}
         </Card>
 
-        <Link href="/(public)" asChild>
-          <Button title="На главную" variant="ghost" className="mt-6" />
-        </Link>
+        <Button
+          title={t.goHome}
+          variant="ghost"
+          className="mt-6"
+          onPress={() => router.replace("/(public)")}
+        />
       </ScrollView>
     </SafeAreaView>
   );

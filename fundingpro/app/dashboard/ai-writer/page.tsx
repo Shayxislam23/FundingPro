@@ -6,6 +6,7 @@ import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { Sparkles, Copy, RefreshCcw, AlertTriangle, Loader2, CheckCircle2, History } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
+import { trackEvent } from "@/lib/analytics";
 import { PlanLimitUpgrade } from "@/components/design/PlanUsageBadge";
 
 const SECTION_KEYS: Record<string, string> = {
@@ -110,6 +111,8 @@ function AIWriterContent() {
       setResult(data.data);
       setActiveSection(selectedSections[0] ?? "");
       setStep("output");
+      trackEvent("ai_generate", { donor_format: donorFormat });
+      trackEvent("onboarding_step_ai");
       if (data.data.saved) {
         setRecentProposals((prev) => [
           {
@@ -366,7 +369,7 @@ function AIWriterContent() {
 
             <div className="bg-funding-light-green rounded-2xl p-4 text-xs text-funding-text-muted-light leading-relaxed">
               <p className="font-semibold mb-1 text-funding-green">Политика конфиденциальности AI</p>
-              Персональные данные, ПИНФЛ, паспортные данные, реквизиты организации — не передаются внешним AI-провайдерам.
+              Персональные данные, ПИНФЛ и паспортные данные — не передаются внешним AI-провайдерам.
             </div>
           </div>
         </div>

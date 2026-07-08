@@ -22,7 +22,7 @@ export function LegalFooter({ className, style, variant = "light" }: LegalFooter
       : "text-funding-green hover:underline";
 
   return (
-    <footer className={cn("text-xs space-y-2", className)} style={style}>
+    <footer className={cn("px-4 text-center text-xs space-y-2", className)} style={style}>
       <nav className="flex flex-wrap justify-center gap-x-4 gap-y-1">
         {LEGAL_LINKS.map(({ href, label }) => (
           <Link key={href} href={href} className={linkClass}>
@@ -30,7 +30,7 @@ export function LegalFooter({ className, style, variant = "light" }: LegalFooter
           </Link>
         ))}
       </nav>
-      <p className={variant === "dark" ? "text-white/40" : "text-gray-500"}>
+      <p className={cn("mx-auto max-w-3xl leading-relaxed", variant === "dark" ? "text-white/40" : "text-gray-500")}>
         {getCompanyFooter()} · {COMPANY.email}
       </p>
       <p className={cn("text-[10px] max-w-xl mx-auto leading-relaxed", variant === "dark" ? "text-white/30" : "text-gray-400")}>

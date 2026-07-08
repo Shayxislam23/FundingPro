@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, router } from "expo-router";
+import { t } from "../../lib/i18n";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { getNextOnboardingStep, ONBOARDING_STEPS } from "../../components/onboarding/steps";
 import { Button } from "../../components/ui/Button";
@@ -23,7 +24,7 @@ export default function OnboardingWizard() {
 
   if (status.isComplete) {
     return (
-      <Screen title="Онбординг" showBack>
+      <Screen title="Мой путь" showBack>
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-2xl font-black text-funding-black text-center">Готово!</Text>
           <Text className="text-sm text-gray-500 mt-2 text-center">
@@ -40,7 +41,7 @@ export default function OnboardingWizard() {
   const percent = Math.round((status.completedCount / status.totalSteps) * 100);
 
   return (
-    <Screen title="Онбординг" showBack>
+    <Screen title="Мой путь" showBack>
       <ScrollView className="flex-1 px-4 py-4">
         <Text className="text-sm text-gray-500">
           Шаг {currentIndex + 1} из {status.totalSteps}
@@ -54,11 +55,11 @@ export default function OnboardingWizard() {
         <Text className="text-xs text-gray-500 mt-2">{status.completedCount}/{status.totalSteps} выполнено · {percent}%</Text>
 
         {nextStep ? (
-          <Link href={nextStep.href as never} asChild>
-            <Pressable>
-              <Button title="Перейти к шагу" className="mt-6" />
-            </Pressable>
-          </Link>
+          <Button
+            title={t.goToStep}
+            className="mt-6"
+            onPress={() => router.push(nextStep.href as never)}
+          />
         ) : null}
 
         <Text className="text-sm font-semibold text-funding-black mt-8 mb-3">Все шаги</Text>

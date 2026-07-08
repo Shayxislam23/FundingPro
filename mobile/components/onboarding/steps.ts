@@ -10,26 +10,26 @@ export type OnboardingStep = {
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: "profile",
-    label: "Создать профиль НКО",
-    description: "Укажите название, сектор и контакты организации.",
+    label: "Заполнить личный профиль",
+    description: "Укажите имя, интересы и контакты.",
     href: "/(app)/profile",
   },
   {
     id: "documents",
-    label: "Загрузить устав или регистрацию",
-    description: "Добавьте учредительные документы для заявок.",
+    label: "Загрузить CV или документы",
+    description: "Добавьте резюме и мотивационное письмо для заявок.",
     href: "/(app)/documents",
   },
   {
     id: "saved_grant",
-    label: "Сохранить первый грант",
-    description: "Найдите подходящий грант и сохраните его в избранное.",
+    label: "Сохранить первую возможность",
+    description: "Найдите подходящий грант или программу и сохраните в избранное.",
     href: "/(app)/(tabs)/grants",
   },
   {
     id: "eligibility",
     label: "Пройти проверку соответствия",
-    description: "Проверьте, подходит ли ваша организация под условия гранта.",
+    description: "Проверьте, подходите ли вы под условия выбранной программы.",
     href: "/(app)/(tabs)/eligibility",
   },
   {

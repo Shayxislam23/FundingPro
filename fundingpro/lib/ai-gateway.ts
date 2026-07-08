@@ -41,10 +41,10 @@ export function redactPii(text: string): RedactionResult {
 
 export const PROMPTS = {
   "match-grants": (profile: string) =>
-    `You are a grant expert for Central Asia. Given this organization profile, suggest the 5 most relevant grants from our database.\n\nProfile:\n${profile}\n\nRespond in Russian. Format as JSON array with fields: grantId, matchScore (0-100), reason.`,
+    `You are a grant expert for Central Asia. Given this individual applicant profile, suggest the 5 most relevant grants and programs from our database.\n\nProfile:\n${profile}\n\nRespond in Russian. Format as JSON array with fields: grantId, matchScore (0-100), reason.`,
 
   "eligibility-review": (grantTitle: string, profile: string) =>
-    `You are a grant eligibility expert. Review this organization's eligibility for the grant.\n\nGrant: ${grantTitle}\nOrganization: ${profile}\n\nRespond in Russian with: score (0-100), status (eligible/partially_eligible/not_eligible), strengths (array), gaps (array), nextSteps (array).`,
+    `You are a grant eligibility expert. Review this individual applicant's eligibility for the grant or program.\n\nGrant: ${grantTitle}\nApplicant: ${profile}\n\nRespond in Russian with: score (0-100), status (eligible/partially_eligible/not_eligible), strengths (array), gaps (array), nextSteps (array).`,
 
   "proposal-generate": (section: string, grantTitle: string, context: string) =>
     `You are a professional grant writer. Write a ${section} section for a grant proposal.\n\nGrant: ${grantTitle}\nContext: ${context}\n\nWrite in Russian. Be professional, specific and compelling. Max 500 words.`,
@@ -189,6 +189,11 @@ export async function callAi(
     : redactPii(prompt);
 
   const provider = process.env.AI_PROVIDER ?? "mock";
+  const production = process.env.NODE_ENV === "production";
+
+  if (production && provider === "mock") {
+    throw new Error("AI mock provider is disabled in production. Set AI_PROVIDER and API keys.");
+  }
 
   let response: AiResponse;
 
@@ -197,6 +202,8 @@ export async function callAi(
       response = await callOpenAI(redacted);
     } else if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
       response = await callAnthropic(redacted);
+    } else if (production) {
+      throw new Error(`AI provider is not configured for production: ${provider}`);
     } else {
       if (opts.strict) {
         throw new AiUnavailableError(`AI provider not configured (AI_PROVIDER=${provider})`);
@@ -208,6 +215,9 @@ export async function callAi(
     console.error(`AI provider error (${provider}):`, err);
     if (opts.strict) {
       throw new AiUnavailableError(`AI provider ${provider} failed`, { cause: err });
+    }
+    if (production) {
+      throw err instanceof Error ? err : new Error("AI provider failed in production");
     }
     // Fallback to mock on error
     response = callMock(redacted);

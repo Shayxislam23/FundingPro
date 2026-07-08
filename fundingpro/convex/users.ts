@@ -8,6 +8,8 @@ import {
 } from "./lib/auth";
 import { authedMutation, authedQuery, adminMutation, adminQuery } from "./lib/customFunctions";
 import { paginateAll } from "./lib/pagination";
+import { patchUserMode, resolveUserMode } from "./lib/userMode";
+import { resolvedUserModeValidator, userModeValidator } from "./lib/validators";
 import type { Doc } from "./_generated/dataModel";
 
 const internalUserValidator = v.object({
@@ -136,6 +138,7 @@ export const getMe = authedQuery({
     isBanned: v.boolean(),
     createdAt: v.string(),
     platformRole: v.union(v.literal("user"), v.literal("admin")),
+    userMode: userModeValidator,
   }),
   handler: async (ctx) => {
     return {
@@ -147,7 +150,27 @@ export const getMe = authedQuery({
       isBanned: ctx.user.isBanned,
       createdAt: new Date(ctx.user.createdAt).toISOString(),
       platformRole: ctx.user.platformRole,
+      userMode: await resolveUserMode(ctx, ctx.user),
     };
+  },
+});
+
+export const getUserMode = authedQuery({
+  args: {},
+  returns: resolvedUserModeValidator,
+  handler: async (ctx) => {
+    return await resolveUserMode(ctx, ctx.user);
+  },
+});
+
+export const setUserMode = authedMutation({
+  args: {
+    userMode: v.literal("individual"),
+  },
+  returns: resolvedUserModeValidator,
+  handler: async (ctx, args) => {
+    await patchUserMode(ctx, ctx.user._id, args.userMode);
+    return args.userMode;
   },
 });
 

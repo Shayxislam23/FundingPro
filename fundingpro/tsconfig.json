@@ -21,14 +21,16 @@
         "name": "next"
       }
     ],
+    "types": [
+      "node",
+      "react",
+      "react-dom"
+    ],
     "paths": {
       "@/*": [
         "./*"
       ]
     },
-    "typeRoots": [
-      "../node_modules/@types"
-    ],
     "target": "ES2017"
   },
   "include": [

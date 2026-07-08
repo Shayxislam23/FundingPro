@@ -13,7 +13,7 @@ import { ArrowRight } from "lucide-react";
 
 const pageTitle = "Тарифы и подписки";
 const pageDescription =
-  "Тарифные планы FundingPro для бизнеса и молодёжи: поиск грантов, стипендий и конкурсов, AI-проверка соответствия, черновики заявок. Оплата в UZS через Uzum.";
+  "Тарифные планы FundingPro для физических лиц: поиск грантов, AI-проверка соответствия, черновики заявок. Оплата в UZS через Uzum.";
 
 export const metadata: Metadata = {
   title: pageTitle,
@@ -79,8 +79,8 @@ export default async function PricingPage() {
           Выберите план FundingPro
         </h1>
         <p className="text-sm text-gray-500 mb-10 max-w-2xl">
-          Для бизнеса, молодёжи и частных лиц в Узбекистане. Бесплатный старт: 2 проверки
-          соответствия и 1 AI-черновик в месяц.
+          Для физических лиц в Узбекистане. Бесплатный старт: 2 проверки соответствия
+          и 1 AI-черновик в месяц.
         </p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -4,12 +4,20 @@ import { withActiveUser } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
 import { ensureInternalUser } from "@/lib/db/users";
 import { insertDocument, DOCUMENT_TYPES } from "@/lib/db/documents";
+import { submitLabTask, type LabTaskType } from "@/lib/db/onboarding";
 import { convexMutation } from "@/lib/convex-server";
 import { api } from "@/lib/convex-server";
 import { saveLocalFile, deleteLocalFile } from "@/lib/local-storage";
 import { sanitizeStorageFileName } from "@fundingpro/shared";
 import { validateFileContent, isAllowedUploadMime } from "@/lib/file-sniff";
 import { MAX_UPLOAD_BYTES } from "@/lib/upload-limits";
+
+const LAB_DOCUMENT_TASKS: Partial<Record<string, LabTaskType>> = {
+  CV: "cv",
+  MOTIVATION_LETTER: "motivation_letter",
+  PROPOSAL_DRAFT: "motivation_letter",
+  APPLICATION_PROOF: "proof_uploaded",
+};
 
 export const POST = withActiveUser(async (req, authUser) => {
   const formData = await req.formData();
@@ -105,6 +113,22 @@ export const POST = withActiveUser(async (req, authUser) => {
       storageId,
     },
   });
+
+  const labTaskType = LAB_DOCUMENT_TASKS[normalizedDocType];
+  if (labTaskType) {
+    try {
+      await submitLabTask(
+        { taskType: labTaskType, evidenceDocumentId: documentId },
+        authUser.accessToken
+      );
+    } catch (taskErr) {
+      console.warn("Failed to submit Lab task for document upload", {
+        documentId,
+        docType: normalizedDocType,
+        error: taskErr instanceof Error ? taskErr.message : String(taskErr),
+      });
+    }
+  }
 
   return apiSuccess(
     {

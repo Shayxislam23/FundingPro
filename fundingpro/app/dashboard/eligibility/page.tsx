@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { CheckCircle2, AlertCircle, RotateCcw, Loader2 } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
+import { trackEvent } from "@/lib/analytics";
 import { PlanLimitUpgrade } from "@/components/design/PlanUsageBadge";
 
 type Step = "questions" | "loading" | "result";
@@ -19,11 +20,11 @@ type EligResult = {
 };
 
 const questions = [
-  { id: "org_type", question: "Ваша организация зарегистрирована как НКО или юридическое лицо?", options: ["Да, НКО", "Да, ООО/АО", "Нет, физлицо", "В процессе регистрации"] },
-  { id: "experience", question: "Есть ли у вас опыт реализации проектов в целевом секторе?", options: ["Более 3 лет", "1–3 года", "Менее 1 года", "Нет опыта"] },
-  { id: "budget", question: "Есть ли у вас опыт управления грантовым бюджетом?", options: ["Да, международные гранты", "Да, местные гранты", "Только собственный бюджет", "Нет"] },
-  { id: "documents", question: "Готовы ли учредительные документы организации?", options: ["Все документы готовы", "Большинство готово", "Частично готово", "Нет документов"] },
-  { id: "partners", question: "Есть ли у вас местные партнёры / рекомендатели?", options: ["Да, несколько", "Один партнёр", "В процессе переговоров", "Нет"] },
+  { id: "applicant_type", question: "Вы подаёте заявку как физическое лицо?", options: ["Да", "Представляю организацию (позже)", "Ещё не решил"] },
+  { id: "experience", question: "Есть ли у вас опыт участия в программах, стажировках или грантах?", options: ["Более 3 лет", "1–3 года", "Менее 1 года", "Нет опыта"] },
+  { id: "education", question: "Какой у вас уровень образования?", options: ["Школа", "Студент", "Бакалавр", "Магистратура и выше"] },
+  { id: "documents", question: "Готовы ли личные документы для заявки (CV, мотивационное письмо)?", options: ["Все готовы", "Большинство готово", "Частично готово", "Нет документов"] },
+  { id: "language", question: "На каких языках вы можете подготовить заявку?", options: ["Русский", "Узбекский", "Английский", "Несколько языков"] },
 ];
 
 const statusLabels: Record<string, { label: string; bg: string; color: string }> = {
@@ -84,6 +85,8 @@ function EligibilityContent() {
           return;
         }
         setResult(data.data);
+        trackEvent("eligibility_run", { grant_id: grantId ?? "general" });
+        trackEvent("onboarding_step_eligibility");
         setStep("result");
       } catch (e) {
         setError(e instanceof Error ? e.message : "Ошибка");

@@ -14,6 +14,26 @@ type PaymentReport = {
   message: string;
   providers?: { id: string; enabled: boolean; configured: boolean; label: string }[];
   stats: { totalPayments: number; pendingPayments: number; subscriptionRequests: number };
+  reconciliation: {
+    checkedPayments: number;
+    openIssues: number;
+    criticalIssues: number;
+    highIssues: number;
+    mediumIssues: number;
+    amountMismatches: number;
+    missingProviderTransactions: number;
+    issues: {
+      paymentId: string;
+      provider: string;
+      severity: "critical" | "high" | "medium";
+      code: string;
+      message: string;
+      paymentStatus: string;
+      providerState: string | null;
+      expectedAmountTiyin: number | null;
+      providerAmountTiyin: number | null;
+    }[];
+  };
   commissionTiers: { range: string; platform: number; current?: boolean }[];
   payments: {
     id: string;
@@ -140,6 +160,83 @@ export default function AdminPaymentsPage() {
           value={report.paymentsEnabled ? "Вкл." : "Выкл."}
           icon={TrendingUp}
         />
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
+          <div>
+            <h2 className="font-bold text-funding-black">Reconciliation</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Проверено платежей: {report.reconciliation.checkedPayments}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+            <div className="rounded-xl border border-gray-100 px-3 py-2">
+              <p className="text-xs text-gray-400">Issues</p>
+              <p className="font-bold text-funding-black">{report.reconciliation.openIssues}</p>
+            </div>
+            <div className="rounded-xl border border-red-100 px-3 py-2">
+              <p className="text-xs text-red-400">Critical</p>
+              <p className="font-bold text-red-600">{report.reconciliation.criticalIssues}</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 px-3 py-2">
+              <p className="text-xs text-gray-400">Amount</p>
+              <p className="font-bold text-funding-black">{report.reconciliation.amountMismatches}</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 px-3 py-2">
+              <p className="text-xs text-gray-400">Missing tx</p>
+              <p className="font-bold text-funding-black">{report.reconciliation.missingProviderTransactions}</p>
+            </div>
+          </div>
+        </div>
+
+        {report.reconciliation.issues.length === 0 ? (
+          <p className="text-sm text-gray-400">Расхождений между локальными платежами и provider transaction state не найдено.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  {["Severity", "Provider", "Payment", "Local", "Provider", "Amount"].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {report.reconciliation.issues.map((issue, i) => (
+                  <tr key={`${issue.paymentId}-${issue.code}`} style={{ borderBottom: i < report.reconciliation.issues.length - 1 ? "1px solid #f9fafb" : "none" }}>
+                    <td className="px-4 py-3">
+                      <span
+                        className="px-2.5 py-1 rounded-full text-xs font-semibold"
+                        style={
+                          issue.severity === "critical"
+                            ? { background: "#FEE2E2", color: "#DC2626" }
+                            : issue.severity === "high"
+                              ? { background: "#FFEDD5", color: "#EA580C" }
+                              : { background: "#FEF3C7", color: "#D97706" }
+                        }
+                      >
+                        {issue.severity}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{issue.provider}</td>
+                    <td className="px-4 py-3 text-sm text-funding-black">
+                      <span className="block max-w-[140px] truncate" title={issue.paymentId}>
+                        {issue.paymentId}
+                      </span>
+                      <span className="block text-xs text-gray-400">{issue.code}</span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{issue.paymentStatus}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{issue.providerState ?? "—"}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">
+                      {issue.providerAmountTiyin ?? "—"} / {issue.expectedAmountTiyin ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-6">

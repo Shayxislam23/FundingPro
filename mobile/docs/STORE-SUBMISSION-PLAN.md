@@ -104,18 +104,20 @@ cd fundingpro && npm run app-links:check -- --live
 
 3. Universal / App Links open `https://www.fundingpro.uz/mobile/*` on a physical device.
 
-**Known gap (2026-07-08):** production currently returns **404** for both well-known paths.
+**Status (2026-07-08):** Vercel production deployment is now up to date with main.
+Well-known paths will return 200 once the two env vars below are set.
 
-Root cause: Vercel is running a **June 26, 2026** build (commit `450c00dd`, message: "fix(mobile): remove invalid JSON comment from eas.json"). The GitHub ↔ Vercel integration is **disconnected** — PR #8 merge did NOT auto-trigger a redeploy.
+**Remaining blocker — env vars not yet set in Vercel:**
+- `APPLE_TEAM_ID` — get from Apple Developer portal → Membership → Team ID (10-char string)
+- `ANDROID_RELEASE_SHA256` — get from EAS keystore or Play Console after first signed upload
 
-**Fix (do this now):**
+**Do not invent these values.** After setting them in Vercel (Settings → Environment Variables → Production):
 ```bash
-cd fundingpro
-npx vercel deploy --prod   # deploys main branch code
+npx vercel deploy --prod   # one more redeploy to pick up the new env vars
+cd fundingpro && npm run app-links:check -- --live  # verify 200 + no incomplete header
 ```
-Then set the env vars (Step 1 above) and redeploy once more.
 
-Do not submit for store review until this is green.
+Do not submit for store review until app-links:check passes on the live domain.
 
 ## Phase 4 — Store listing copy
 

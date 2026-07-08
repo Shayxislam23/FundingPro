@@ -1,8 +1,10 @@
 # FundingPro Mobile — App Store / Play Store Launch (v1.0.0)
 
-Checklist for **store submission** after preview builds and Maestro smoke pass. Technical release steps live in [`RELEASE.md`](./RELEASE.md).
+Checklist for **store submission** after preview builds and Maestro smoke pass. Technical release: [`RELEASE.md`](./RELEASE.md). Full phase board: [`STORE-SUBMISSION-PLAN.md`](./STORE-SUBMISSION-PLAN.md). Listing text: [`STORE-LISTING-COPY.md`](./STORE-LISTING-COPY.md).
 
-**Current version:** `0.4.0` (RC). **Target store release:** `1.0.0` — bump only after TestFlight/preview sign-off (see [Version path](#version-path-to-v100) below).
+**Current version:** `0.4.0` (RC). **Target store release:** `1.0.0` — bump only after TestFlight/preview sign-off ([Version path](#version-path-to-v100)).
+
+**Positioning:** физические лица (гранты, стипендии, программы). Not NGO-only.
 
 ---
 
@@ -15,7 +17,7 @@ Checklist for **store submission** after preview builds and Maestro smoke pass. 
 | Maestro smoke (local) | `maestro test mobile/maestro/` |
 | Prod catalog + API | `npm run convex:seed:prod` (root) |
 | Deep links on device | `fundingpro://auth/callback`, `fundingpro://subscription/return` |
-| App Links (production) | Real Apple Team ID + Android SHA-256 in web `.well-known` |
+| App Links (production) | Real `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256`; live `/.well-known/*` → **200** |
 
 ---
 
@@ -25,15 +27,15 @@ Capture on **physical device** or simulator at **6.7" iPhone** and **Phone (1080
 
 | # | Screen | RU caption idea | Notes |
 |---|--------|-----------------|-------|
-| 1 | Public landing | «Гранты для бизнеса и молодёжи Узбекистана» | Hero + «Публичные гранты» CTA |
-| 2 | Grants catalog | «Поиск и фильтры грантов» | At least one grant card visible |
-| 3 | Home dashboard | «Ваш прогресс и заявки» | Stats + onboarding checklist if incomplete |
-| 4 | Opportunities Lab | «Путь к гранту за 10 шагов» | Journey progress bar + next-action card |
+| 1 | Public landing | «Гранты для физических лиц в Узбекистане» | Hero + CTA к публичным грантам |
+| 2 | Grants catalog | «Поиск и фильтры грантов» | Хотя бы одна карточка гранта |
+| 3 | Home dashboard | «Ваш прогресс и заявки» | Stats + onboarding, если не завершён |
+| 4 | Мой путь / онбординг | «Путь к заявке шаг за шагом» | Progress bar + следующий шаг |
 | 5 | AI writer | «AI-черновик заявки» | Disclosure visible |
-| 6 | Subscription | «Тарифы и оплата» | Payment consent checkbox + plan cards |
-| 7 | Profile | «Профиль» | Account deletion link visible |
+| 6 | Subscription | «Тарифы и оплата» | Consent + карточки тарифов |
+| 7 | Profile | «Личный профиль» | Ссылка на удаление аккаунта |
 
-**App Store Connect:** 6.7", 6.5", 5.5" if required; **Play Console:** phone + 7" tablet optional.
+**App Store Connect:** 6.7", 6.5", 5.5" if required; **Play Console:** phone + 7" tablet optional + **feature graphic 1024×500**.
 
 Export PNG, no status bar clutter, light mode (app default).
 
@@ -48,15 +50,15 @@ Demo account (Clerk development — review builds only):
 
 Sign-in: Email OTP only (no social login required).
 
-Payments: Uzum / card checkout may be disabled in review build (PAYMENTS_ENABLED=false).
+Payments: Uzum / Payme / card checkout may be disabled in review build (PAYMENTS_ENABLED=false).
   Subscription screen still shows plan list and payment terms consent.
 
 Account deletion: Profile → «Запросить удаление аккаунта» (support ticket; backend erasure planned).
 
 AI: In-app disclosure at Dashboard → AI → «Раскрытие AI».
 
-Opportunities Lab: More → «Opportunities Lab» — 10-step guided onboarding for
-youth/business applicants (self-report progress, no payment involved).
+Мой путь: Ещё / Онбординг — пошаговый путь физлица до реальной заявки
+  (профиль → документы → грант → eligibility → AI-черновик).
 
 Legal URLs (live):
   Privacy: https://www.fundingpro.uz/legal/privacy
@@ -98,17 +100,17 @@ CI runs Maestro when CLI is available; full execution needs `MAESTRO_APP_PATH` t
 Do **not** bump version until Track 1 exit criteria are met:
 
 1. Preview/TestFlight build signed off on physical devices (auth, grants, deep links).
-2. Store screenshots + metadata drafted from this doc.
+2. Store screenshots + metadata drafted (`STORE-LISTING-COPY.md` + this doc).
 3. Maestro smoke green on dev client locally.
-4. App Links placeholders replaced with real Team ID / SHA-256 (web deploy).
+4. App Links live (no `X-App-Links-Config: incomplete`; no 404 on `/.well-known/*`).
 5. Production EAS profile + submit:
 
 ```bash
 cd mobile
 # Edit app.json + package.json version → 1.0.0
 eas build --profile production --platform all
-eas submit --platform ios
-eas submit --platform android
+eas submit --platform ios --profile production
+eas submit --platform android --profile production
 ```
 
 Update [`RELEASE.md`](./RELEASE.md) and [`CHANGELOG.md`](../CHANGELOG.md) when tagging v1.0.0.
@@ -117,9 +119,11 @@ Update [`RELEASE.md`](./RELEASE.md) and [`CHANGELOG.md`](../CHANGELOG.md) when t
 
 ## Related docs
 
+- [`STORE-SUBMISSION-PLAN.md`](./STORE-SUBMISSION-PLAN.md) — 10-phase board
+- [`STORE-LISTING-COPY.md`](./STORE-LISTING-COPY.md) — paste-ready RU listing
+- [`APP-PRIVACY-DATA-SAFETY.md`](./APP-PRIVACY-DATA-SAFETY.md) — privacy form answers
+- [`EAS-SUBMIT-CREDENTIALS.md`](./EAS-SUBMIT-CREDENTIALS.md) — submit IDs
 - [`RELEASE.md`](./RELEASE.md) — build commands, compliance, deep links
 - [`EAS-PREVIEW.md`](./EAS-PREVIEW.md) — preview profile smoke
 - [`CLAY-VERIFY.md`](./CLAY-VERIFY.md) — UI gate before screenshots
-- [`APP-PRIVACY-DATA-SAFETY.md`](./APP-PRIVACY-DATA-SAFETY.md) — pre-filled answers for Apple App Privacy / Google Play Data Safety forms
-- [`EAS-SUBMIT-CREDENTIALS.md`](./EAS-SUBMIT-CREDENTIALS.md) — what's missing in `eas.json` and where each credential comes from
 - [`SECURITY.md`](./SECURITY.md) — secrets and auth notes

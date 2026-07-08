@@ -312,6 +312,7 @@ export default function DashboardHome() {
         </View>
 
         <Text className="text-lg font-bold text-funding-black mb-3">Быстрые действия</Text>
+        <QuickAction label="Мой путь" href="/(app)/onboarding" />
         <QuickAction label="Найти гранты" href="/(app)/(tabs)/grants" />
         <QuickAction label="Проверить соответствие" href="/(app)/(tabs)/eligibility" />
         <QuickAction label="Личный профиль" href="/(app)/profile" />

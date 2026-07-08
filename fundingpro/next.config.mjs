@@ -1,15 +1,42 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 /** @type {import('next').NextConfig} */
 /**
  * CSP tradeoffs:
  * - `unsafe-inline` — required by Next.js for hydration/bootstrap scripts.
  * - `unsafe-eval` — only in development (React Fast Refresh / devtools). Omitted in production builds.
- * - `connect-src` includes Convex and Clerk; add other origins here if you integrate analytics/CDN.
+ * - Clerk loads its browser runtime from the instance domain.
+ * - Local Convex dev uses 127.0.0.1 ports 3210/3211.
  */
+const appDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(appDir, "..");
 const isProd = process.env.NODE_ENV === "production";
 
 const scriptSrc = isProd
-  ? "script-src 'self' 'unsafe-inline'"
-  : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+  ? "script-src 'self' 'unsafe-inline' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com"
+  : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com";
+
+const connectSrc = [
+  "connect-src 'self'",
+  "https://*.convex.cloud",
+  "wss://*.convex.cloud",
+  "https://*.clerk.com",
+  "https://*.clerk.accounts.dev",
+  "https://challenges.cloudflare.com",
+  ...(isProd
+    ? []
+    : [
+        "http://127.0.0.1:3210",
+        "http://127.0.0.1:3211",
+        "http://localhost:3210",
+        "http://localhost:3211",
+        "ws://127.0.0.1:3210",
+        "ws://127.0.0.1:3211",
+        "ws://localhost:3210",
+        "ws://localhost:3211",
+      ]),
+].join(" ");
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
@@ -28,7 +55,9 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.clerk.com https://*.clerk.accounts.dev",
+      connectSrc,
+      "worker-src 'self' blob:",
+      "frame-src https://*.clerk.com https://*.clerk.accounts.dev https://challenges.cloudflare.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -37,9 +66,40 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  outputFileTracingRoot: repoRoot,
   transpilePackages: ["@fundingpro/shared"],
+  async rewrites() {
+    // Some hosts/CDNs mishandle App Router folders under `app/.well-known`.
+    // Proxy the Apple/Google verification paths to stable API routes.
+    return [
+      {
+        source: "/.well-known/apple-app-site-association",
+        destination: "/api/well-known/apple-app-site-association",
+      },
+      {
+        source: "/.well-known/assetlinks.json",
+        destination: "/api/well-known/assetlinks",
+      },
+    ];
+  },
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      { source: "/(.*)", headers: securityHeaders },
+      {
+        source: "/.well-known/apple-app-site-association",
+        headers: [
+          { key: "Content-Type", value: "application/json" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
+      },
+      {
+        source: "/.well-known/assetlinks.json",
+        headers: [
+          { key: "Content-Type", value: "application/json" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
+      },
+    ];
   },
 };
 

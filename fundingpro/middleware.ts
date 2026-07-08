@@ -7,12 +7,15 @@ const isProtectedRoute = createRouteMatcher([
   "/admin(.*)",
 ]);
 
-const isAuthRoute = createRouteMatcher(["/auth(.*)"]);
+const isAuthRoute = createRouteMatcher(["/auth(.*)", "/sign-up(.*)"]);
 
 const isRateLimitedApiRoute = createRouteMatcher([
   "/api/v1/ai/(.*)",
   "/api/v1/auth/(.*)",
   "/api/v1/lead-magnet",
+  "/api/v1/lab/(.*)",
+  "/api/v1/onboarding/lab-profile",
+  "/api/v1/onboarding/tasks",
   "/api/v1/payments/payme",
   "/api/v1/payments/click/(.*)",
   "/api/v1/payments/uzum/(.*)",
@@ -68,15 +71,20 @@ export const config = {
     "/dashboard/:path*",
     "/admin/:path*",
     "/auth/:path*",
+    "/sign-up/:path*",
     "/dashboard",
     "/admin",
     "/auth",
+    "/sign-up",
     "/api/v1/ai/:path*",
     "/api/v1/auth/:path*",
     "/api/v1/payments/payme",
     "/api/v1/payments/click/:path*",
     "/api/v1/payments/uzum/:path*",
     "/api/v1/lead-magnet",
+    "/api/v1/lab/:path*",
+    "/api/v1/onboarding/lab-profile",
+    "/api/v1/onboarding/tasks",
     "/api/v1/payments/status",
     "/api/v1/payments/webhook",
   ],

@@ -60,6 +60,7 @@ function withRateLimitHeaders(response: NextResponse, headers: Record<string, st
 }
 
 const LEAD_MAGNET_MAX_REQUESTS = Number(process.env.LEAD_MAGNET_RATE_LIMIT_MAX ?? 10);
+const LAB_MAX_REQUESTS = Number(process.env.LAB_RATE_LIMIT_MAX ?? 120);
 const PUBLIC_PAYMENTS_STATUS_MAX = Number(process.env.PAYMENTS_STATUS_RATE_LIMIT_MAX ?? 60);
 const WEBHOOK_MAX_REQUESTS = Number(process.env.WEBHOOK_RATE_LIMIT_MAX ?? 30);
 
@@ -109,6 +110,23 @@ async function applyApiRateLimitInner(req: NextRequest): Promise<NextResponse | 
     const bucketKey = `lead-magnet:${ip}`;
     const allowed = await checkRateLimitAsync(bucketKey, LEAD_MAGNET_MAX_REQUESTS);
     const headers = await rateLimitHeaders(bucketKey, LEAD_MAGNET_MAX_REQUESTS);
+    if (!allowed) {
+      return withRateLimitHeaders(
+        apiError("Too many requests. Try again later.", 429, "RATE_LIMITED"),
+        headers
+      );
+    }
+    return null;
+  }
+
+  if (
+    pathname.startsWith("/api/v1/lab/") ||
+    pathname === "/api/v1/onboarding/lab-profile" ||
+    pathname === "/api/v1/onboarding/tasks"
+  ) {
+    const bucketKey = `lab:${ip}`;
+    const allowed = await checkRateLimitAsync(bucketKey, LAB_MAX_REQUESTS);
+    const headers = await rateLimitHeaders(bucketKey, LAB_MAX_REQUESTS);
     if (!allowed) {
       return withRateLimitHeaders(
         apiError("Too many requests. Try again later.", 429, "RATE_LIMITED"),

@@ -24,7 +24,7 @@ export default function OnboardingWizard() {
 
   if (status.isComplete) {
     return (
-      <Screen title="Онбординг" showBack>
+      <Screen title="Мой путь" showBack>
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-2xl font-black text-funding-black text-center">Готово!</Text>
           <Text className="text-sm text-gray-500 mt-2 text-center">
@@ -41,7 +41,7 @@ export default function OnboardingWizard() {
   const percent = Math.round((status.completedCount / status.totalSteps) * 100);
 
   return (
-    <Screen title="Онбординг" showBack>
+    <Screen title="Мой путь" showBack>
       <ScrollView className="flex-1 px-4 py-4">
         <Text className="text-sm text-gray-500">
           Шаг {currentIndex + 1} из {status.totalSteps}

@@ -65,6 +65,8 @@ const FALLBACK_PLAN_SEED = [
   },
 ] as const;
 
+// Highlights the individuals-first Pro plan and business Pro plan.
+// "plan-ngo-pro" slug is legacy; targetType is INDIVIDUAL ("Pro — физлица").
 const HIGHLIGHTED_PLAN_SLUGS = new Set(["plan-ngo-pro", "plan-business-pro"]);
 
 const FALLBACK_USD_UZS_RATE = 12800;
@@ -82,6 +84,7 @@ const FALLBACK_PLANS: Plan[] = FALLBACK_PLAN_SEED.map((plan) => ({
 
 function groupFallbackPlans(plans: Plan[]) {
   return {
+    individual: plans.filter((p) => p.targetType === "INDIVIDUAL"),
     ngo: plans.filter((p) => p.targetType === "NGO"),
     business: plans.filter(
       (p) => p.targetType === "BUSINESS" || p.targetType === "ENTERPRISE"

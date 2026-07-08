@@ -75,7 +75,9 @@ eas submit --platform android
 maestro test mobile/maestro/
 ```
 
-See [`mobile/docs/STORE-LAUNCH.md`](./STORE-LAUNCH.md) for App Store screenshots, review notes, and v1.0.0 path.
+See [`STORE-LAUNCH.md`](./STORE-LAUNCH.md) for screenshots/review notes, [`STORE-SUBMISSION-PLAN.md`](./STORE-SUBMISSION-PLAN.md) for the 10-phase board, and [`STORE-LISTING-COPY.md`](./STORE-LISTING-COPY.md) for paste-ready RU listing text.
+
+App Links: after setting `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` on Vercel, redeploy web and verify live `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json` return HTTP 200 (not 404).
 
 ## Versioning
 

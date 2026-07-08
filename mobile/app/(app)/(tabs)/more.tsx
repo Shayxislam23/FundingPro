@@ -5,7 +5,7 @@ import { useAuth } from "../../../lib/auth/context";
 import { Button } from "../../../components/ui/Button";
 
 const MENU = [
-  { label: "Opportunities Lab", href: "/(app)/lab" },
+  { label: "Мой путь", href: "/(app)/onboarding" },
   { label: "Мои заявки", href: "/(app)/tracker" },
   { label: "Документы", href: "/(app)/documents" },
   { label: "Консультанты", href: "/(app)/consultants" },

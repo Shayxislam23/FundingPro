@@ -111,7 +111,7 @@ jobs:
         run: |
           npm run start -- -p 3099 &
           SERVER_PID=$!
-          for i in $(seq 1 45); do
+          for _ in $(seq 1 45); do
             if curl -sf http://127.0.0.1:3099/api/v1/health > /dev/null; then break; fi
             sleep 2
           done
@@ -169,7 +169,7 @@ jobs:
           fi
 
   production-deploy-check:
-    # Only after a real push to main — not on PR runs, and not before the
+    # Only after a real push to main - not on PR runs, and not before the
     # commit that's supposed to be live actually exists on the branch.
     # Verifies the deployed site reflects this commit instead of assuming
     # "merged to main" implies "deployed" (see docs/JUDGE_EVIDENCE_PACKET.md

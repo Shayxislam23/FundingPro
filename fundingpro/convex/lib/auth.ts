@@ -1,5 +1,6 @@
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
+import { resolveUserMode } from "./userMode";
 
 type Ctx = QueryCtx | MutationCtx;
 
@@ -90,7 +91,7 @@ export async function ensureUser(
         });
       }
 
-      const user = (await ctx.db.get("users", imported._id))!;
+      const user = await persistDefaultUserMode(ctx, (await ctx.db.get("users", imported._id))!);
       return { user, isNew: false };
     }
   }
@@ -106,7 +107,7 @@ export async function ensureUser(
     if (Object.keys(patch).length > 1) {
       await ctx.db.patch("users", existing._id, patch);
     }
-    const user = (await ctx.db.get("users", existing._id))!;
+    const user = await persistDefaultUserMode(ctx, (await ctx.db.get("users", existing._id))!);
     return { user, isNew: false };
   }
 
@@ -131,7 +132,7 @@ export async function ensureUser(
     updatedAt: now,
   });
 
-  const user = (await ctx.db.get("users", userId))!;
+  const user = await persistDefaultUserMode(ctx, (await ctx.db.get("users", userId))!);
   return { user, isNew: true };
 }
 
@@ -161,4 +162,15 @@ export async function getUserByExternalId(
 
 export function externalUserId(user: AppUser): string {
   return user.clerkId;
+}
+
+async function persistDefaultUserMode(
+  ctx: MutationCtx,
+  user: AppUser
+): Promise<AppUser> {
+  if (user.userMode) return user;
+  const userMode = await resolveUserMode(ctx, user);
+  const now = Date.now();
+  await ctx.db.patch("users", user._id, { userMode, updatedAt: now });
+  return (await ctx.db.get("users", user._id))!;
 }

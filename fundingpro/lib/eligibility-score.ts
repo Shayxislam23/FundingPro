@@ -14,87 +14,95 @@ export function computeEligibility(
   const gaps: string[] = [];
   const nextSteps: string[] = [];
 
-  const orgType = String(answers.org_type ?? "");
-  if (orgType.includes("НКО")) {
-    score += 15;
-    strengths.push("НКО — приоритетный тип для большинства доноров");
-  } else if (orgType.includes("ООО") || orgType.includes("АО")) {
-    score += 5;
-    strengths.push("Юридическое лицо зарегистрировано");
-  } else if (orgType.includes("физлицо")) {
-    score -= 15;
-    gaps.push("Физические лица имеют ограниченный доступ к грантам");
+  const applicantType = String(answers.applicant_type ?? "");
+  if (applicantType === "Да") {
+    score += 10;
+    strengths.push("Заявка как физическое лицо — подходит для стипендий и индивидуальных программ");
+  } else if (applicantType.includes("организацию")) {
+    score -= 5;
+    gaps.push("Сейчас платформа ориентирована на физических лиц — организации добавим позже");
+    nextSteps.push("Заполните личный профиль и подавайте от своего имени, если программа это допускает");
+  } else if (applicantType.includes("не решил")) {
+    score -= 5;
+    gaps.push("Не определён тип заявителя");
+    nextSteps.push("Уточните в условиях гранта, допускаются ли физические лица");
   }
 
   const experience = String(answers.experience ?? "");
   if (experience.includes("3 лет")) {
     score += 20;
-    strengths.push("Более 3 лет опыта в секторе");
+    strengths.push("Более 3 лет опыта в программах или проектах");
   } else if (experience.includes("1–3")) {
     score += 10;
-    strengths.push("1–3 года опыта");
+    strengths.push("1–3 года релевантного опыта");
   } else if (experience.includes("Менее")) {
     score -= 5;
-    gaps.push("Мало опыта — рекомендуется начать с малых грантов");
+    gaps.push("Мало опыта — начните с программ для начинающих");
+    nextSteps.push("Выберите гранты с пониженным порогом опыта");
   } else if (experience.includes("Нет")) {
-    score -= 15;
-    gaps.push("Нет опыта реализации проектов");
-    nextSteps.push("Начните с малых грантов или партнёрских проектов");
+    score -= 10;
+    gaps.push("Нет опыта участия в программах");
+    nextSteps.push("Подготовьте CV с учебными и волонтёрскими достижениями");
   }
 
-  const budget = String(answers.budget ?? "");
-  if (budget.includes("международные")) {
-    score += 15;
-    strengths.push("Опыт управления международными грантами");
-  } else if (budget.includes("местные")) {
+  const education = String(answers.education ?? "");
+  if (education.includes("Магистратура")) {
+    score += 10;
+    strengths.push("Уровень образования соответствует многим международным программам");
+  } else if (education.includes("Бакалавр")) {
     score += 8;
-    strengths.push("Опыт управления местными грантами");
-  } else if (budget.includes("Нет")) {
-    score -= 10;
-    gaps.push("Нет опыта управления грантовым бюджетом");
-    nextSteps.push("Пройдите обучение по финансовому управлению грантами");
+    strengths.push("Бакалавриат — стандартный уровень для стипендий и грантов");
+  } else if (education.includes("Студент")) {
+    score += 5;
+    strengths.push("Статус студента открывает стипендии и обменные программы");
+  } else if (education.includes("Школа")) {
+    score -= 5;
+    gaps.push("Часть программ требует студенческий или высший статус");
+    nextSteps.push("Ищите программы для школьников и молодёжи");
   }
 
   const documents = String(answers.documents ?? "");
-  if (documents.includes("готовы")) {
-    score += 10;
-    strengths.push("Учредительные документы готовы");
+  if (documents.includes("Все готовы")) {
+    score += 15;
+    strengths.push("CV и мотивационное письмо готовы");
   } else if (documents.includes("Большинство")) {
-    score += 5;
+    score += 8;
+    strengths.push("Основные документы почти готовы");
   } else if (documents.includes("Частично")) {
     score -= 5;
-    gaps.push("Неполный пакет документов");
-    nextSteps.push("Подготовьте полный пакет учредительных документов");
+    gaps.push("Не полный пакет личных документов");
+    nextSteps.push("Дозагрузите CV и мотивационное письмо в раздел «Документы»");
   } else if (documents.includes("Нет")) {
     score -= 20;
-    gaps.push("Отсутствуют учредительные документы");
-    nextSteps.push("Срочно подготовьте все учредительные документы");
+    gaps.push("Нет CV или мотивационного письма");
+    nextSteps.push("Создайте CV и черновик мотивационного письма с помощью AI Writer");
   }
 
-  const partners = String(answers.partners ?? "");
-  if (partners.includes("несколько")) {
+  const language = String(answers.language ?? "");
+  if (language.includes("Несколько")) {
+    score += 12;
+    strengths.push("Мультиязычность усиливает международные заявки");
+  } else if (language.includes("Английский")) {
     score += 10;
-    strengths.push("Сеть местных партнёров");
-  } else if (partners.includes("Один")) {
-    score += 5;
-    strengths.push("Есть местный партнёр");
-  } else if (partners.includes("Нет")) {
-    score -= 5;
-    gaps.push("Нет партнёров-рекомендателей");
-    nextSteps.push("Найдите местных партнёров или рекомендателей");
+    strengths.push("Английский — ключевой язык для международных программ");
+  } else if (language.includes("Русский") || language.includes("Узбекский")) {
+    score += 3;
+    strengths.push("Локальные языки подходят для региональных грантов");
   }
 
   if (grant && grant.sectors.length > 0 && answers.sector) {
     const userSector = String(answers.sector).toLowerCase();
-    const match = grant.sectors.some((s) => userSector.includes(s.toLowerCase()) || s.toLowerCase().includes(userSector));
+    const match = grant.sectors.some(
+      (s) => userSector.includes(s.toLowerCase()) || s.toLowerCase().includes(userSector)
+    );
     if (match) {
       score += 5;
-      strengths.push("Сектор организации соответствует гранту");
+      strengths.push("Интересы профиля соответствуют сектору гранта");
     }
   }
 
   if (nextSteps.length === 0) {
-    nextSteps.push("Подготовьте полный пакет документов", "Свяжитесь с консультантом FundingPro");
+    nextSteps.push("Проверьте дедлайн и формат подачи на сайте донора", "Загрузите документы в FundingPro");
   }
 
   const clampedScore = Math.max(0, Math.min(100, score));

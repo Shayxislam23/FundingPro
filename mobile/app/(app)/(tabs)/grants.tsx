@@ -1,7 +1,7 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { FlashList } from "@shopify/flash-list";
+import { FlashListSized, FLASH_LIST_ITEM_SIZE } from "../../../components/ui/FlashListSized";
 import {
   ActivityIndicator,
   Pressable,
@@ -20,10 +20,12 @@ import { Screen } from "../../../components/ui/Screen";
 import { ErrorState } from "../../../components/ui/States";
 import { Button } from "../../../components/ui/Button";
 import { api } from "../../../lib/api/client";
+import { t } from "../../../lib/i18n";
+import { loadGrantsCache, saveGrantsCache } from "../../../lib/offline/grants-cache";
 import { queryKeys } from "../../../lib/query-keys";
-import { saveGrantsCache } from "../../../lib/offline/grants-cache";
 
 const PAGE_SIZE = 12;
+const GRANT_ROW_HEIGHT = FLASH_LIST_ITEM_SIZE.grant;
 
 const sectorFilters = [
   "Все",
@@ -66,12 +68,33 @@ const countryFilters = [
 type CountryFilter = (typeof countryFilters)[number]["label"];
 
 export default function GrantsTab() {
+  const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeSector, setActiveSector] = useState<SectorFilter>("Все");
   const [activeCountry, setActiveCountry] = useState<CountryFilter>("Узбекистан");
   const [listMode, setListMode] = useState<ListMode>("active");
   const [showExpired, setShowExpired] = useState(false);
+  const [cacheReady, setCacheReady] = useState(false);
+  const [offlineFallback, setOfflineFallback] = useState(false);
+
+  useEffect(() => {
+    void loadGrantsCache().then((cached) => {
+      if (cached) {
+        queryClient.setQueryData(
+          queryKeys.grants({
+            tab: true,
+            search: undefined,
+            sector: SECTOR_SLUGS.Все,
+            country: "Uzbekistan",
+            activeOnly: true,
+          }),
+          { pages: [cached], pageParams: [1] }
+        );
+      }
+      setCacheReady(true);
+    });
+  }, [queryClient]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchInput.trim()), 300);
@@ -101,12 +124,21 @@ export default function GrantsTab() {
       if (pageParam === 1) {
         await saveGrantsCache(data);
       }
+      setOfflineFallback(false);
       return data;
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.page < lastPage.pages ? lastPage.page + 1 : undefined,
+    enabled: cacheReady,
+    placeholderData: (previous) => previous,
   });
+
+  useEffect(() => {
+    if (grantsQuery.isError && grantsQuery.data) {
+      setOfflineFallback(true);
+    }
+  }, [grantsQuery.isError, grantsQuery.data]);
 
   const grants = useMemo(
     () => grantsQuery.data?.pages.flatMap((page) => page.grants) ?? [],
@@ -126,7 +158,7 @@ export default function GrantsTab() {
   );
   const expiredCount = grants.length - activeCount;
 
-  if (grantsQuery.isLoading && !grantsQuery.data) {
+  if (!cacheReady || (grantsQuery.isLoading && !grantsQuery.data)) {
     return (
       <Screen title="Гранты">
         <View className="px-4 pt-3 pb-2 bg-clay-canvas border-b border-clay-inset/40">
@@ -137,7 +169,7 @@ export default function GrantsTab() {
     );
   }
 
-  if (grantsQuery.isError) {
+  if (grantsQuery.isError && !grantsQuery.data) {
     return (
       <ErrorState message={grantsQuery.error.message} onRetry={() => grantsQuery.refetch()} />
     );
@@ -145,6 +177,11 @@ export default function GrantsTab() {
 
   const stickyHeader = (
     <View className="px-4 pb-3 pt-1 bg-clay-canvas border-b border-clay-inset/40">
+      {offlineFallback ? (
+        <Text className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mb-2">
+          {t.offlineGrants}
+        </Text>
+      ) : null}
       <Card className="p-4 mb-0">
         <View className="flex-row gap-2 mb-4">
           {(["active", "all"] as const).map((mode) => (
@@ -274,8 +311,9 @@ export default function GrantsTab() {
 
   return (
     <Screen title="Гранты">
-      <FlashList<GrantListItem>
+      <FlashListSized<GrantListItem>
         data={filteredGrants}
+        estimatedItemSize={GRANT_ROW_HEIGHT}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={stickyHeader}
         stickyHeaderIndices={[0]}

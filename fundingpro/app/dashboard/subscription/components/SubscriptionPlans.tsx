@@ -31,7 +31,7 @@ export function SubscriptionPlans({
     <>
       {ngoPlans.length > 0 && (
         <div className="mb-8">
-          <h2 className="font-bold text-funding-black mb-4">НКО и частные лица</h2>
+          <h2 className="font-bold text-funding-black mb-4">Для физических лиц</h2>
           <div className="grid sm:grid-cols-3 gap-5">
             {ngoPlans.map((plan) => (
               <PlanCard

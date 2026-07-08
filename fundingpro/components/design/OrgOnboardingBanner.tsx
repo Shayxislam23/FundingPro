@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Building2, ArrowRight, X } from "lucide-react";
+import { User, ArrowRight, X } from "lucide-react";
 
 type OrgOnboardingBannerProps = {
   onDismiss?: () => void;
   dismissible?: boolean;
 };
 
+/** @deprecated name kept for imports — banner for individual profile completion */
 export function OrgOnboardingBanner({ onDismiss, dismissible = false }: OrgOnboardingBannerProps) {
   return (
     <div
@@ -16,21 +17,21 @@ export function OrgOnboardingBanner({ onDismiss, dismissible = false }: OrgOnboa
         className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
         style={{ background: "#D9F7DD" }}
       >
-        <Building2 className="w-5 h-5" style={{ color: "#008A2E" }} />
+        <User className="w-5 h-5" style={{ color: "#008A2E" }} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-funding-black">Заполните профиль организации</p>
+        <p className="text-sm font-semibold text-funding-black">Заполните личный профиль</p>
         <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-          Профиль нужен для AI-подбора грантов и проверки соответствия требованиям доноров.
+          Укажите имя, интересы и контакты — AI подберёт гранты и возможности под вас.
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <Link
-          href="/dashboard/profile"
+          href="/dashboard/lab"
           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white"
           style={{ background: "#008A2E" }}
         >
-          Создать профиль <ArrowRight className="w-3.5 h-3.5" />
+          Заполнить профиль <ArrowRight className="w-3.5 h-3.5" />
         </Link>
         {dismissible && onDismiss && (
           <button

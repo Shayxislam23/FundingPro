@@ -9,8 +9,8 @@ import { Screen } from "../../components/ui/Screen";
 const STEPS = [
   {
     icon: "person-circle-outline" as const,
-    title: "Создайте профиль организации",
-    description: "Укажите тип, сектор и описание — это основа для подбора грантов.",
+    title: "Создайте личный профиль",
+    description: "Укажите интересы, опыт и цели — это основа для подбора грантов и программ.",
     href: "/(auth)/login",
   },
   {
@@ -22,7 +22,7 @@ const STEPS = [
   {
     icon: "checkmark-circle-outline" as const,
     title: "Проверьте соответствие",
-    description: "Узнайте, подходит ли грант вашей организации.",
+    description: "Узнайте, подходите ли вы под условия гранта или программы.",
     href: "/(auth)/login",
   },
   {

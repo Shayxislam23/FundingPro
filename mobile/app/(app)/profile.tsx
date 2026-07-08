@@ -14,14 +14,6 @@ const DELETE_SUBJECT = "Запрос на удаление аккаунта";
 const DELETE_MESSAGE =
   "Прошу удалить мой аккаунт FundingPro и связанные персональные данные в соответствии с политикой конфиденциальности.";
 
-const ORG_TYPES = [
-  { value: "NGO", label: "НКО" },
-  { value: "BUSINESS", label: "Бизнес" },
-  { value: "ACADEMIC", label: "Университет / школа" },
-  { value: "GOVERNMENT", label: "Государственная организация" },
-  { value: "INDIVIDUAL", label: "Частное лицо" },
-] as const;
-
 export default function ProfileScreen() {
   const orgQuery = useQuery({
     queryKey: queryKeys.organization,
@@ -29,7 +21,6 @@ export default function ProfileScreen() {
   });
 
   const [name, setName] = useState("");
-  const [type, setType] = useState("NGO");
   const [country, setCountry] = useState("Uzbekistan");
   const [sector, setSector] = useState("");
   const [description, setDescription] = useState("");
@@ -39,7 +30,6 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!org) return;
     setName(org.name);
-    setType(org.type || "NGO");
     setCountry(org.country ?? "Uzbekistan");
     setSector(org.sector ?? "");
     setDescription(org.description ?? "");
@@ -49,7 +39,7 @@ export default function ProfileScreen() {
     mutationFn: () =>
       api.updateOrganization({
         name,
-        type,
+        type: "INDIVIDUAL",
         country,
         sector,
         description,
@@ -109,38 +99,16 @@ export default function ProfileScreen() {
   };
 
   return (
-    <Screen title="Профиль организации" showBack>
+    <Screen title="Личный профиль" showBack>
       <ScrollView className="p-4">
         <Card>
-          <Text className="text-xs text-gray-400 uppercase">Организация</Text>
+          <Text className="text-xs text-gray-400 uppercase">Профиль</Text>
           <Input
             className="mt-2"
-            placeholder="Название"
+            placeholder="Ваше имя"
             value={name}
             onChangeText={setName}
           />
-          <Text className="text-xs text-gray-400 uppercase mt-4">Тип организации</Text>
-          <View className="flex-row flex-wrap gap-2 mt-2">
-            {ORG_TYPES.map((orgType) => (
-              <Pressable
-                key={orgType.value}
-                onPress={() => setType(orgType.value)}
-                className={`px-3 py-1.5 rounded-full ${
-                  type === orgType.value
-                    ? "bg-funding-green"
-                    : "bg-clay-surface border border-clay-inset/60"
-                }`}
-              >
-                <Text
-                  className={`text-xs font-medium ${
-                    type === orgType.value ? "text-white" : "text-gray-600"
-                  }`}
-                >
-                  {orgType.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
           <Input
             className="mt-3"
             placeholder="Страна"
@@ -157,7 +125,7 @@ export default function ProfileScreen() {
           <ClaySurface variant="inset" radius="input" className="mt-2 overflow-hidden">
             <TextInput
               className="px-4 py-3 text-funding-black bg-transparent min-h-[88px]"
-              placeholder="Кратко опишите миссию и опыт организации"
+              placeholder="Кратко опишите ваш опыт, интересы и цели"
               placeholderTextColor="#6B7F70"
               value={description}
               onChangeText={setDescription}
@@ -173,7 +141,7 @@ export default function ProfileScreen() {
           />
         </Card>
         {org?.verified && (
-          <Text className="text-funding-green text-sm mt-3">✓ Организация верифицирована</Text>
+          <Text className="text-funding-green text-sm mt-3">✓ Профиль подтверждён</Text>
         )}
 
         <Card className="mt-6">

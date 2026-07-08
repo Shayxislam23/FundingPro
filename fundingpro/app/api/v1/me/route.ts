@@ -3,6 +3,7 @@ import { apiSuccess } from "@/lib/api";
 import { withActiveUser } from "@/lib/api-route";
 import { writeAuditLog, isAdminUser } from "@/lib/auth-helpers";
 import { getUserPlatformRole } from "@/lib/db/user-roles";
+import { getUserMode } from "@/lib/db/user-mode";
 import { ensureInternalUser } from "@/lib/db/users";
 import { getUserOrganizationDetails } from "@/lib/db/organizations";
 import { getPaymentIntegrationStatus } from "@/lib/payments";
@@ -30,12 +31,13 @@ export const GET = withActiveUser(async (_req, authUser) => {
     });
   }
 
-  const [organization, subscription, savedGrantIds, platformRole, isAdmin, paymentPendingIntegration] =
+  const [organization, subscription, savedGrantIds, platformRole, userMode, isAdmin, paymentPendingIntegration] =
     await Promise.all([
       getUserOrganizationDetails(authUser.accessToken),
       getUserSubscription(authUser.accessToken),
       listSavedGrantIds(authUser.accessToken).catch(() => [] as string[]),
       getUserPlatformRole(authUser.accessToken),
+      getUserMode(authUser.accessToken),
       isAdminUser(authUser.accessToken, internalUser.email),
       isPaymentIntegrationPending(),
     ]);
@@ -47,6 +49,7 @@ export const GET = withActiveUser(async (_req, authUser) => {
     isActive: internalUser.isActive,
     createdAt: internalUser.createdAt,
     platformRole,
+    userMode,
     isAdmin,
     organization,
     subscription,

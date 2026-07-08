@@ -5,6 +5,7 @@ import { SectionLabel } from "@/components/design/SectionLabel";
 import { EmptyState } from "@/components/design/EmptyState";
 import { FolderOpen, Upload, File, Lock, Trash2, Loader2, Download } from "lucide-react";
 import { getAuthHeaders, getAuthHeadersForUpload } from "@/lib/client-auth";
+import { trackEvent } from "@/lib/analytics";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/upload-limits";
 
 type Doc = {
@@ -26,6 +27,9 @@ const DOC_CATEGORY_LABELS: Record<string, string> = {
   PORTFOLIO: "Портфолио проектов",
   FIN_REPORT: "Финансовый отчёт",
   PROPOSAL_DRAFT: "Черновик заявки",
+  MOTIVATION_LETTER: "Мотивационное письмо",
+  APPLICATION_PROOF: "Proof of application",
+  PAYMENT_PROOF: "Proof of payment",
   BUDGET: "Бюджет",
   OTHER: "Другое",
 };
@@ -70,7 +74,6 @@ export default function DocumentsPage() {
 
   useEffect(() => {
     fetchDocs();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,6 +103,7 @@ export default function DocumentsPage() {
         return;
       }
       setUploadSuccess(`«${file.name}» загружен в защищённое хранилище`);
+      trackEvent("onboarding_step_documents", { doc_type: docType });
       await fetchDocs();
       setTimeout(() => setUploadSuccess(""), 5000);
     } catch {

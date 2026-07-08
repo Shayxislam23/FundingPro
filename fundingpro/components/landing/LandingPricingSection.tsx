@@ -20,7 +20,7 @@ export function LandingPricingSection({ plans, plansLoading, usdUzsRate }: Landi
             Выберите план
           </h2>
           <p className="max-w-lg mx-auto text-sm" style={{ color: "#6b7280" }}>
-            Для бизнеса, молодёжи и частных лиц.{" "}
+            Для физических лиц. Тарифы для организаций и бизнеса — позже.{" "}
             <Link href="/pricing" className="text-funding-green hover:underline">
               Все тарифы
             </Link>

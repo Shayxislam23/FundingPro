@@ -1,6 +1,6 @@
 # Growth Playbook — FundingPro
 
-## Каналы (Узбекистан, НКО)
+## Каналы (Узбекистан, физлица)
 
 | Канал | Формат | Частота | CTA |
 |-------|--------|---------|-----|
@@ -14,7 +14,7 @@
 |------------|--------------|------------|
 | telegram | weekly_digest | Канал дедлайнов |
 | share | grant_card | Кнопка «Поделиться» на `/grants/[id]` |
-| linkedin | ngo_case | Кейсы пилота |
+| linkedin | individual_case | Кейсы пилота |
 | lead_magnet | pdf_grants_2026 | Форма на landing |
 
 ## Telegram digest
@@ -36,7 +36,9 @@ NEXT_PUBLIC_POSTHOG_KEY=
 NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
 ```
 
-События: `landing_cta_click`, `auth_success`, `onboarding_step_*`, `eligibility_run`, `ai_generate`, `lead_magnet_submit`, `grant_shared`.
+События: `landing_cta_click`, `lab_cta_click`, `lab_checkout_started`, `lab_profile_saved`, `auth_success`, `onboarding_step_*`, `lab_task_submitted`, `eligibility_run`, `north_star_*`, `ai_generate`, `lead_magnet_submit`, `grant_shared`, `pmf_survey_response`.
+
+См. также `lib/analytics.ts` — canonical event names and GROWTH_PLAYBOOK mapping.
 
 ## Пилотные метрики
 

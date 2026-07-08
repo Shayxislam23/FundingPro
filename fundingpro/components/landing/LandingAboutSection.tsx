@@ -3,7 +3,7 @@ import { SectionLabel } from "@/components/design/SectionLabel";
 import { MetricCard } from "@/components/design/MetricCard";
 
 const ABOUT_ITEMS = [
-  "Поиск подходящих грантов по профилю организации",
+  "Поиск подходящих грантов и программ по личному профилю",
   "AI-проверка соответствия требованиям донора",
   "Генерация черновика заявки в структуре донора",
   "CRM-трекер статусов заявок",

@@ -8,6 +8,12 @@ import { matchGrantsFromDatabase } from "@/lib/db/match-grants";
 import { logAiRequest } from "@/lib/db/proposals";
 import { callAi, PROMPTS } from "@/lib/ai-gateway";
 
+type SafeMatchProfile = {
+  sector?: string;
+  country?: string;
+  applicantType?: string;
+};
+
 export const POST = withActiveUser(async (req, authUser) => {
   if (!(await checkAiRateLimitAsync(authUser.userId))) {
     return apiError("Too many AI requests. Try again later.", 429, "RATE_LIMITED");
@@ -84,9 +90,45 @@ export const POST = withActiveUser(async (req, authUser) => {
   });
 });
 
-function sanitizeProfile(profile: Record<string, unknown>): Record<string, unknown> {
-  const forbidden = ["name", "phone", "email", "pinfl", "passport", "myid", "bank", "card", "payment"];
-  return Object.fromEntries(
-    Object.entries(profile).filter(([k]) => !forbidden.some((f) => k.toLowerCase().includes(f)))
-  );
+function sanitizeProfile(profile: Record<string, unknown>): SafeMatchProfile {
+  const safeProfile: SafeMatchProfile = {};
+  const sector = pickProfileString(profile, ["sector", "sectors"]);
+  const country = pickProfileString(profile, ["country", "countryScope", "country_scope"]);
+  const applicantType = pickProfileString(profile, [
+    "applicantType",
+    "applicant_type",
+    "orgType",
+    "org_type",
+    "type",
+  ]);
+
+  if (sector) safeProfile.sector = sector;
+  if (country) safeProfile.country = country;
+  if (applicantType) safeProfile.applicantType = applicantType;
+
+  return safeProfile;
+}
+
+function pickProfileString(profile: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = normalizeProfileString(profile[key]);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function normalizeProfileString(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed.slice(0, 120) : undefined;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const normalized = normalizeProfileString(item);
+      if (normalized) return normalized;
+    }
+  }
+
+  return undefined;
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { Building2, Loader2, CheckCircle2, Pencil } from "lucide-react";
+import { Loader2, CheckCircle2, Pencil, User } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
 import { SECTOR_OPTIONS, translateSector } from "@fundingpro/shared";
 import { trackEvent } from "@/lib/analytics";
@@ -17,14 +17,6 @@ type Organization = {
   isVerified: boolean;
 };
 
-const ORG_TYPES = [
-  { value: "NGO", label: "НКО" },
-  { value: "BUSINESS", label: "Бизнес" },
-  { value: "ACADEMIC", label: "Университет / школа" },
-  { value: "GOVERNMENT", label: "Государственная организация" },
-  { value: "INDIVIDUAL", label: "Частное лицо" },
-];
-
 export default function ProfilePage() {
   const [org, setOrg] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +26,6 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
 
   const [name, setName] = useState("");
-  const [type, setType] = useState("NGO");
   const [country, setCountry] = useState("Uzbekistan");
   const [sector, setSector] = useState("");
   const [description, setDescription] = useState("");
@@ -42,7 +33,6 @@ export default function ProfilePage() {
   function applyOrg(organization: Organization) {
     setOrg(organization);
     setName(organization.name);
-    setType(organization.type);
     setCountry(organization.country ?? "Uzbekistan");
     setSector(organization.sector ?? "");
   }
@@ -72,7 +62,7 @@ export default function ProfilePage() {
       const res = await fetch("/api/v1/organizations", {
         method: isUpdate ? "PATCH" : "POST",
         headers,
-        body: JSON.stringify({ name, type, country, sector, description }),
+        body: JSON.stringify({ name, type: "INDIVIDUAL", country, sector, description }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -103,9 +93,9 @@ export default function ProfilePage() {
     <div className="max-w-2xl">
       <div className="mb-6">
         <SectionLabel>Профиль</SectionLabel>
-        <h1 className="text-2xl font-black text-funding-black">Организация</h1>
+        <h1 className="text-2xl font-black text-funding-black">Личный профиль</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Профиль используется для AI-подбора грантов и проверки соответствия.
+          Профиль используется для AI-подбора грантов и программ. Тарифы для организаций — позже.
         </p>
       </div>
 
@@ -114,12 +104,12 @@ export default function ProfilePage() {
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-funding-light-green flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-funding-green" />
+                <User className="w-5 h-5 text-funding-green" />
               </div>
               <div>
                 <p className="font-semibold text-funding-black">{org.name}</p>
                 <p className="text-xs text-gray-500">
-                  {ORG_TYPES.find((t) => t.value === org.type)?.label ?? org.type} · {org.country ?? "—"}
+                  Физическое лицо · {org.country ?? "—"}
                 </p>
               </div>
             </div>
@@ -153,29 +143,17 @@ export default function ProfilePage() {
           )}
 
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Название</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Имя</label>
             <input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="mt-1 w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-funding-green/20"
-              placeholder="ЭкоНКО Узбекистан"
+              placeholder="Алишер Каримов"
             />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Тип</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="mt-1 w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm"
-              >
-                {ORG_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-            </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Страна</label>
               <input
@@ -207,7 +185,7 @@ export default function ProfilePage() {
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               className="mt-1 w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm resize-none"
-              placeholder="Кратко опишите миссию и опыт организации"
+              placeholder="Кратко опишите ваш опыт, интересы и цели"
             />
           </div>
 
@@ -230,7 +208,7 @@ export default function ProfilePage() {
               className="flex-1 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
               style={{ background: "#008A2E" }}
             >
-              {saving ? "Сохранение..." : org ? "Сохранить изменения" : "Создать профиль организации"}
+              {saving ? "Сохранение..." : org ? "Сохранить изменения" : "Создать профиль"}
             </button>
           </div>
         </form>

@@ -1,5 +1,21 @@
 import { v } from "convex/values";
 
+/** Resolved mode exposed to clients (legacy DB values normalized). */
+export const resolvedUserModeValidator = v.union(
+  v.literal("individual"),
+  v.literal("mentor"),
+  v.literal("admin")
+);
+
+/** Stored on users.userMode — includes legacy values until backfill. */
+export const userModeValidator = v.union(
+  v.literal("individual"),
+  v.literal("organization"),
+  v.literal("lab_student"),
+  v.literal("mentor"),
+  v.literal("admin")
+);
+
 const flexibleScalarValidator = v.union(v.string(), v.number(), v.boolean(), v.null());
 const flexibleValueValidator = v.union(
   flexibleScalarValidator,
@@ -24,6 +40,10 @@ export const paymentMetadataValidator = v.optional(
     packageName: v.optional(v.string()),
     checkoutMock: v.optional(v.boolean()),
     checkoutOrderId: v.optional(v.string()),
+    labEnrollmentId: v.optional(v.string()),
+    labCohortId: v.optional(v.string()),
+    labCohortSlug: v.optional(v.string()),
+    serviceName: v.optional(v.string()),
   })
 );
 

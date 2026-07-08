@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Alert, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,6 +21,7 @@ import {
   withGrantsFallback,
 } from "../../lib/public-fallback";
 import { queryKeys } from "../../lib/query-keys";
+import { t } from "../../lib/i18n";
 
 const QUICK_LINKS = [
   { label: "Как это работает", href: "/(public)/how-it-works", icon: "help-circle" as const },
@@ -85,7 +86,7 @@ export default function PublicLanding() {
         <GradientHero variant="hero">
           <FundingProLogo variant="light" size="lg" />
           <Text className="mt-3 text-body text-white/90 leading-6 max-w-sm">
-            Платформа для поиска грантов и подготовки заявок в Узбекистане
+            AI-платформа для физических лиц: гранты, стипендии и программы в Узбекистане
           </Text>
         </GradientHero>
 
@@ -97,14 +98,17 @@ export default function PublicLanding() {
 
           {showDemoBanner ? <DemoBanner className="mt-3" /> : null}
 
-          <Link href="/(public)/grants" asChild>
-            <Button title="Найти грант" className="mt-6" haptic />
-          </Link>
+          <Button
+            title={t.findGrant}
+            className="mt-6"
+            haptic
+            onPress={() => router.push("/(public)/grants")}
+          />
 
           <ClaySurface variant="raised" className="mt-8 rounded-[24px] p-5">
             <Text className="text-base font-bold text-funding-black">Подборка грантов на email</Text>
             <Text className="text-sm text-gray-500 mt-1 leading-5">
-              Получите актуальные возможности финансирования для НКО Узбекистана.
+              Получите актуальные гранты и программы для физических лиц в Узбекистане.
             </Text>
             {leadDone ? (
               <Text className="text-sm text-funding-green font-medium mt-4">

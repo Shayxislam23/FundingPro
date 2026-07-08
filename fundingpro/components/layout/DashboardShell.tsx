@@ -16,39 +16,56 @@ import {
   LogOut,
   BarChart3,
   Briefcase,
-  Building2,
+  User,
   Menu,
   X,
   MoreHorizontal,
+  Target,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useClerk } from "@clerk/nextjs";
 import { getAuthHeaders } from "@/lib/client-auth";
 import { PlanUsageBadge } from "@/components/design/PlanUsageBadge";
 import { ShellNavLink, isNavItemActive } from "@/components/layout/AppShell";
+import type { UserMode } from "@/lib/db/user-mode";
 
-const navItems = [
+type NavItem = {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+};
+
+/** Единая навигация для физлиц (v1). НКО/организации — позже. */
+const individualNavItems: NavItem[] = [
   { label: "Главная", href: "/dashboard", icon: LayoutDashboard },
   { label: "Гранты", href: "/dashboard/grants", icon: BookOpen },
   { label: "Opportunities Lab", href: "/dashboard/lab", icon: GraduationCap },
   { label: "Проверка соответствия", href: "/dashboard/eligibility", icon: CheckSquare },
   { label: "AI Предложение", href: "/dashboard/ai-writer", icon: FileText },
   { label: "Мои заявки", href: "/dashboard/tracker", icon: BarChart3 },
+  { label: "Мой путь", href: "/dashboard/lab", icon: Target },
   { label: "Документы", href: "/dashboard/documents", icon: FolderOpen },
   { label: "Консультанты", href: "/dashboard/consultants", icon: Briefcase },
-  { label: "Профиль", href: "/dashboard/profile", icon: Building2 },
+  { label: "Профиль", href: "/dashboard/profile", icon: User },
   { label: "Подписка", href: "/dashboard/subscription", icon: CreditCard },
   { label: "Поддержка", href: "/dashboard/support", icon: HelpCircle },
 ];
 
-const mobileBottomNav = [
+const individualMobileBottomNav: NavItem[] = [
   { label: "Главная", href: "/dashboard", icon: LayoutDashboard },
   { label: "Гранты", href: "/dashboard/grants", icon: BookOpen },
   { label: "Проверка", href: "/dashboard/eligibility", icon: CheckSquare },
-  { label: "AI", href: "/dashboard/ai-writer", icon: FileText },
+  { label: "Путь", href: "/dashboard/lab", icon: Target },
 ];
+
+function navForMode(_userMode: UserMode | null): {
+  navItems: NavItem[];
+  mobileBottomNav: NavItem[];
+} {
+  return { navItems: individualNavItems, mobileBottomNav: individualMobileBottomNav };
+}
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -65,6 +82,9 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
   const notifRef = useRef<HTMLDivElement>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [orgName, setOrgName] = useState<string | null>(null);
+  const [userMode, setUserMode] = useState<UserMode | null>(null);
+
+  const { navItems, mobileBottomNav } = useMemo(() => navForMode(userMode), [userMode]);
 
   const unreadCount = 0;
   const userInitial = (userEmail?.[0] ?? orgName?.[0] ?? "U").toUpperCase();
@@ -92,6 +112,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
         const json = await res.json();
         setUserEmail(json.data?.email ?? null);
         setOrgName(json.data?.organization?.name ?? null);
+        setUserMode(json.data?.userMode ?? null);
       } catch {
         /* ignore */
       }
@@ -257,7 +278,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-xs font-semibold text-gray-800 leading-tight truncate max-w-[140px]">
-                  {orgName ?? "Профиль"}
+                  {orgName ?? userEmail?.split("@")[0] ?? "Мой профиль"}
                 </p>
                 <p className="text-[10px] text-gray-400 truncate max-w-[140px]">{userEmail ?? ""}</p>
               </div>

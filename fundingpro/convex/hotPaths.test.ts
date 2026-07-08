@@ -121,6 +121,54 @@ describe("grants.list", () => {
   });
 });
 
+describe("matchGrants.match", () => {
+  test("scores profile matches without scanning the whole catalog", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `match|${Date.now()}`;
+    const clerkId = `clerk-match-${Date.now()}`;
+    let climateGrantId = "" as Id<"grants">;
+
+    await t.run(async (ctx) => {
+      const seeded = await seedCatalog(ctx);
+      climateGrantId = seeded.grantId;
+      await seedUser(ctx, tokenIdentifier, clerkId);
+
+      await ctx.db.insert("grants", {
+        title: "Business Expansion Grant",
+        description: "A less relevant test grant",
+        donorId: seeded.donorId,
+        sectors: ["business"],
+        countryScope: ["Kazakhstan"],
+        applicantTypes: ["Business"],
+        currency: "USD",
+        status: "open",
+        isActive: true,
+        isFeatured: true,
+        lastUpdatedAt: seeded.now,
+        createdAt: seeded.now,
+        updatedAt: seeded.now,
+      });
+    });
+
+    const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const result = await authed.query(api.matchGrants.match, {
+      profile: {
+        sector: "Climate",
+        country: "uzbekistan",
+        applicantType: "ngo",
+      },
+      limit: 5,
+    });
+
+    expect(result.length).toBeLessThanOrEqual(5);
+    expect(result[0]?.grantId).toBe(climateGrantId);
+    expect(result[0]?.score).toBe(100);
+    expect(result[0]?.reasons).toContain("Совпадение по сектору");
+    expect(result[0]?.reasons).toContain("Совпадение по стране");
+    expect(result[0]?.reasons).toContain("Совпадение по типу заявителя");
+  });
+});
+
 describe("applications.create", () => {
   test("creates application and deduplicates on same grant", async () => {
     const t = convexTest(schema, modules);
@@ -381,6 +429,89 @@ describe("subscription lifecycle", () => {
     const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
     const subscription = await authed.query(api.users.getSubscription, {});
     expect(subscription).toBeNull();
+describe("payments.adminReport reconciliation", () => {
+  test("flags provider-paid Payme transactions that are not locally successful", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `admin-payments|${Date.now()}`;
+    const clerkId = `clerk-admin-payments-${Date.now()}`;
+    let paymentId = "" as Id<"payments">;
+
+    await t.run(async (ctx) => {
+      const adminUserId = await seedUser(ctx, tokenIdentifier, clerkId, "admin");
+      paymentId = await ctx.db.insert("payments", {
+        userId: adminUserId,
+        amountUsd: 99,
+        currency: "UZS",
+        status: "PENDING",
+        provider: "payme",
+        idempotencyKey: `payme-reconcile-${Date.now()}`,
+        serviceType: "subscription",
+        metadata: { planId: "pro", planName: "Pro", amountTiyin: 149_000_000 },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      await ctx.db.insert("paymeTransactions", {
+        paymeTransId: `payme-reconcile-tx-${Date.now()}`,
+        paymentId,
+        state: 2,
+        amountTiyin: 149_000_000,
+        createTime: Date.now(),
+        performTime: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+
+    const admin = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const report = await admin.query(api.payments.adminReport, { provider: "payme" });
+
+    expect(report.reconciliation.openIssues).toBe(1);
+    expect(report.reconciliation.criticalIssues).toBe(1);
+    expect(report.reconciliation.issues[0]?.paymentId).toBe(paymentId);
+    expect(report.reconciliation.issues[0]?.code).toBe("provider_paid_local_not_success");
+  });
+});
+
+describe("lab access nextAction", () => {
+  test("guides user from enrollment to payment review to lab access", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `lab-action|${Date.now()}`;
+    const clerkId = `clerk-lab-action-${Date.now()}`;
+    let enrollmentId = "" as Id<"labEnrollments">;
+
+    await t.run(async (ctx) => {
+      await seedUser(ctx, tokenIdentifier, clerkId);
+    });
+
+    const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const emptyAccess = await authed.query(api.lab.getMyAccess, {});
+    expect(emptyAccess.accessState).toBe("not_enrolled");
+    expect(emptyAccess.nextAction.kind).toBe("enroll");
+
+    const reserved = await authed.mutation(api.lab.ensureMyEnrollment, {});
+    expect(reserved.accessState).toBe("pending_payment");
+    expect(reserved.nextAction.kind).toBe("pay");
+    enrollmentId = reserved.enrollment?.id as Id<"labEnrollments">;
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(enrollmentId, {
+        status: "manual_review",
+        updatedAt: Date.now(),
+      });
+    });
+    const manualReview = await authed.query(api.lab.getMyAccess, {});
+    expect(manualReview.nextAction.kind).toBe("await_manual_review");
+
+    await t.run(async (ctx) => {
+      await ctx.db.patch(enrollmentId, {
+        status: "paid",
+        paidAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+    });
+    const paid = await authed.query(api.lab.getMyAccess, {});
+    expect(paid.hasPaidAccess).toBe(true);
+    expect(paid.nextAction.kind).toBe("open_lab");
   });
 });
 
@@ -612,26 +743,30 @@ describe("onboarding.getStatus", () => {
     await t.run(async (ctx) => {
       const userId = await seedUser(ctx, tokenIdentifier, clerkId);
       const now = Date.now();
-      const orgId = await ctx.db.insert("organizations", {
-        name: "Test NGO",
-        type: "NGO",
-        isVerified: false,
+      await ctx.db.insert("labParticipants", {
+        userId,
+        fullName: "Test User",
         createdAt: now,
         updatedAt: now,
       });
-      await ctx.db.insert("organizationMembers", {
+      const documentId = await ctx.db.insert("documents", {
         userId,
-        organizationId: orgId,
-        role: "owner",
-        createdAt: now,
-        updatedAt: now,
-      });
-      await ctx.db.insert("documents", {
-        userId,
-        fileName: "charter.pdf",
-        storageKey: "charter.pdf",
-        docType: "CHARTER",
+        fileName: "cv.pdf",
+        storageKey: "cv.pdf",
+        docType: "CV",
         status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("labTasks", {
+        userId,
+        taskType: "cv",
+        studentStatus: "submitted",
+        mentorStatus: "approved",
+        evidenceDocumentId: documentId,
+        submittedAt: now,
+        reviewedAt: now,
+        reviewedBy: userId,
         createdAt: now,
         updatedAt: now,
       });
@@ -640,8 +775,224 @@ describe("onboarding.getStatus", () => {
     const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
     const status = await authed.query(api.onboarding.getStatus, {});
     expect(status.steps.profile).toBe(true);
-    expect(status.steps.documents).toBe(true);
+    expect(status.steps.cv).toBe(true);
     expect(status.completedCount).toBeGreaterThanOrEqual(2);
+  });
+
+  test("requires mentor-approved opportunities and attendance for certificate eligibility", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `certificate|${Date.now()}`;
+    const clerkId = `clerk-certificate-${Date.now()}`;
+    const adminTokenIdentifier = `certificate-admin|${Date.now()}`;
+    const adminClerkId = `clerk-certificate-admin-${Date.now()}`;
+    let userId = "" as Id<"users">;
+
+    await t.run(async (ctx) => {
+      userId = await seedUser(ctx, tokenIdentifier, clerkId);
+      await seedUser(ctx, adminTokenIdentifier, adminClerkId, "admin");
+      const now = Date.now();
+      await ctx.db.insert("labParticipants", {
+        userId,
+        fullName: "Certificate Student",
+        linkedinUrl: "https://linkedin.com/in/certificate-student",
+        selectedOpportunityCount: 10,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      for (const taskType of ["cv", "motivation_letter", "proof_uploaded", "application_submitted"] as const) {
+        await ctx.db.insert("labTasks", {
+          userId,
+          taskType,
+          studentStatus: "submitted",
+          mentorStatus: "approved",
+          submittedAt: now,
+          reviewedAt: now,
+          reviewedBy: userId,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      await ctx.db.insert("labOpportunityApplications", {
+        userId,
+        title: "Verified opportunity",
+        submissionMethod: "external_portal",
+        status: "approved",
+        reviewedAt: now,
+        reviewedBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
+    const before = await authed.query(api.onboarding.getStatus, {});
+    expect(before.steps.opportunities_10).toBe(false);
+    expect(before.steps.application_submitted).toBe(true);
+    expect(before.certificateEligible).toBe(false);
+
+    const authedAdmin = t.withIdentity({
+      tokenIdentifier: adminTokenIdentifier,
+      subject: adminClerkId,
+    });
+    const blockedDecision = await authedAdmin.mutation(api.onboarding.issueCertificateDecision, {
+      userId: clerkId,
+    });
+    expect(blockedDecision.status).toBe("blocked");
+    expect(blockedDecision.blockedReasons).toContain("opportunities_10_not_approved");
+    expect(blockedDecision.blockedReasons).toContain("attendance_below_70");
+
+    await t.run(async (ctx) => {
+      const now = Date.now();
+      const participant = await ctx.db
+        .query("labParticipants")
+        .withIndex("by_user", (q) => q.eq("userId", userId))
+        .unique();
+      expect(participant).not.toBeNull();
+      await ctx.db.patch(participant!._id, {
+        attendancePercent: 70,
+        updatedAt: now,
+      });
+      await ctx.db.insert("labTasks", {
+        userId,
+        taskType: "opportunities_10",
+        studentStatus: "submitted",
+        mentorStatus: "approved",
+        submittedAt: now,
+        reviewedAt: now,
+        reviewedBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const after = await authed.query(api.onboarding.getStatus, {});
+    expect(after.certificateEligible).toBe(true);
+
+    const issuedDecision = await authedAdmin.mutation(api.onboarding.issueCertificateDecision, {
+      userId: clerkId,
+    });
+    expect(issuedDecision.status).toBe("issued");
+    expect(issuedDecision.blockedReasons).toEqual([]);
+  });
+
+  test("recomputes cohort stats from enrollments and participant review state", async () => {
+    const t = convexTest(schema, modules);
+    const tokenIdentifier = `stats-user|${Date.now()}`;
+    const clerkId = `clerk-stats-user-${Date.now()}`;
+    const adminTokenIdentifier = `stats-admin|${Date.now()}`;
+    const adminClerkId = `clerk-stats-admin-${Date.now()}`;
+
+    await t.run(async (ctx) => {
+      const userId = await seedUser(ctx, tokenIdentifier, clerkId);
+      await seedUser(ctx, adminTokenIdentifier, adminClerkId, "admin");
+      const now = Date.now();
+      const cohortId = await ctx.db.insert("labCohorts", {
+        slug: "stats-cohort",
+        name: "Stats Cohort",
+        startsAt: now,
+        priceUzs: 150_000,
+        status: "enrolling",
+        certificatePolicyVersion: "lab-v1",
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("labEnrollments", {
+        userId,
+        cohortId,
+        status: "paid",
+        amountUzs: 150_000,
+        paidAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("labParticipants", {
+        userId,
+        fullName: "Stats User",
+        participantStatus: "needs_reminder",
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("labTasks", {
+        userId,
+        taskType: "cv",
+        studentStatus: "submitted",
+        mentorStatus: "pending_review",
+        submittedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const authedAdmin = t.withIdentity({
+      tokenIdentifier: adminTokenIdentifier,
+      subject: adminClerkId,
+    });
+    const stats = await authedAdmin.mutation(api.onboarding.recomputeCohortStatsForAdmin, {
+      cohortSlug: "stats-cohort",
+    });
+
+    expect(stats.totalEnrollments).toBe(1);
+    expect(stats.paidEnrollments).toBe(1);
+    expect(stats.totalParticipants).toBe(1);
+    expect(stats.needsMentorReview).toBe(1);
+    expect(stats.needsReminder).toBe(1);
+    expect(stats.collectedUzs).toBe(150_000);
+
+    const listed = await authedAdmin.query(api.onboarding.listParticipantsForAdmin, {
+      limit: 10,
+      cohortSlug: "stats-cohort",
+    });
+    expect(listed.cohortStats?.paidEnrollments).toBe(1);
+  });
+
+  test("listJourneyForAdmin returns enrolled lab users only", async () => {
+    const t = convexTest(schema, modules);
+    const enrolledToken = `journey-enrolled|${Date.now()}`;
+    const enrolledClerk = `clerk-journey-enrolled-${Date.now()}`;
+    const otherToken = `journey-other|${Date.now()}`;
+    const otherClerk = `clerk-journey-other-${Date.now()}`;
+    const adminToken = `journey-admin|${Date.now()}`;
+    const adminClerk = `clerk-journey-admin-${Date.now()}`;
+
+    await t.run(async (ctx) => {
+      const enrolledUserId = await seedUser(ctx, enrolledToken, enrolledClerk);
+      await seedUser(ctx, otherToken, otherClerk);
+      await seedUser(ctx, adminToken, adminClerk, "admin");
+      const now = Date.now();
+      const cohortId = await ctx.db.insert("labCohorts", {
+        slug: "journey-cohort",
+        name: "Journey Cohort",
+        startsAt: now,
+        priceUzs: 150_000,
+        status: "enrolling",
+        certificatePolicyVersion: "lab-v1",
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("labEnrollments", {
+        userId: enrolledUserId,
+        cohortId,
+        status: "paid",
+        amountUzs: 150_000,
+        paidAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("labParticipants", {
+        userId: enrolledUserId,
+        fullName: "Enrolled Student",
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const authedAdmin = t.withIdentity({ tokenIdentifier: adminToken, subject: adminClerk });
+    const journey = await authedAdmin.query(api.onboarding.listJourneyForAdmin, { limit: 10 });
+    expect(journey.participants).toHaveLength(1);
+    expect(journey.participants[0]?.fullName).toBe("Enrolled Student");
+    expect(journey.participants[0]?.email).toBe(`${enrolledClerk}@test.local`);
   });
 });
 

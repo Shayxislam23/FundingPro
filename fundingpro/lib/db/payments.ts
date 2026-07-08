@@ -174,6 +174,38 @@ export async function getPaymeTransaction(
   }) as Promise<PaymeTransactionRecord | null>;
 }
 
+export async function getPaymeTransactionByPayment(
+  paymentId: string
+): Promise<PaymeTransactionRecord | null> {
+  return convexInternalQuery(internal.paymentsInternal.getPaymeTransactionByPayment, {
+    paymentId,
+  }) as Promise<PaymeTransactionRecord | null>;
+}
+
+export type PaymeStatementTransaction = {
+  id: string;
+  time: number;
+  amount: number;
+  account: { order_id: string };
+  create_time: number;
+  perform_time: number;
+  cancel_time: number;
+  transaction: string;
+  state: number;
+  reason: number | null;
+};
+
+export async function listPaymeTransactionsForStatement(params: {
+  from: number;
+  to: number;
+  limit?: number;
+}): Promise<PaymeStatementTransaction[]> {
+  return convexInternalQuery(
+    internal.paymentsInternal.listPaymeTransactionsForStatement,
+    params
+  ) as Promise<PaymeStatementTransaction[]>;
+}
+
 export async function upsertPaymeTransaction(input: {
   paymeTransId: string;
   paymentId: string;

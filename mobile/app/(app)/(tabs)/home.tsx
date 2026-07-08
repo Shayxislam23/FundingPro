@@ -79,16 +79,17 @@ export default function DashboardHome() {
   const planUsageQuery = useQuery({ queryKey: queryKeys.planUsage, queryFn: () => api.planUsage() });
 
   const org = meQuery.data?.organization;
+  const hasProfile = !!org?.name || !!onboardingQuery.data?.steps?.profile;
   const matchQuery = useQuery({
-    queryKey: queryKeys.matchGrants(org?.id),
+    queryKey: queryKeys.matchGrants(org?.id ?? "individual"),
     queryFn: () =>
       api.matchGrants({
-        type: org!.type,
-        sector: org!.sector ?? undefined,
-        country: org!.country ?? undefined,
-        description: org!.description ?? undefined,
+        type: org?.type ?? "INDIVIDUAL",
+        sector: org?.sector ?? undefined,
+        country: org?.country ?? "Uzbekistan",
+        description: org?.description ?? undefined,
       }),
-    enabled: !!org,
+    enabled: hasProfile,
   });
 
   const applications = applicationsQuery.data?.applications ?? [];
@@ -108,14 +109,14 @@ export default function DashboardHome() {
     void applicationsQuery.refetch();
     void onboardingQuery.refetch();
     void planUsageQuery.refetch();
-    if (org) void matchQuery.refetch();
+    if (hasProfile) void matchQuery.refetch();
   };
 
   if (meQuery.isLoading) return <LoadingState />;
 
-  const orgName = org?.name ?? null;
   const onboarding = onboardingQuery.data;
   const userName = meQuery.data?.email?.split("@")[0];
+  const displayName = org?.name ?? userName;
 
   return (
     <SafeAreaView className="flex-1 bg-clay-canvas">
@@ -126,11 +127,9 @@ export default function DashboardHome() {
         <View className="flex-row items-start justify-between mb-1">
           <View className="flex-1 pr-3">
             <Text className="text-2xl font-black text-funding-black">
-              {orgName
-                ? `Добро пожаловать, ${orgName}`
-                : userName
-                  ? `Привет, ${userName}!`
-                  : "Главная"}
+              {displayName
+                ? `Добро пожаловать, ${displayName}`
+                : "Главная"}
             </Text>
             <Text className="text-sm text-gray-500 mt-1">
               {totalGrants} грантов в базе
@@ -171,13 +170,13 @@ export default function DashboardHome() {
 
         <ReconsentBanner />
 
-        {!org && (
+        {!hasProfile && (
           <Link href="/(app)/profile" asChild>
             <Pressable className="mt-3 active:opacity-80">
               <Card className="bg-amber-50 border-amber-200">
-                <Text className="font-semibold text-funding-black">Заполните профиль организации</Text>
+                <Text className="font-semibold text-funding-black">Заполните личный профиль</Text>
                 <Text className="text-sm text-gray-600 mt-1">
-                  Это нужно для проверки соответствия и подбора грантов.
+                  Это нужно для подбора грантов и проверки соответствия.
                 </Text>
               </Card>
             </Pressable>
@@ -206,7 +205,7 @@ export default function DashboardHome() {
           <StatCard icon="bookmark" title="Сохранено" value={String(savedGrantsCount)} subtitle="грантов" />
         </View>
 
-        {org && matchQuery.data?.matches && matchQuery.data.matches.length > 0 && (
+        {hasProfile && matchQuery.data?.matches && matchQuery.data.matches.length > 0 && (
           <View className="mt-2 mb-4">
             <SectionHeader title="Рекомендованные гранты" actionLabel="Все →" actionHref="/(app)/(tabs)/grants" />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-1">
@@ -315,7 +314,7 @@ export default function DashboardHome() {
         <Text className="text-lg font-bold text-funding-black mb-3">Быстрые действия</Text>
         <QuickAction label="Найти гранты" href="/(app)/(tabs)/grants" />
         <QuickAction label="Проверить соответствие" href="/(app)/(tabs)/eligibility" />
-        <QuickAction label="Профиль организации" href="/(app)/profile" />
+        <QuickAction label="Личный профиль" href="/(app)/profile" />
         <QuickAction label="Создать AI-предложение" href="/(app)/(tabs)/ai-writer" />
 
         <View className="h-6" />

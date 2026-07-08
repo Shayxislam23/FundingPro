@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, router } from "expo-router";
+import { t } from "../../lib/i18n";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { getNextOnboardingStep, ONBOARDING_STEPS } from "../../components/onboarding/steps";
 import { Button } from "../../components/ui/Button";
@@ -54,11 +55,11 @@ export default function OnboardingWizard() {
         <Text className="text-xs text-gray-500 mt-2">{status.completedCount}/{status.totalSteps} выполнено · {percent}%</Text>
 
         {nextStep ? (
-          <Link href={nextStep.href as never} asChild>
-            <Pressable>
-              <Button title="Перейти к шагу" className="mt-6" />
-            </Pressable>
-          </Link>
+          <Button
+            title={t.goToStep}
+            className="mt-6"
+            onPress={() => router.push(nextStep.href as never)}
+          />
         ) : null}
 
         <Text className="text-sm font-semibold text-funding-black mt-8 mb-3">Все шаги</Text>

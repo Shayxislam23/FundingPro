@@ -138,7 +138,7 @@ export default function AiWriterTab() {
         {!org ? (
           <Card className="mb-4">
             <Text className="text-sm text-gray-600">
-              Заполните профиль организации для персональных рекомендаций.
+              Заполните личный профиль для персональных рекомендаций.
             </Text>
             <Link href="/(app)/profile" className="text-funding-green font-semibold text-sm mt-2">
               Перейти в профиль →

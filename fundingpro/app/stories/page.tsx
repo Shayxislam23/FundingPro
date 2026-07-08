@@ -3,40 +3,40 @@ import Link from "next/link";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { ArrowRight, Building2 } from "lucide-react";
+import { ArrowRight, User } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Истории успеха",
   description:
-    "Пилотные кейсы организаций, использующих FundingPro для поиска грантов и подготовки заявок в Узбекистане.",
+    "Пилотные кейсы людей, использующих FundingPro для поиска грантов и программ в Узбекистане.",
   alternates: { canonical: "/stories" },
 };
 
 const PILOT_STORIES = [
   {
-    org: "ЭкоНКО Узбекистан",
-    sector: "Экология",
-    city: "Ташкент",
-    summary:
-      "НКО использовала AI-подбор для поиска климатических грантов ПРООН и ЕС. Платформа помогла сократить время на первичный скрининг с 2 недель до 2 дней.",
-    outcome: "Пилот · 3 гранта в shortlist",
-    status: "pilot" as const,
-  },
-  {
-    org: "АгроКонсалт ООО",
-    sector: "Сельское хозяйство",
-    city: "Самарканд",
-    summary:
-      "Малый бизнес протестировал проверку соответствия для программы GIZ по зелёной экономике. AI выявил недостающие документы до подачи заявки.",
-    outcome: "Пилот · eligibility score 78%",
-    status: "pilot" as const,
-  },
-  {
-    org: "Центр инновационного образования",
+    org: "Дилноза К.",
     sector: "Образование",
     city: "Ташкент",
     summary:
-      "Академическая организация подготовила черновик заявки на грант Всемирного банка с помощью AI Writer в формате UNDP.",
+      "Студентка бакалавриата использовала AI-подбор для стипендий и обменных программ ЕС. Платформа сократила поиск с двух недель до двух дней.",
+    outcome: "Пилот · 3 программы в shortlist",
+    status: "pilot" as const,
+  },
+  {
+    org: "Жавохир М.",
+    sector: "Социальные проекты",
+    city: "Нукус",
+    summary:
+      "Выпускник проверил соответствие гранту ПРООН до подачи. AI указал на пробелы в CV и мотивационном письме.",
+    outcome: "Пилот · eligibility score 76%",
+    status: "pilot" as const,
+  },
+  {
+    org: "Нилуфар А.",
+    sector: "Международные программы",
+    city: "Самарканд",
+    summary:
+      "Специалист подготовила черновик мотивационного письма для программы GIZ с помощью AI Writer за 15 минут.",
     outcome: "Пилот · черновик за 15 минут",
     status: "pilot" as const,
   },
@@ -66,7 +66,7 @@ export default function StoriesPage() {
           Истории участников пилота
         </h1>
         <p className="text-sm text-gray-500 mb-10 max-w-2xl">
-          Реальные организации из пилотной программы FundingPro в Узбекистане. Полные кейсы
+          Реальные участники пилота FundingPro в Узбекистане. Полные кейсы
           публикуются по мере завершения грантовых циклов.
         </p>
 
@@ -81,7 +81,7 @@ export default function StoriesPage() {
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: "#D9F7DD" }}
                 >
-                  <Building2 className="w-5 h-5" style={{ color: "#008A2E" }} />
+                  <User className="w-5 h-5" style={{ color: "#008A2E" }} />
                 </div>
                 <div>
                   <h2 className="font-bold text-funding-black">{story.org}</h2>

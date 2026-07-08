@@ -7,6 +7,7 @@ import { callAi, PROMPTS } from "@/lib/ai-gateway";
 import { logAiRequest } from "@/lib/db/proposals";
 import { computeEligibility, sanitizeForAI } from "@/lib/eligibility-score";
 import { checkEligibilityLimit } from "@/lib/plan-limits";
+import { trackServerEvent } from "@/lib/analytics-server";
 
 export const POST = withActiveUser(async (req, authUser) => {
   const body = await req.json();
@@ -69,6 +70,13 @@ export const POST = withActiveUser(async (req, authUser) => {
     },
     authUser.accessToken
   );
+
+  trackServerEvent("eligibility_run", {
+    userId: authUser.userId,
+    grantId: grantId ?? null,
+    status,
+    score,
+  });
 
   return apiSuccess({
     checkId,

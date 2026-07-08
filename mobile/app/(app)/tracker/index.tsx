@@ -1,14 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "expo-router";
-import { FlashList } from "@shopify/flash-list";
+import { Link, router } from "expo-router";
+import { FlashListSized, FLASH_LIST_ITEM_SIZE } from "../../../components/ui/FlashListSized";
 import { Pressable, RefreshControl, Text, View } from "react-native";
 import { formatDeadlineDisplay, formatGrantAmount } from "@fundingpro/shared";
 import { Card } from "../../../components/ui/Card";
 import { Screen } from "../../../components/ui/Screen";
 import { EmptyState, ErrorState, LoadingState } from "../../../components/ui/States";
+import { Button } from "../../../components/ui/Button";
 import { api } from "../../../lib/api/client";
 import { getStatusLabel, getStatusStyle } from "../../../lib/application-status";
+import { t } from "../../../lib/i18n";
 import { queryKeys } from "../../../lib/query-keys";
+
+const APPLICATION_ROW_HEIGHT = FLASH_LIST_ITEM_SIZE.application;
 
 export default function TrackerScreen() {
   const appsQuery = useQuery({
@@ -22,9 +26,10 @@ export default function TrackerScreen() {
   }
 
   return (
-    <Screen title="Мои заявки" showBack>
-      <FlashList
+    <Screen title={t.tracker} showBack>
+      <FlashListSized
         data={appsQuery.data?.applications ?? []}
+        estimatedItemSize={APPLICATION_ROW_HEIGHT}
         refreshControl={
           <RefreshControl refreshing={appsQuery.isRefetching} onRefresh={() => appsQuery.refetch()} />
         }

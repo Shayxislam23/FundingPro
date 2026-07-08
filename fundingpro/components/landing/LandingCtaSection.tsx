@@ -14,8 +14,7 @@ export function LandingCtaSection() {
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-4xl md:text-5xl font-black text-white mb-4">Готовы начать?</h2>
         <p className="mb-6 max-w-xl mx-auto" style={{ color: "#A7B8AA" }}>
-          Получите подборку грантов, стипендий и конкурсов для бизнеса и молодёжи Узбекистана на email или начните
-          бесплатно в дашборде.
+          Получите подборку грантов и программ для физических лиц в Узбекистане на email или начните бесплатно в дашборде.
         </p>
         <LeadMagnetForm />
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">

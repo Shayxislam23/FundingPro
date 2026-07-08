@@ -9,6 +9,7 @@ import { Search, Loader2 } from "lucide-react";
 import { translateSector } from "@fundingpro/shared";
 import { getAuthHeaders } from "@/lib/client-auth";
 import { buildMatchScoreDetails, type MatchScoreDetails } from "@/lib/match-score";
+import { trackEvent } from "@/lib/analytics";
 import {
   formatGrantAmount,
   formatDeadlineDisplay,
@@ -180,6 +181,8 @@ function GrantsPageContent() {
       const res = await fetch(`/api/v1/grants/${id}/save`, { method, headers });
       if (!res.ok) {
         setSaved((prev) => (isSaved ? [...prev, id] : prev.filter((s) => s !== id)));
+      } else if (!isSaved) {
+        trackEvent("onboarding_step_saved_grant", { grant_id: id });
       }
     } catch {
       setSaved((prev) => (isSaved ? [...prev, id] : prev.filter((s) => s !== id)));

@@ -11,7 +11,7 @@ function AuthContent() {
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white">
       <header className="p-6">
         <Link href="/" className="inline-flex items-center gap-2">
-          <FundingProLogo className="h-8 w-auto" />
+          <FundingProLogo variant="light" className="h-8 w-auto" />
         </Link>
       </header>
 
@@ -25,14 +25,14 @@ function AuthContent() {
           </div>
           <SignIn
             routing="hash"
-            signUpUrl="/auth"
+            signUpUrl="/sign-up"
             fallbackRedirectUrl="/dashboard"
             forceRedirectUrl="/dashboard"
           />
         </div>
       </main>
 
-      <LegalFooter />
+      <LegalFooter className="px-6 pb-6" />
     </div>
   );
 }

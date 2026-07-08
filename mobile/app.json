@@ -11,7 +11,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "uz.fundingpro.app",
-      "associatedDomains": ["applinks:www.fundingpro.uz"],
+      "associatedDomains": [
+        "applinks:www.fundingpro.uz"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -36,7 +38,10 @@
               "pathPrefix": "/mobile"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -55,7 +60,16 @@
           "color": "#008A2E"
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#008A2E"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

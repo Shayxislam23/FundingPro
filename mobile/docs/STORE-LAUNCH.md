@@ -120,4 +120,6 @@ Update [`RELEASE.md`](./RELEASE.md) and [`CHANGELOG.md`](../CHANGELOG.md) when t
 - [`RELEASE.md`](./RELEASE.md) — build commands, compliance, deep links
 - [`EAS-PREVIEW.md`](./EAS-PREVIEW.md) — preview profile smoke
 - [`CLAY-VERIFY.md`](./CLAY-VERIFY.md) — UI gate before screenshots
+- [`APP-PRIVACY-DATA-SAFETY.md`](./APP-PRIVACY-DATA-SAFETY.md) — pre-filled answers for Apple App Privacy / Google Play Data Safety forms
+- [`EAS-SUBMIT-CREDENTIALS.md`](./EAS-SUBMIT-CREDENTIALS.md) — what's missing in `eas.json` and where each credential comes from
 - [`SECURITY.md`](./SECURITY.md) — secrets and auth notes

@@ -25,12 +25,13 @@ Capture on **physical device** or simulator at **6.7" iPhone** and **Phone (1080
 
 | # | Screen | RU caption idea | Notes |
 |---|--------|-----------------|-------|
-| 1 | Public landing | «Гранты для НКО Узбекистана» | Hero + «Публичные гранты» CTA |
+| 1 | Public landing | «Гранты для бизнеса и молодёжи Узбекистана» | Hero + «Публичные гранты» CTA |
 | 2 | Grants catalog | «Поиск и фильтры грантов» | At least one grant card visible |
 | 3 | Home dashboard | «Ваш прогресс и заявки» | Stats + onboarding checklist if incomplete |
-| 4 | AI writer | «AI-черновик заявки» | Disclosure visible |
-| 5 | Subscription | «Тарифы и оплата» | Payment consent checkbox + plan cards |
-| 6 | Profile | «Профиль организации» | Account deletion link visible |
+| 4 | Opportunities Lab | «Путь к гранту за 10 шагов» | Journey progress bar + next-action card |
+| 5 | AI writer | «AI-черновик заявки» | Disclosure visible |
+| 6 | Subscription | «Тарифы и оплата» | Payment consent checkbox + plan cards |
+| 7 | Profile | «Профиль» | Account deletion link visible |
 
 **App Store Connect:** 6.7", 6.5", 5.5" if required; **Play Console:** phone + 7" tablet optional.
 
@@ -53,6 +54,9 @@ Payments: Uzum / card checkout may be disabled in review build (PAYMENTS_ENABLED
 Account deletion: Profile → «Запросить удаление аккаунта» (support ticket; backend erasure planned).
 
 AI: In-app disclosure at Dashboard → AI → «Раскрытие AI».
+
+Opportunities Lab: More → «Opportunities Lab» — 10-step guided onboarding for
+youth/business applicants (self-report progress, no payment involved).
 
 Legal URLs (live):
   Privacy: https://www.fundingpro.uz/legal/privacy

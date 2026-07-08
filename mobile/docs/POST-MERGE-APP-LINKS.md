@@ -1,5 +1,7 @@
 # Post-merge App Links cheat sheet
 
+> **Status (2026-07-08):** PR #8 merged ✅ · Site live at `www.fundingpro.uz` ✅ · Both `.well-known` endpoints return 200 ✅ · `X-App-Links-Config: incomplete` still present — needs Vercel env vars (Step 1 below).
+
 Run these steps **immediately after** the PR is merged and Vercel finishes its production deploy.
 
 ---
@@ -14,7 +16,12 @@ In [Vercel Dashboard → Project → Settings → Environment Variables](https:/
 | `ANDROID_RELEASE_SHA256` | EAS keystore or Play Console signing certificates page. Accepts hex with or without colons; comma-separate multiple fingerprints. Example: `AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99` |
 | `ANDROID_PACKAGE` | Only set if overriding the default `uz.fundingpro.app` |
 
-> **Env-only changes do NOT trigger an automatic redeploy.** After saving the vars, manually redeploy Production in the Vercel dashboard (Deployments → ⋯ → Redeploy).
+> **Env-only changes do NOT trigger an automatic redeploy.** After saving the vars, manually redeploy Production:
+> ```bash
+> cd fundingpro && vercel --prod
+> ```
+
+> **Note on apex domain:** `fundingpro.uz` (no www) redirects 307 → `www.fundingpro.uz`. This is normal Vercel behavior (primary domain = www). The mobile app already targets `www.fundingpro.uz` in `associatedDomains` and `intentFilters` — no change needed.
 
 ---
 

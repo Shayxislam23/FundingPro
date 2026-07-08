@@ -11,6 +11,7 @@ function jsonRpcEnvelope(
   body: { result?: Record<string, unknown>; error?: PaymeJsonRpcResponse["error"] }
 ): PaymeJsonRpcResponse {
   return {
+    jsonrpc: "2.0" as const,
     id,
     ...body,
   };

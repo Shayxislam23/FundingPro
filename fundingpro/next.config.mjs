@@ -69,8 +69,10 @@ const nextConfig = {
   outputFileTracingRoot: repoRoot,
   transpilePackages: ["@fundingpro/shared"],
   async rewrites() {
-    // Some hosts/CDNs mishandle App Router folders under `app/.well-known`.
-    // Proxy the Apple/Google verification paths to stable API routes.
+    // Proxy /.well-known/* to stable API routes under app/api/well-known/.
+    // These are "beforeFiles" rewrites (default when returning an array), so they
+    // run before filesystem routing — the canonical handlers are the API routes only.
+    // See mobile/docs/POST-MERGE-APP-LINKS.md for post-deploy verification steps.
     return [
       {
         source: "/.well-known/apple-app-site-association",

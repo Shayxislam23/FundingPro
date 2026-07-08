@@ -104,7 +104,7 @@ cd fundingpro && npm run app-links:check -- --live
 
 3. Universal / App Links open `https://www.fundingpro.uz/mobile/*` on a physical device.
 
-**Known gap (2026-07-08):** production currently returns **404** for both well-known paths. Code routes exist under `fundingpro/app/.well-known/*/route.ts` — redeploy web after merge, then set env vars. Do not submit for store review until this is green.
+**Known gap (2026-07-08):** production currently returns **404** for both well-known paths. Canonical API routes live under `fundingpro/app/api/well-known/` (rewritten from `/.well-known/*` via `next.config.mjs`) — redeploy web after merge, then set env vars. Do not submit for store review until this is green.
 
 ## Phase 4 — Store listing copy
 

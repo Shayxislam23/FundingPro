@@ -7,6 +7,7 @@ export {
   createSubscriptionPaymentIntent,
   getDefaultProvider,
   getPaymentIntegrationStatus,
+  getEnabledPaymentProviders,
   getPaymentProvider,
   getPublicPaymentConfig,
   getProviderStatus,

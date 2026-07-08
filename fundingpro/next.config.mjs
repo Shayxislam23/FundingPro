@@ -67,7 +67,11 @@ const securityHeaders = [
 
 const nextConfig = {
   outputFileTracingRoot: repoRoot,
-  transpilePackages: ["@fundingpro/shared"],
+  webpack(config) {
+    config.resolve.alias["@fundingpro/shared"] = path.resolve(appDir, "lib/fundingpro-shared");
+    config.resolve.alias["@fundingpro/api-types"] = path.resolve(appDir, "lib/fundingpro-api-types");
+    return config;
+  },
   async rewrites() {
     // Proxy /.well-known/* to stable API routes under app/api/well-known/.
     // These are "beforeFiles" rewrites (default when returning an array), so they

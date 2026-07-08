@@ -83,9 +83,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "resend": "^6.12.3",
-    "tailwind-merge": "^3.6.0",
-    "@fundingpro/api-types": "*",
-    "@fundingpro/shared": "*"
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^2.0.0",

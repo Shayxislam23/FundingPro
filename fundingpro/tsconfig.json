@@ -29,6 +29,18 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@fundingpro/shared": [
+        "./lib/fundingpro-shared"
+      ],
+      "@fundingpro/shared/*": [
+        "./lib/fundingpro-shared/*"
+      ],
+      "@fundingpro/api-types": [
+        "./lib/fundingpro-api-types"
+      ],
+      "@fundingpro/api-types/*": [
+        "./lib/fundingpro-api-types/*"
       ]
     },
     "target": "ES2017"

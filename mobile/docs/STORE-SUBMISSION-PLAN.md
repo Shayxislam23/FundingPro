@@ -21,14 +21,14 @@ External:
 
 ## Status board (update as you go)
 
-Last code pass: **2026-07-08**
+Last code pass: **2026-07-08** · Last analysis: **2026-07-08 19:45 +05**
 
 | Phase | Owner | Status | Blocker |
 |------:|-------|--------|---------|
 | 0 Developer accounts | Human / billing | ⬜ | $99 Apple + $25 Google |
 | 1 Draft listings | Human | ⬜ | Needs Phase 0 |
 | 2 EAS submit credentials | Human | ⬜ | Needs Phase 1 IDs; `eas.json` skeleton ✅ code-complete |
-| 3 App Links (code) | Dev | ✅ code-complete | Route handlers + rewrites verified; SHA-256 format fixed. **Still needs:** set `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` on Vercel → redeploy → `app-links:check --live` |
+| 3 App Links (code) | Dev | ⚠️ redeploy needed | Code ✅ in PR #8 (merged 2026-07-08). **Vercel running June 26 build** — GitHub integration disconnected, `.well-known/*` → 404 live. Fix: `cd fundingpro && npx vercel deploy --prod` in terminal → then set `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` on Vercel → redeploy again. |
 | 4 Store listing copy | Done in repo | ✅ draft | Paste into consoles (`STORE-LISTING-COPY.md`) |
 | 5 Screenshots / feature graphic | Human / design | ⬜ | After Clay verify; «Мой путь» screen now titled correctly |
 | 6 Privacy / Data Safety forms | Human | ✅ answers ready | Fill from `APP-PRIVACY-DATA-SAFETY.md` |
@@ -104,7 +104,18 @@ cd fundingpro && npm run app-links:check -- --live
 
 3. Universal / App Links open `https://www.fundingpro.uz/mobile/*` on a physical device.
 
-**Known gap (2026-07-08):** production currently returns **404** for both well-known paths. Canonical API routes live under `fundingpro/app/api/well-known/` (rewritten from `/.well-known/*` via `next.config.mjs`) — redeploy web after merge, then set env vars. Do not submit for store review until this is green.
+**Known gap (2026-07-08):** production currently returns **404** for both well-known paths.
+
+Root cause: Vercel is running a **June 26, 2026** build (commit `450c00dd`, message: "fix(mobile): remove invalid JSON comment from eas.json"). The GitHub ↔ Vercel integration is **disconnected** — PR #8 merge did NOT auto-trigger a redeploy.
+
+**Fix (do this now):**
+```bash
+cd fundingpro
+npx vercel deploy --prod   # deploys main branch code
+```
+Then set the env vars (Step 1 above) and redeploy once more.
+
+Do not submit for store review until this is green.
 
 ## Phase 4 — Store listing copy
 

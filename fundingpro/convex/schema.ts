@@ -656,27 +656,4 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_status", ["status"]),
 
-  /** Opportunities Lab onboarding layer — additive, all journey fields optional. */
-  labParticipants: defineTable({
-    userId: v.id("users"),
-    fullName: v.optional(v.string()),
-    age: v.optional(v.number()),
-    city: v.optional(v.string()),
-    telegram: v.optional(v.string()),
-    educationStatus: v.optional(v.string()),
-    interests: v.optional(v.array(v.string())),
-    cvStatus: v.optional(v.union(v.literal("uploaded"), v.literal("help_requested"))),
-    linkedinUrl: v.optional(v.string()),
-    motivationLetterStatus: v.optional(
-      v.union(v.literal("submitted"), v.literal("needs_revision"), v.literal("approved"))
-    ),
-    chosenGrantId: v.optional(v.id("grants")),
-    applicationProofStatus: v.optional(
-      v.union(v.literal("submitted"), v.literal("needs_revision"), v.literal("approved"))
-    ),
-    attendanceOk: v.optional(v.boolean()),
-    mentorStatus: v.optional(v.string()),
-    mentorNotes: v.optional(v.string()),
-    ...timestamps,
-  }).index("by_user", ["userId"]),
 });

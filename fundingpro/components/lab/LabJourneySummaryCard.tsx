@@ -4,24 +4,32 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, GraduationCap } from "lucide-react";
 import { getAuthHeaders } from "@/lib/client-auth";
-import type { LabJourney } from "@/lib/db/lab";
 import { LAB_STEPS } from "@/components/lab/labSteps";
+
+type OnboardingStatusShape = {
+  progressPercent: number;
+  nextStepId: string | null;
+};
 
 /**
  * Compact Opportunities Lab progress card for the main dashboard.
- * Self-contained (fetches its own data) so it can be dropped into the
- * existing dashboard page without touching its data flow.
+ * Self-contained (fetches its own data via /api/v1/onboarding/status).
  */
 export function LabJourneySummaryCard() {
-  const [journey, setJourney] = useState<LabJourney | null>(null);
+  const [status, setStatus] = useState<OnboardingStatusShape | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     getAuthHeaders()
-      .then((headers) => fetch("/api/v1/lab/journey", { headers }))
+      .then((headers) => fetch("/api/v1/onboarding/status", { headers }))
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (!cancelled && d?.data) setJourney(d.data as LabJourney);
+        if (!cancelled && d?.data) {
+          setStatus({
+            progressPercent: d.data.progressPercent ?? 0,
+            nextStepId: d.data.nextStepId ?? null,
+          });
+        }
       })
       .catch(() => {});
     return () => {
@@ -29,9 +37,9 @@ export function LabJourneySummaryCard() {
     };
   }, []);
 
-  if (!journey) return null;
+  if (!status) return null;
 
-  const nextMeta = LAB_STEPS.find((s) => s.id === journey.nextStepId);
+  const nextMeta = LAB_STEPS.find((s) => s.id === status.nextStepId);
 
   return (
     <Link
@@ -44,21 +52,21 @@ export function LabJourneySummaryCard() {
             <GraduationCap className="w-5 h-5 text-funding-green" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-funding-black">Opportunities Lab</p>
+            <p className="text-sm font-semibold text-funding-black">Мой путь к заявке</p>
             <p className="text-xs text-gray-500 truncate">
               {nextMeta ? `Далее: ${nextMeta.label.toLowerCase()}` : "Все шаги выполнены — проверьте сертификат"}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
-          <span className="text-sm font-bold text-funding-green">{journey.progressPercent}%</span>
+          <span className="text-sm font-bold text-funding-green">{status.progressPercent}%</span>
           <ChevronRight className="w-4 h-4 text-gray-300" />
         </div>
       </div>
       <div className="h-1.5 rounded-full bg-funding-light-bg overflow-hidden mt-3">
         <div
           className="h-full rounded-full bg-funding-green transition-all"
-          style={{ width: `${journey.progressPercent}%` }}
+          style={{ width: `${status.progressPercent}%` }}
         />
       </div>
     </Link>

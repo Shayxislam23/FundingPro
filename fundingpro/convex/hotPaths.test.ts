@@ -429,6 +429,9 @@ describe("subscription lifecycle", () => {
     const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
     const subscription = await authed.query(api.users.getSubscription, {});
     expect(subscription).toBeNull();
+  });
+});
+
 describe("payments.adminReport reconciliation", () => {
   test("flags provider-paid Payme transactions that are not locally successful", async () => {
     const t = convexTest(schema, modules);

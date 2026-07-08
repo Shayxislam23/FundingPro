@@ -21,14 +21,14 @@ External:
 
 ## Status board (update as you go)
 
-Last code pass: **2026-07-08** · Last analysis: **2026-07-08 19:45 +05**
+Last code pass: **2026-07-08** · Last analysis: **2026-07-09 00:17 +05**
 
 | Phase | Owner | Status | Blocker |
 |------:|-------|--------|---------|
 | 0 Developer accounts | Human / billing | ⬜ | $99 Apple + $25 Google |
 | 1 Draft listings | Human | ⬜ | Needs Phase 0 |
 | 2 EAS submit credentials | Human | ⬜ | Needs Phase 1 IDs; `eas.json` skeleton ✅ code-complete |
-| 3 App Links (code) | Dev | ⚠️ redeploy needed | Code ✅ in PR #8 (merged 2026-07-08). **Vercel running June 26 build** — GitHub integration disconnected, `.well-known/*` → 404 live. Fix: `cd fundingpro && npx vercel deploy --prod` in terminal → then set `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` on Vercel → redeploy again. |
+| 3 App Links (code) | Dev | ⚠️ env vars missing | Code ✅ live. Both `.well-known/*` → **200 OK** ✅ (confirmed 2026-07-09). **`X-App-Links-Config: incomplete`** — needs `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` on Vercel Production, then `npx vercel --prod`. Run `bash paste-secrets.sh` from repo root. |
 | 4 Store listing copy | Done in repo | ✅ draft | Paste into consoles (`STORE-LISTING-COPY.md`) |
 | 5 Screenshots / feature graphic | Human / design | ⬜ | After Clay verify; «Мой путь» screen now titled correctly |
 | 6 Privacy / Data Safety forms | Human | ✅ answers ready | Fill from `APP-PRIVACY-DATA-SAFETY.md` |

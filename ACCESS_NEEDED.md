@@ -1,6 +1,6 @@
 # ACCESS_NEEDED — что нужно от тебя для полного запуска
 
-Обновлено: 2026-07-08 | Статус проверен агентом автоматически.
+Обновлено: 2026-07-09 | Статус проверен агентом автоматически.
 
 ---
 
@@ -9,8 +9,8 @@
 | Компонент | Статус | Детали |
 |---|---|---|
 | **fundingpro.uz** | ✅ LIVE | 200 OK, Next.js SSR работает, Vercel READY |
-| `www.fundingpro.uz/.well-known/apple-app-site-association` | ⚠️ Неполный | 200 OK ✅, но `TEAM_ID.uz.fundingpro.app` — placeholder, нужен APPLE_TEAM_ID |
-| `www.fundingpro.uz/.well-known/assetlinks.json` | ⚠️ Неполный | 200 OK ✅, но SHA256 — placeholder, нужен ANDROID_RELEASE_SHA256 |
+| `www.fundingpro.uz/.well-known/apple-app-site-association` | ⚠️ Неполный | 200 OK ✅ · `X-App-Links-Config: incomplete` · Нужен APPLE_TEAM_ID на Vercel |
+| `www.fundingpro.uz/.well-known/assetlinks.json` | ⚠️ Неполный | 200 OK ✅ · `X-App-Links-Config: incomplete` · Нужен ANDROID_RELEASE_SHA256 на Vercel |
 | `fundingpro.uz` → `www.fundingpro.uz` | ✅ OK | 307 redirect — штатное поведение Vercel |
 | GitHub Actions CI | ❌ BILLING LOCK | Аккаунт GitHub заблокирован по биллингу (см. Блокер #3) |
 | GitHub repo visibility | ✅ Public | Изменено агентом 2026-07-08 для снятия лимита минут |

@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch: # allow manual re-trigger from Actions tab
 
 jobs:
   web:

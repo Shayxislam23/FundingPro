@@ -65,7 +65,7 @@ Use this when onboarding production or after rotating secrets.
 - [ ] **2.** Set **required** vars: `NEXT_PUBLIC_CONVEX_URL`, Clerk keys, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
 - [ ] **3.** Set **recommended**: `ADMIN_EMAILS`, `NEXT_PUBLIC_APP_URL`, `CLERK_JWT_ISSUER_DOMAIN`, `CONVEX_DEPLOY_KEY`, `CONVEX_SYSTEM_SECRET`
 - [ ] **4.** App Links (M-02): `APPLE_TEAM_ID`, `ANDROID_RELEASE_SHA256` on **Production** (+ Preview if testing)
-- [ ] **4b.** Monorepo install: `fundingpro/vercel.json` → `"installCommand": "cd .. && npm ci"` (Root Directory = `fundingpro`)
+- [ ] **4b.** Vercel Root Directory = `fundingpro` → `installCommand: npm install` (lockfile lives at monorepo root; `cd .. && npm ci` only after Git reconnect with repo-root install — see ACCESS_NEEDED.md §3b)
 - [ ] **5.** Payments: set PSP credentials; keep **`PAYMENTS_ENABLED=false`** until O4 sandbox passes
 - [ ] **6.** Run `npm run deploy:check` — fix any `MISSING` lines
 - [ ] **7.** Run `npm run deploy:env` — review diff before pushing to Vercel

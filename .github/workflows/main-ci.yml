@@ -64,11 +64,13 @@ jobs:
       - name: Deploy readiness check
         run: npm run deploy:check
 
-      - name: Payments and App Links env (informational)
+      - name: Payments go-live env (informational)
         continue-on-error: true
-        run: |
-          npm run payments:golive-check || true
-          npm run app-links:check || true
+        run: npm run payments:golive-check
+
+      - name: App Links env (local — informational)
+        continue-on-error: true
+        run: npm run app-links:check
 
       - name: Build
         run: npm run build
@@ -186,9 +188,36 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: .
+
+      - name: Validate production smoke URL
+        env:
+          SMOKE_BASE_URL_PROD: ${{ secrets.SMOKE_BASE_URL_PROD }}
+        run: |
+          BASE="${SMOKE_BASE_URL_PROD:-https://www.fundingpro.uz}"
+          echo "PROD_BASE_URL=$BASE" >> "$GITHUB_ENV"
+          echo "SMOKE_BASE_URL=$BASE" >> "$GITHUB_ENV"
 
       - name: Wait for production to reflect this commit
         run: node scripts/production-content-check.mjs
+
+      - name: Live API smoke (production)
+        run: npm run test:smoke
+
+      - name: App Links live check
+        id: app_links_live
+        continue-on-error: true
+        run: npm run app-links:check -- --live
+
+      - name: App Links live warning
+        if: steps.app_links_live.outcome == 'failure'
+        run: |
+          echo "::warning::App Links live check failed — set APPLE_TEAM_ID + ANDROID_RELEASE_SHA256 on Vercel, then run bash paste-secrets.sh (see ACCESS_NEEDED.md). This step is informational until secrets are set."
 
   security:
     runs-on: ubuntu-latest

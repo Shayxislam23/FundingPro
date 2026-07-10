@@ -1,6 +1,6 @@
 # ACCESS_NEEDED — что нужно от тебя для полного запуска
 
-Обновлено: 2026-07-09 | Статус проверен агентом автоматически.
+Обновлено: 2026-07-10 | CI/deploy gate fixes в коде; human unblock ниже.
 
 ---
 
@@ -12,9 +12,11 @@
 | `www.fundingpro.uz/.well-known/apple-app-site-association` | ⚠️ Неполный | 200 OK ✅ · `X-App-Links-Config: incomplete` · Нужен APPLE_TEAM_ID на Vercel |
 | `www.fundingpro.uz/.well-known/assetlinks.json` | ⚠️ Неполный | 200 OK ✅ · `X-App-Links-Config: incomplete` · Нужен ANDROID_RELEASE_SHA256 на Vercel |
 | `fundingpro.uz` → `www.fundingpro.uz` | ✅ OK | 307 redirect — штатное поведение Vercel |
-| GitHub Actions CI | ❌ BILLING LOCK | Аккаунт GitHub заблокирован по биллингу (см. Блокер #3) |
-| GitHub repo visibility | ✅ Public | Изменено агентом 2026-07-08 для снятия лимита минут |
-| Vercel GitHub auto-deploy | ⚠️ Отключён | Деплои идут через Vercel CLI вручную |
+| GitHub Actions CI (`main-ci.yml`) | ❌ BILLING LOCK | См. Блокер #3 — код CI обновлён, ждёт разблокировки |
+| GitHub Release Gate (`release-gate.yml`) | ⏳ NEW | Scheduled prod smoke каждые 6ч + push main |
+| Ghost workflow `BuildFailed` | 🗑️ Удалён | id 306385397 — отключи уведомления (см. §3) |
+| GitHub repo visibility | ✅ Public | Public repo не снимает billing lock на аккаунте |
+| Vercel GitHub auto-deploy | ⚠️ Отключён | Reconnect в Vercel Dashboard (см. ниже) |
 | EAS CLI | ❌ Не установлен | `eas` не найден на машине |
 
 ---
@@ -97,6 +99,36 @@ GitHub → Settings → Billing & plans →
 ```
 
 После разблокировки биллинга CI должен заработать сразу (репо уже public).
+
+**Проверка после разблокировки:**
+```bash
+gh workflow run main-ci.yml --ref main
+gh workflow run release-gate.yml --ref main
+gh run list --limit 5
+```
+
+**Уведомления:** ghost workflow `BuildFailed` удалён. Если письма с пустым именем workflow продолжаются — GitHub → Settings → Notifications → отключить failed workflows для deleted.
+
+---
+
+### 🔐 3b. Vercel ↔ GitHub reconnect (автодеплой main)
+
+Merge в `main` не обновляет prod, пока Git integration отключена.
+
+1. [vercel.com](https://vercel.com) → Project **fundingpro** → Settings → **Git**
+2. Connect repository: `Shayxislam23/FundingPro`
+3. Production Branch: `main`
+4. Root Directory: `fundingpro`
+5. Убедись, что `fundingpro/vercel.json` использует `"installCommand": "cd .. && npm ci"` (lockfile в корне monorepo)
+6. После reconnect: push в main → Vercel auto-deploy (или `vercel --prod` как fallback)
+
+**Post-merge verify (локально):**
+```bash
+cd fundingpro
+PROD_BASE_URL=https://www.fundingpro.uz node scripts/production-content-check.mjs
+SMOKE_BASE_URL=https://www.fundingpro.uz npm run test:smoke
+npm run app-links:check -- --live
+```
 
 ---
 

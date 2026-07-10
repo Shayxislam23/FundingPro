@@ -2,9 +2,36 @@
 
 Operator checklist for production go-live tasks that require Vercel/Convex/PSP dashboard access. Code and scripts live in-repo; **live verification is required** before closing security findings.
 
-Last updated: 2026-06-27
+Last updated: 2026-07-10
 
-## One-command in-repo gate
+## CI and production deploy gate
+
+| Workflow | File | When it runs |
+|----------|------|--------------|
+| CI | `.github/workflows/main-ci.yml` | push/PR main; `production-deploy-check` only on push to main |
+| Release Gate | `.github/workflows/release-gate.yml` | push main, every 6h schedule, manual dispatch |
+
+**Production gate checks (live):** health, AASA 200/json, individuals-first landing copy, API smoke, App Links (warning-only until env complete).
+
+**Blockers (human):**
+1. GitHub billing lock — [github.com/settings/billing](https://github.com/settings/billing)
+2. Vercel Git reconnect — see [ACCESS_NEEDED.md](../../ACCESS_NEEDED.md) §3b
+3. App Links env — `bash paste-secrets.sh` from repo root
+
+**After billing unblock:**
+```bash
+gh workflow run main-ci.yml --ref main
+gh workflow run release-gate.yml --ref main
+gh run watch
+cd fundingpro
+PROD_BASE_URL=https://www.fundingpro.uz npm run prod:content-check
+SMOKE_BASE_URL=https://www.fundingpro.uz npm run test:smoke
+SMOKE_BASE_URL=https://www.fundingpro.uz npm run app-links:check -- --live
+```
+
+**Ghost workflow:** `BuildFailed` (deleted) may still send empty-name failure emails — disable in GitHub Notifications.
+
+---
 
 ```bash
 cd fundingpro
@@ -38,6 +65,7 @@ Use this when onboarding production or after rotating secrets.
 - [ ] **2.** Set **required** vars: `NEXT_PUBLIC_CONVEX_URL`, Clerk keys, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`
 - [ ] **3.** Set **recommended**: `ADMIN_EMAILS`, `NEXT_PUBLIC_APP_URL`, `CLERK_JWT_ISSUER_DOMAIN`, `CONVEX_DEPLOY_KEY`, `CONVEX_SYSTEM_SECRET`
 - [ ] **4.** App Links (M-02): `APPLE_TEAM_ID`, `ANDROID_RELEASE_SHA256` on **Production** (+ Preview if testing)
+- [ ] **4b.** Monorepo install: `fundingpro/vercel.json` → `"installCommand": "cd .. && npm ci"` (Root Directory = `fundingpro`)
 - [ ] **5.** Payments: set PSP credentials; keep **`PAYMENTS_ENABLED=false`** until O4 sandbox passes
 - [ ] **6.** Run `npm run deploy:check` — fix any `MISSING` lines
 - [ ] **7.** Run `npm run deploy:env` — review diff before pushing to Vercel

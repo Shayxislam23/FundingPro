@@ -1,0 +1,62 @@
+name: Release Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 */6 * * *"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'schedule' && 'schedule' || 'on-demand' }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+
+jobs:
+  production_smoke_gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: fundingpro
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: .
+
+      - name: Validate production smoke URL
+        env:
+          SMOKE_BASE_URL_PROD: ${{ secrets.SMOKE_BASE_URL_PROD }}
+        run: |
+          if [ -n "$SMOKE_BASE_URL_PROD" ]; then
+            echo "SMOKE_BASE_URL=$SMOKE_BASE_URL_PROD" >> "$GITHUB_ENV"
+            echo "PROD_BASE_URL=$SMOKE_BASE_URL_PROD" >> "$GITHUB_ENV"
+            echo "Using SMOKE_BASE_URL_PROD secret"
+          else
+            echo "SMOKE_BASE_URL=https://www.fundingpro.uz" >> "$GITHUB_ENV"
+            echo "PROD_BASE_URL=https://www.fundingpro.uz" >> "$GITHUB_ENV"
+            echo "Using default production URL: https://www.fundingpro.uz"
+          fi
+
+      - name: Production content check
+        run: node scripts/production-content-check.mjs
+
+      - name: Live API smoke
+        run: npm run test:smoke
+
+      - name: App Links live check
+        id: app_links_live
+        continue-on-error: true
+        run: npm run app-links:check -- --live
+
+      - name: App Links live warning
+        if: steps.app_links_live.outcome == 'failure'
+        run: |
+          echo "::warning::App Links live check failed — set APPLE_TEAM_ID + ANDROID_RELEASE_SHA256 on Vercel, then run bash paste-secrets.sh (see ACCESS_NEEDED.md)."

@@ -1,3 +1,4 @@
+# Billing lock on github.com/settings/billing blocks all jobs — not a workflow bug.
 name: Release Gate
 
 on:

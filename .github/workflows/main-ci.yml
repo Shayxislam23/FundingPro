@@ -1,3 +1,5 @@
+# If jobs fail instantly with "account is locked due to a billing issue", fix at
+# https://github.com/settings/billing — workflow YAML is valid; see ACCESS_NEEDED.md §3.
 name: CI
 
 on:
@@ -178,6 +180,7 @@ jobs:
     # council-audit history: three rounds of fixes sat merged-but-unshipped).
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: web
     defaults:
       run:

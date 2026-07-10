@@ -16,7 +16,7 @@
 | GitHub Release Gate (`release-gate.yml`) | ⏳ NEW | Scheduled prod smoke каждые 6ч + push main |
 | Ghost workflow `BuildFailed` | 🗑️ Удалён | id 306385397 — отключи уведомления (см. §3) |
 | GitHub repo visibility | ✅ Public | Public repo не снимает billing lock на аккаунте |
-| Vercel GitHub auto-deploy | ⚠️ Отключён | Reconnect в Vercel Dashboard (см. ниже) |
+| Vercel GitHub auto-deploy | ⚠️ Отключён | Reconnect в Vercel Dashboard — Root Directory **`.`** (рекомендуется) или `fundingpro` (см. §3b) |
 | EAS CLI | ❌ Не установлен | `eas` не найден на машине |
 
 ---
@@ -118,9 +118,14 @@ Merge в `main` не обновляет prod, пока Git integration откл�
 1. [vercel.com](https://vercel.com) → Project **fundingpro** → Settings → **Git**
 2. Connect repository: `Shayxislam23/FundingPro`
 3. Production Branch: `main`
-4. Root Directory: `fundingpro`
-5. Убедись, что `fundingpro/vercel.json` использует `"installCommand": "cd .. && npm ci"` (lockfile в корне monorepo)
-6. После reconnect: push в main → Vercel auto-deploy (или `vercel --prod` как fallback)
+4. **Root Directory** — выбери один вариант (оба работают):
+
+| Root Directory | vercel.json | installCommand | Когда использовать |
+|---|---|---|---|
+| **`.` (корень репо)** — рекомендуется | `vercel.json` в корне | `npm ci` | Git reconnect: полный clone, lockfile в корне |
+| `fundingpro` | `fundingpro/vercel.json` | `npm install` | Текущий CLI deploy; **не** используй `cd .. && npm ci` — родительский lockfile не попадает в bundle |
+
+5. После reconnect: push в `main` → Vercel auto-deploy (или `cd fundingpro && npx vercel --prod` как fallback)
 
 **Post-merge verify (локально):**
 ```bash

@@ -1,6 +1,6 @@
 # ACCESS_NEEDED — что нужно от тебя для полного запуска
 
-Обновлено: 2026-07-10 | CI/deploy gate fixes в коде; human unblock ниже.
+Обновлено: 2026-07-10 (повторная проверка CI) | CI/deploy gate fixes в коде; human unblock ниже.
 
 ---
 
@@ -12,7 +12,7 @@
 | `www.fundingpro.uz/.well-known/apple-app-site-association` | ⚠️ Неполный | 200 OK ✅ · `X-App-Links-Config: incomplete` · Нужен APPLE_TEAM_ID на Vercel |
 | `www.fundingpro.uz/.well-known/assetlinks.json` | ⚠️ Неполный | 200 OK ✅ · `X-App-Links-Config: incomplete` · Нужен ANDROID_RELEASE_SHA256 на Vercel |
 | `fundingpro.uz` → `www.fundingpro.uz` | ✅ OK | 307 redirect — штатное поведение Vercel |
-| GitHub Actions CI (`main-ci.yml`) | ❌ BILLING LOCK | См. Блокер #3 — код CI обновлён, ждёт разблокировки |
+| GitHub Actions CI (`main-ci.yml`) | ❌ BILLING LOCK | Проверено **2026-07-10** — runs `29077750889`, `29077752343` всё ещё `billing issue` |
 | GitHub Release Gate (`release-gate.yml`) | ⏳ NEW | Scheduled prod smoke каждые 6ч + push main |
 | Ghost workflow `BuildFailed` | 🗑️ Удалён | id 306385397 — отключи уведомления (см. §3) |
 | GitHub repo visibility | ✅ Public | Public repo не снимает billing lock на аккаунте |
@@ -100,11 +100,15 @@ GitHub → Settings → Billing & plans →
 
 После разблокировки биллинга CI должен заработать сразу (репо уже public).
 
+**Последняя проверка (2026-07-10):** workflow dispatch запускается, но jobs падают с `"The job was not started because your account is locked due to a billing issue."` — биллинг **ещё заблокирован**.
+
 **Проверка после разблокировки:**
 ```bash
 gh workflow run main-ci.yml --ref main
 gh workflow run release-gate.yml --ref main
-gh run list --limit 5
+sleep 10
+gh run list --limit 3
+gh run view <latest-run-id>
 ```
 
 **Уведомления:** ghost workflow `BuildFailed` удалён. Если письма с пустым именем workflow продолжаются — GitHub → Settings → Notifications → отключить failed workflows для deleted.
@@ -115,17 +119,25 @@ gh run list --limit 5
 
 Merge в `main` не обновляет prod, пока Git integration отключена.
 
+**Если OAuth «Connect GitHub» в Vercel не открывается / падает:** сначала переподключи GitHub в [github.com/settings/applications](https://github.com/settings/applications) → Authorized OAuth Apps → Vercel → Grant (или Revoke + заново Connect в Vercel). Альтернатива без dashboard OAuth: deploy вручную `cd fundingpro && npx vercel --prod --yes` после каждого merge (см. `fundingpro/docs/DOMAIN-STRATEGY.md`).
+
+**Пошагово в Vercel Dashboard:**
+
 1. [vercel.com](https://vercel.com) → Project **fundingpro** → Settings → **Git**
-2. Connect repository: `Shayxislam23/FundingPro`
-3. Production Branch: `main`
-4. **Root Directory** — выбери один вариант (оба работают):
+2. **Disconnect** старую интеграцию (если есть «broken» link)
+3. **Connect Git Repository** → GitHub → авторизуй `Shayxislam23/FundingPro` (нужен repo admin)
+4. Production Branch: `main`
+5. **Root Directory** — выбери один вариант (оба работают; см. `fundingpro/docs/DOMAIN-STRATEGY.md`):
 
 | Root Directory | vercel.json | installCommand | Когда использовать |
 |---|---|---|---|
 | **`.` (корень репо)** — рекомендуется | `vercel.json` в корне | `npm ci` | Git reconnect: полный clone, lockfile в корне |
 | `fundingpro` | `fundingpro/vercel.json` | `npm install` | Текущий CLI deploy; **не** используй `cd .. && npm ci` — родительский lockfile не попадает в bundle |
 
-5. После reconnect: push в `main` → Vercel auto-deploy (или `cd fundingpro && npx vercel --prod` как fallback)
+6. Save → **Deployments** → убедись, что новый deploy из `main` пошёл автоматически
+7. Fallback без Git: `cd fundingpro && npx vercel --prod --yes`
+
+**Домены:** canonical prod = `www.fundingpro.uz`. Не используй `fundingpro.app` (legacy Netlify) или `funding-pro.vercel.app` для smoke/CI — см. `fundingpro/docs/DOMAIN-STRATEGY.md`.
 
 **Post-merge verify (локально):**
 ```bash
@@ -133,6 +145,27 @@ cd fundingpro
 PROD_BASE_URL=https://www.fundingpro.uz node scripts/production-content-check.mjs
 SMOKE_BASE_URL=https://www.fundingpro.uz npm run test:smoke
 npm run app-links:check -- --live
+```
+
+---
+
+### 🔐 3c. GitHub repo secret (опционально) — `SMOKE_BASE_URL_PROD`
+
+Используется в `main-ci.yml` (production-deploy-check) и `release-gate.yml`. По умолчанию оба workflow берут `https://www.fundingpro.uz`.
+
+**Когда задавать:** если prod временно на другом URL или нужен staging gate.
+
+```
+GitHub → Repo Settings → Secrets and variables → Actions → New repository secret
+Name: SMOKE_BASE_URL_PROD
+Value: https://www.fundingpro.uz
+```
+
+Локальная проверка App Links (скрипт работает, `--live` проверен 2026-07-10):
+```bash
+cd fundingpro
+SMOKE_BASE_URL=https://www.fundingpro.uz npm run app-links:check -- --live
+# Ожидаем fail пока нет APPLE_TEAM_ID / ANDROID_RELEASE_SHA256 — см. paste-secrets.sh
 ```
 
 ---

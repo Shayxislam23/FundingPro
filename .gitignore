@@ -2,6 +2,11 @@
 .env.local
 node_modules
 
+# macOS Finder / editor duplicate copies
+* 2.*
+* 3.*
+* 4.*
+
 # Local bulk skill installs (cyber/etc.); committed SEO skills from 4c50ca9 stay tracked
 .agents/skills/*
 !.agents/skills/alert-manager/

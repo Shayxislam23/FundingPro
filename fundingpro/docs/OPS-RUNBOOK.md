@@ -15,8 +15,10 @@ Last updated: 2026-07-10
 
 **Blockers (human):**
 1. GitHub billing lock — [github.com/settings/billing](https://github.com/settings/billing)
-2. Vercel Git reconnect — see [ACCESS_NEEDED.md](../../ACCESS_NEEDED.md) §3b
+2. Vercel Git reconnect — see [ACCESS_NEEDED.md](../../ACCESS_NEEDED.md) §3b and [DOMAIN-STRATEGY.md](./DOMAIN-STRATEGY.md)
 3. App Links env — `bash paste-secrets.sh` from repo root
+
+**Canonical domain:** [DOMAIN-STRATEGY.md](./DOMAIN-STRATEGY.md) — always use `https://www.fundingpro.uz` for smoke / App Links / content-check.
 
 **After billing unblock:**
 ```bash

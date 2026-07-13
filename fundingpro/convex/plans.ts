@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { query } from "./_generated/server";
 import { paginateAll } from "./lib/pagination";
 
-const HIGHLIGHTED = new Set(["plan-ngo-pro", "plan-business-pro"]);
+const HIGHLIGHTED = new Set(["plan-ngo-pro"]);
 
 const planRow = v.object({
   id: v.string(),

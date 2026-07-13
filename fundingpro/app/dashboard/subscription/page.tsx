@@ -10,8 +10,7 @@ import { useSubscriptionCheckout } from "./hooks/useSubscriptionCheckout";
 import { mapApiPlan, type PaymentConfig, type Plan } from "./types";
 
 export default function SubscriptionPage() {
-  const [ngoPlans, setNgoPlans] = useState<Plan[]>([]);
-  const [businessPlans, setBusinessPlans] = useState<Plan[]>([]);
+  const [individualPlans, setIndividualPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [usdUzsRate, setUsdUzsRate] = useState<number | null>(null);
@@ -71,8 +70,13 @@ export default function SubscriptionPage() {
     ])
       .then(([plansRes, payRes]) => {
         const grouped = plansRes.data?.grouped;
-        if (grouped?.ngo?.length) setNgoPlans(grouped.ngo.map(mapApiPlan));
-        if (grouped?.business?.length) setBusinessPlans(grouped.business.map(mapApiPlan));
+        const individuals = grouped?.individual?.length
+          ? grouped.individual
+          : (plansRes.data?.plans ?? []).filter(
+              (p: { targetType?: string }) =>
+                String(p.targetType ?? "").trim().toUpperCase() === "INDIVIDUAL"
+            );
+        if (individuals.length) setIndividualPlans(individuals.map(mapApiPlan));
         if (payRes.data) setPaymentConfig(payRes.data);
         if (plansRes.data?.usdUzsRate) setUsdUzsRate(plansRes.data.usdUzsRate);
       })
@@ -190,8 +194,7 @@ export default function SubscriptionPage() {
         </div>
       ) : (
         <SubscriptionPlans
-          ngoPlans={ngoPlans}
-          businessPlans={businessPlans}
+          individualPlans={individualPlans}
           paymentsOn={paymentsOn}
           requested={requested}
           requesting={requesting}

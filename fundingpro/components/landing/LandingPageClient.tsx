@@ -37,10 +37,19 @@ export function LandingPageClient() {
       .then((r) => r.json())
       .then((d) => {
         const all = (d.data?.plans ?? []) as LandingPlan[];
-        const featured = FEATURED_PLAN_IDS.map((id) => all.find((p) => p.id === id)).filter(
+        const individual =
+          ((d.data?.grouped?.individual ?? []) as LandingPlan[]).length > 0
+            ? (d.data.grouped.individual as LandingPlan[])
+            : all.filter((p) => {
+                const t = String((p as LandingPlan & { targetType?: string }).targetType ?? "")
+                  .trim()
+                  .toUpperCase();
+                return t === "INDIVIDUAL" || FEATURED_PLAN_IDS.includes(p.id);
+              });
+        const featured = FEATURED_PLAN_IDS.map((id) => individual.find((p) => p.id === id)).filter(
           (p): p is LandingPlan => Boolean(p)
         );
-        setPlans(featured.length > 0 ? featured : all.slice(0, 3));
+        setPlans(featured.length > 0 ? featured : individual.slice(0, 3));
         if (d.data?.usdUzsRate) setUsdUzsRate(Number(d.data.usdUzsRate));
       })
       .catch(() => setPlans([]))

@@ -13,9 +13,9 @@ export const siteConfig = {
   description:
     "FundingPro помогает физическим лицам находить гранты и программы, проверять соответствие требованиям донора и готовить заявки с помощью AI.",
   ogDescription:
-    "Поиск международных грантов, AI-проверка соответствия и подготовка заявок для Узбекистана и Центральной Азии.",
+    "AI-платформа для физических лиц: поиск грантов и стипендий, проверка соответствия и подготовка заявок в Узбекистане и Центральной Азии.",
   twitterDescription:
-    "Поиск международных грантов, AI-проверка соответствия и подготовка заявок.",
+    "Гранты и стипендии для физических лиц: AI-подбор, проверка соответствия и черновики заявок.",
 } as const;
 
 export function absoluteUrl(path: string): string {
@@ -33,7 +33,6 @@ export function defaultOgImages(): NonNullable<Metadata["openGraph"]>["images"] 
       alt: siteConfig.name,
     },
   ];
-;
 }
 
 /** Minimal ru/uz hreflang stubs for public pages (Uzbek UI planned). */

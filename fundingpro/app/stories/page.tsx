@@ -8,7 +8,7 @@ import { ArrowRight, User } from "lucide-react";
 export const metadata: Metadata = {
   title: "Истории успеха",
   description:
-    "Пилотные кейсы людей, использующих FundingPro для поиска грантов и программ в Узбекистане.",
+    "Пилотные кейсы физических лиц, использующих FundingPro для поиска грантов, стипендий и программ в Узбекистане.",
   alternates: { canonical: "/stories" },
 };
 

@@ -9,7 +9,7 @@ import { ArrowRight, ChevronDown } from "lucide-react";
 export const metadata: Metadata = {
   title: "Как это работает",
   description:
-    "Узнайте, как FundingPro помогает найти гранты, проверить соответствие требованиям донора и подготовить заявку с помощью AI.",
+    "Как FundingPro помогает физическим лицам найти гранты и стипендии, проверить соответствие требованиям донора и подготовить заявку с помощью AI.",
   alternates: hreflangAlternates("/how-it-works"),
 };
 

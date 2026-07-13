@@ -17,7 +17,8 @@ export type LandingPlan = {
   highlighted: boolean;
 };
 
-export const FEATURED_PLAN_IDS = ["plan-ngo-basic", "plan-ngo-pro", "plan-business-starter"];
+/** Individuals-first featured tiers (legacy slugs; targetType is INDIVIDUAL). */
+export const FEATURED_PLAN_IDS = ["plan-ngo-basic", "plan-ngo-pro"];
 
 export const LANDING_FEATURES: {
   icon: LucideIcon;
@@ -47,12 +48,12 @@ export const LANDING_FEATURES: {
   {
     icon: FolderOpen,
     title: "Документы",
-    desc: "Безопасное хранение учредительных документов, CV и писем поддержки.",
+    desc: "Безопасное хранение CV, мотивационных писем и справок для подачи.",
   },
   {
     icon: Users,
     title: "Консультанты",
-    desc: "Проверенные эксперты по грантовому письму, бюджетированию и отчётности.",
+    desc: "Проверенные эксперты по грантовому письму, стипендиям и отчётности.",
   },
 ];
 

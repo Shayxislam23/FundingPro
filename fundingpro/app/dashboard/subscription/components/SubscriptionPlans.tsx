@@ -5,8 +5,7 @@ import { ProviderPicker } from "./ProviderPicker";
 import type { PaymentProvider, Plan } from "../types";
 
 type SubscriptionPlansProps = {
-  ngoPlans: Plan[];
-  businessPlans: Plan[];
+  individualPlans: Plan[];
   paymentsOn: boolean;
   requested: Set<string>;
   requesting: string | null;
@@ -17,8 +16,7 @@ type SubscriptionPlansProps = {
 };
 
 export function SubscriptionPlans({
-  ngoPlans,
-  businessPlans,
+  individualPlans,
   paymentsOn,
   requested,
   requesting,
@@ -29,11 +27,11 @@ export function SubscriptionPlans({
 }: SubscriptionPlansProps) {
   return (
     <>
-      {ngoPlans.length > 0 && (
+      {individualPlans.length > 0 ? (
         <div className="mb-8">
           <h2 className="font-bold text-funding-black mb-4">Для физических лиц</h2>
           <div className="grid sm:grid-cols-3 gap-5">
-            {ngoPlans.map((plan) => (
+            {individualPlans.map((plan) => (
               <PlanCard
                 key={plan.id}
                 plan={plan}
@@ -48,26 +46,15 @@ export function SubscriptionPlans({
             ))}
           </div>
         </div>
-      )}
-
-      {businessPlans.length > 0 && (
-        <div className="mb-8">
-          <h2 className="font-bold text-funding-black mb-4">Бизнес</h2>
-          <div className="grid sm:grid-cols-3 gap-5">
-            {businessPlans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                paymentsOn={paymentsOn}
-                requested={requested.has(plan.id)}
-                requesting={requesting === plan.id}
-                paying={paying?.startsWith(plan.id) ?? false}
-                onRequest={() => onRequest(plan.id, plan.nameRu)}
-                onPay={(provider, method) => onPay(plan.id, provider, method)}
-                enabledProviders={enabledProviders}
-              />
-            ))}
-          </div>
+      ) : (
+        <div className="mb-8 rounded-2xl border border-gray-100 bg-white p-6">
+          <h2 className="font-bold text-funding-black mb-2">Для физических лиц</h2>
+          <p className="text-sm text-gray-500">
+            Тарифы временно недоступны. Если проблема повторяется — напишите в поддержку.
+          </p>
+          <p className="text-xs text-gray-400 mt-3">
+            Тарифы для организаций и бизнеса появятся позже.
+          </p>
         </div>
       )}
     </>

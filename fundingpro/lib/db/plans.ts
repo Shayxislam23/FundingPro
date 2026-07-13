@@ -21,10 +21,26 @@ export async function listPlans(): Promise<PlanRow[]> {
   }
 }
 
+function normalizeTargetType(targetType: string): string {
+  return targetType.trim().toUpperCase();
+}
+
+/** v1 public surface: individuals only (физлица). */
+export function isIndividualPlan(plan: Pick<PlanRow, "targetType">): boolean {
+  return normalizeTargetType(plan.targetType) === "INDIVIDUAL";
+}
+
+/** Plans shown on landing /pricing — excludes deferred NGO/business tiers. */
+export function listIndividualPlans(plans: PlanRow[]): PlanRow[] {
+  return plans.filter(isIndividualPlan);
+}
+
 export function groupPlansByTarget(plans: PlanRow[]) {
-  const ngo = plans.filter((p) => p.targetType === "NGO");
-  const business = plans.filter(
-    (p) => p.targetType === "BUSINESS" || p.targetType === "ENTERPRISE"
-  );
-  return { ngo, business };
+  const individual = plans.filter((p) => normalizeTargetType(p.targetType) === "INDIVIDUAL");
+  const ngo = plans.filter((p) => normalizeTargetType(p.targetType) === "NGO");
+  const business = plans.filter((p) => {
+    const t = normalizeTargetType(p.targetType);
+    return t === "BUSINESS" || t === "ENTERPRISE";
+  });
+  return { individual, ngo, business };
 }

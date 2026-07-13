@@ -34,6 +34,12 @@ type Settings = {
   uzumCheckoutConfigured?: boolean;
   paymeConfigured?: boolean;
   clickConfigured?: boolean;
+  appLinks?: {
+    ready: boolean;
+    iosReady: boolean;
+    androidReady: boolean;
+    missing: string[];
+  };
 };
 
 function StatusCell({ ok, yes, no }: { ok: boolean; yes?: string; no?: string }) {
@@ -164,12 +170,28 @@ export default function AdminSettingsPage() {
                 { label: "Аудит-лог", value: "Активен", ok: true },
                 { label: "Файлы: публичные URL", value: "Отключены", ok: true },
                 { label: "Admin gate", value: "ADMIN_EMAILS + middleware", ok: s?.adminEmailsConfigured ?? false },
+                {
+                  label: "App Links (AASA / assetlinks)",
+                  value: s?.appLinks?.ready
+                    ? "Готово"
+                    : s?.appLinks?.missing?.length
+                      ? `Неполное: ${s.appLinks.missing.join(", ")}`
+                      : "Статус неизвестен",
+                  ok: s?.appLinks?.ready ?? false,
+                },
               ].map(({ label, value, ok }) => (
-                <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50">
+                <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50 gap-3">
                   <span className="text-xs font-medium text-gray-500">{label}</span>
-                  <span className="text-xs font-semibold" style={{ color: ok !== false ? "#008A2E" : "#d97706" }}>{value}</span>
+                  <span className="text-xs font-semibold text-right" style={{ color: ok !== false ? "#008A2E" : "#d97706" }}>{value}</span>
                 </div>
               ))}
+              {s?.appLinks && !s.appLinks.ready && (
+                <p className="text-xs text-gray-400 mt-3">
+                  Задайте недостающие env на Vercel Production (имена переменных выше), затем
+                  редеплой. Значения секретов сюда не выводятся — см.{" "}
+                  <code className="text-[10px]">docs/OPS-RUNBOOK.md</code> § M-02.
+                </p>
+              )}
             </div>
           </div>
 

@@ -6,6 +6,9 @@
  * validates .well-known App Links routes.
  *
  * Usage: PROD_BASE_URL=https://www.fundingpro.uz node scripts/production-content-check.mjs
+ *
+ * App Links: incomplete config is a WARN by default (human paste-secrets).
+ * Fail hard with REQUIRE_COMPLETE_APP_LINKS=1 after APPLE_TEAM_ID + ANDROID_RELEASE_SHA256 are set.
  */
 const BASE = (process.env.PROD_BASE_URL ?? "https://www.fundingpro.uz").replace(/\/$/, "");
 const MAX_WAIT_MS = Number(process.env.PROD_CHECK_MAX_WAIT_MS ?? 8 * 60_000);
@@ -15,6 +18,9 @@ const REQUIRE_COMPLETE_APP_LINKS = process.env.REQUIRE_COMPLETE_APP_LINKS === "1
 const STALE_MARKERS = [
   "Для бизнеса и молодёжи Узбекистана",
   "Для НКО Узбекистана",
+  "Бизнес Starter",
+  "Бизнес Pro",
+  "НКО Базовый",
 ];
 const FRESH_MARKER = "Для физических лиц в Узбекистане";
 
@@ -55,18 +61,44 @@ async function checkAppleAppSiteAssociation() {
     return false;
   }
 
-  if (REQUIRE_COMPLETE_APP_LINKS) {
-    const config = res.headers.get("X-App-Links-Config");
-    if (config === "incomplete") {
-      const missing = res.headers.get("X-App-Links-Missing") ?? "";
+  const config = res.headers.get("X-App-Links-Config");
+  const missing = res.headers.get("X-App-Links-Missing") ?? "";
+
+  if (config === "incomplete") {
+    if (REQUIRE_COMPLETE_APP_LINKS) {
       console.error(
-        `FAIL: X-App-Links-Config is incomplete (${missing || "set APPLE_TEAM_ID on Vercel"})`
+        `FAIL: X-App-Links-Config is incomplete (${missing || "set APPLE_TEAM_ID + ANDROID_RELEASE_SHA256 on Vercel"})`
       );
       return false;
     }
+    console.warn(
+      `WARN: App Links incomplete (${missing || "missing env"}) — paste secrets on Vercel, then redeploy. ` +
+        `Set REQUIRE_COMPLETE_APP_LINKS=1 to fail the gate after secrets are live.`
+    );
+    console.log("OK — apple-app-site-association returns 200 with JSON content-type (config still incomplete).");
+  } else {
+    console.log("OK — apple-app-site-association returns 200 with JSON content-type (App Links ready).");
   }
+  return true;
+}
 
-  console.log("OK — apple-app-site-association returns 200 with JSON content-type.");
+async function checkPricingIndividualsFirst() {
+  const res = await fetch(`${BASE}/pricing`);
+  if (!res.ok) {
+    console.warn(`WARN: GET /pricing returned ${res.status} — skipped pricing copy check.`);
+    return true;
+  }
+  const html = await res.text();
+  const staleOnPricing = ["Бизнес Starter", "Бизнес Pro", "НКО Базовый", "Для НКО"].filter((m) =>
+    html.includes(m)
+  );
+  if (staleOnPricing.length > 0) {
+    console.error(
+      `FAIL: /pricing still shows deferred org/business tiers: ${staleOnPricing.join(", ")}`
+    );
+    return false;
+  }
+  console.log("OK — /pricing has no deferred NGO/business plan names.");
   return true;
 }
 
@@ -102,6 +134,11 @@ async function main() {
   }
 
   console.log("OK — production reflects the latest individuals-first copy.");
+
+  const pricingOk = await checkPricingIndividualsFirst();
+  if (!pricingOk) {
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {

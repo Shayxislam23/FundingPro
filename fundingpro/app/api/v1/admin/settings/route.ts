@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { apiSuccess } from "@/lib/api";
 import { withAdmin } from "@/lib/api-route";
 import { COMPANY } from "@/lib/company-info";
+import { appLinksConfigStatus } from "@/lib/mobile-app-links";
 import {
   isClickConfigured,
   isPaymeConfigured,
@@ -23,6 +24,7 @@ export const GET = withAdmin(async () => {
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
   );
   const adminEmails = process.env.ADMIN_EMAILS ?? "";
+  const appLinks = appLinksConfigStatus();
 
   return apiSuccess({
     platform: "FundingPro v1.0",
@@ -51,5 +53,12 @@ export const GET = withAdmin(async () => {
     uzumCheckoutConfigured: isUzumCheckoutConfigured(),
     paymeConfigured: isPaymeConfigured(),
     clickConfigured: isClickConfigured(),
+    appLinks: {
+      ready: appLinks.missing.length === 0,
+      iosReady: appLinks.iosReady,
+      androidReady: appLinks.androidReady,
+      /** Env var names only — never secret values. */
+      missing: appLinks.missing,
+    },
   });
 });

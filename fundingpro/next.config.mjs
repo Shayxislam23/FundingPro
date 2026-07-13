@@ -66,8 +66,6 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
-  typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
   webpack(config) {
     config.resolve.alias["@fundingpro/shared"] = path.resolve(appDir, "lib/fundingpro-shared");
     config.resolve.alias["@fundingpro/api-types"] = path.resolve(appDir, "lib/fundingpro-api-types");

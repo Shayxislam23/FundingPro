@@ -71,8 +71,8 @@ export const SEED_PLANS = [
   {
     slug: "plan-ngo-consulting",
     name: "Consulting",
-    nameRu: "Консалтинг",
-    targetType: "NGO",
+    nameRu: "Консалтинг — физлица",
+    targetType: "INDIVIDUAL",
     priceUsd: 100,
     priceUzs: 1280000,
     features: ["Персональный консультант", "Pre-application review"],
@@ -218,7 +218,14 @@ export const SEED_STORY_GRANT_KEYS = [
   "b2000001-0000-4000-8000-000000000004", // Центр образования — World Bank education
 ] as const;
 
-export const SEED_GRANTS: GrantSeed[] = [
+/** Prefer физлица in catalog; keep pure Government-only mega-grants unchanged. */
+function withIndividualsFirst(types: string[]): string[] {
+  if (types.includes("Individual")) return types;
+  if (types.length === 1 && types[0] === "Government") return types;
+  return ["Individual", ...types];
+}
+
+const SEED_GRANTS_RAW: GrantSeed[] = [
   { key: "b2000001-0000-4000-8000-000000000001", title: "Climate Resilience for Central Asia", titleRu: "Устойчивость к изменению климата в Центральной Азии", description: "Support for climate adaptation projects in CA region.", descriptionRu: "Поддержка проектов адаптации к изменению климата в регионе ЦА.", donorKey: "a1000001-0000-4000-8000-000000000001", sectors: ["climate", "environment"], countryScope: ["Uzbekistan", "Kazakhstan", "Kyrgyzstan"], applicantTypes: ["NGO", "Government"], amountMin: 50000, amountMax: 250000, deadline: "2026-09-30", sourceUrl: "https://undp.org/grants/climate-ca", isFeatured: true },
   { key: "b2000001-0000-4000-8000-000000000002", title: "EU Civil Society Support Programme", titleRu: "Программа поддержки гражданского общества ЕС", description: "Strengthening civil society organizations in Uzbekistan.", descriptionRu: "Укрепление организаций гражданского общества в Узбекистане.", donorKey: "a1000001-0000-4000-8000-000000000002", sectors: ["civil_society", "human_rights"], countryScope: ["Uzbekistan"], applicantTypes: ["NGO"], amountMin: 30000, amountMax: 150000, deadline: "2026-08-15", sourceUrl: "https://europa.eu/grants/cso-uz", isFeatured: true },
   { key: "b2000001-0000-4000-8000-000000000003", title: "GIZ Green Economy Initiative", titleRu: "Инициатива GIZ по зелёной экономике", description: "Sustainable agriculture and green business development.", descriptionRu: "Устойчивое сельское хозяйство и развитие зелёного бизнеса.", donorKey: "a1000001-0000-4000-8000-000000000003", sectors: ["agriculture", "economy"], countryScope: ["Uzbekistan", "Tajikistan"], applicantTypes: ["NGO", "Business"], amountMin: 40000, amountMax: 200000, deadline: "2026-10-01", sourceUrl: "https://giz.de/grants/green-economy", isFeatured: false },
@@ -251,18 +258,26 @@ export const SEED_GRANTS: GrantSeed[] = [
   { key: "b2000001-0000-4000-8000-000000000030", title: "Swiss Art & Culture Exchange", titleRu: "Обмен в сфере искусства и культуры", description: "Cross-border cultural exchange programmes.", descriptionRu: "Трансграничные программы культурного обмена.", donorKey: "a1000001-0000-4000-8000-000000000005", sectors: ["culture", "arts"], countryScope: ["Uzbekistan", "Switzerland"], applicantTypes: ["NGO", "Individual"], amountMin: 8000, amountMax: 40000, deadline: "2026-06-15", sourceUrl: "https://eda.admin.ch/culture-exchange", isFeatured: false },
 ];
 
+export const SEED_GRANTS: GrantSeed[] = SEED_GRANTS_RAW.map((grant) => ({
+  ...grant,
+  applicantTypes: withIndividualsFirst(grant.applicantTypes),
+}));
+
 export const SEED_GRANT_REQUIREMENTS = [
-  { grantKey: "b2000001-0000-4000-8000-000000000001", requirementType: "org_type", text: "Зарегистрированная НКО или государственная организация", required: true },
-  { grantKey: "b2000001-0000-4000-8000-000000000001", requirementType: "experience", text: "Минимум 2 года опыта в экологических проектах", required: true },
-  { grantKey: "b2000001-0000-4000-8000-000000000001", requirementType: "documents", text: "Учредительные документы и финансовая отчётность", required: true },
-  { grantKey: "b2000001-0000-4000-8000-000000000002", requirementType: "org_type", text: "НКО, зарегистрированная в Узбекистане", required: true },
+  { grantKey: "b2000001-0000-4000-8000-000000000001", requirementType: "applicant", text: "Физическое лицо, НКО или государственная организация", required: true },
+  { grantKey: "b2000001-0000-4000-8000-000000000001", requirementType: "experience", text: "Опыт или мотивированное участие в экологических / climate проектах", required: true },
+  { grantKey: "b2000001-0000-4000-8000-000000000001", requirementType: "documents", text: "CV или портфолио проекта; для НКО — учредительные документы", required: true },
+  { grantKey: "b2000001-0000-4000-8000-000000000002", requirementType: "org_type", text: "НКО или инициативная группа (физлица — через партнёрскую НКО)", required: true },
   { grantKey: "b2000001-0000-4000-8000-000000000002", requirementType: "experience", text: "Опыт работы с целевыми группами не менее 1 года", required: true },
-  { grantKey: "b2000001-0000-4000-8000-000000000004", requirementType: "org_type", text: "Государственное учреждение или университет", required: true },
-  { grantKey: "b2000001-0000-4000-8000-000000000004", requirementType: "budget", text: "Софинансирование не менее 20%", required: false },
-  { grantKey: "b2000001-0000-4000-8000-000000000009", requirementType: "org_type", text: "Зарегистрированное юридическое лицо (МСП)", required: true },
+  { grantKey: "b2000001-0000-4000-8000-000000000004", requirementType: "applicant", text: "Студент, исследователь, вуз или госучреждение", required: true },
+  { grantKey: "b2000001-0000-4000-8000-000000000004", requirementType: "budget", text: "Софинансирование не менее 20% (для организаций)", required: false },
+  { grantKey: "b2000001-0000-4000-8000-000000000006", requirementType: "applicant", text: "Молодые специалисты и физлица 18–35 лет", required: true },
+  { grantKey: "b2000001-0000-4000-8000-000000000009", requirementType: "org_type", text: "Зарегистрированное юридическое лицо (МСП) или ИП", required: true },
   { grantKey: "b2000001-0000-4000-8000-000000000009", requirementType: "experience", text: "Действующий бизнес не менее 1 года", required: true },
-  { grantKey: "b2000001-0000-4000-8000-000000000012", requirementType: "org_type", text: "НКО или коммерческая организация", required: true },
+  { grantKey: "b2000001-0000-4000-8000-000000000012", requirementType: "applicant", text: "Физлицо-инноватор, НКО или коммерческая организация", required: true },
   { grantKey: "b2000001-0000-4000-8000-000000000012", requirementType: "documents", text: "Техническое обоснование проекта", required: true },
+  { grantKey: "b2000001-0000-4000-8000-000000000015", requirementType: "applicant", text: "Физическое лицо или стартап", required: true },
+  { grantKey: "b2000001-0000-4000-8000-000000000022", requirementType: "applicant", text: "Женщины-предприниматели и физлица", required: true },
 ] as const;
 
 export function parseDeadline(dateStr: string): number {

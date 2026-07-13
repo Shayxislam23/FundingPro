@@ -73,6 +73,12 @@ export const funnel = adminQuery({
     withApplication: v.number(),
     withSubscription: v.number(),
     conversionRate: v.number(),
+    /** Active «Мой путь» participants (labParticipants rows). */
+    labParticipants: v.number(),
+    /** Lab participants with application proof approved or submitted task. */
+    withVerifiedApplication: v.number(),
+    /** North Star: verified applications / lab participants (0–1). */
+    northStarRate: v.number(),
   }),
   handler: async (ctx, args) => {
     const cutoff = args.last30DaysSignups ? (args.now ?? 0) - 30 * 24 * 60 * 60 * 1000 : 0;
@@ -88,9 +94,11 @@ export const funnel = adminQuery({
     let withSaved = 0;
     let withApp = 0;
     let withSub = 0;
+    let labParticipants = 0;
+    let withVerifiedApplication = 0;
 
     for (const user of users) {
-      const [org, saved, app, sub] = await Promise.all([
+      const [org, saved, app, sub, lab] = await Promise.all([
         ctx.db
           .query("organizationMembers")
           .withIndex("by_user", (q) => q.eq("userId", user._id))
@@ -109,11 +117,22 @@ export const funnel = adminQuery({
             q.eq("userId", user._id).eq("status", "ACTIVE")
           )
           .first(),
+        ctx.db
+          .query("labParticipants")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .first(),
       ]);
       if (org) withOrg++;
       if (saved) withSaved++;
       if (app) withApp++;
       if (sub) withSub++;
+      if (lab) {
+        labParticipants++;
+        const proof = lab.applicationProofStatus;
+        if (proof === "submitted" || proof === "completed") {
+          withVerifiedApplication++;
+        }
+      }
     }
 
     const signups = users.length;
@@ -124,6 +143,9 @@ export const funnel = adminQuery({
       withApplication: withApp,
       withSubscription: withSub,
       conversionRate: signups > 0 ? withSub / signups : 0,
+      labParticipants,
+      withVerifiedApplication,
+      northStarRate: labParticipants > 0 ? withVerifiedApplication / labParticipants : 0,
     };
   },
 });

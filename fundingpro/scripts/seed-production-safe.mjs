@@ -64,10 +64,17 @@ try {
     process.exit(1);
   }
   const data = await response.json();
-  const plans = Array.isArray(data?.plans) ? data.plans : data;
-  const count = Array.isArray(plans) ? plans.length : 0;
+  const count =
+    typeof data?.data?.total === "number"
+      ? data.data.total
+      : Array.isArray(data?.data?.plans)
+        ? data.data.plans.length
+        : Array.isArray(data?.plans)
+          ? data.plans.length
+          : 0;
   if (count === 0) {
     console.error("✗ Verify failed: plans array is empty");
+    console.error("  Tip: confirm CONVEX_DEPLOY_KEY targets production, then re-run seed.");
     process.exit(1);
   }
   console.log(`✓ Production seed verified — ${count} plan(s) available.`);

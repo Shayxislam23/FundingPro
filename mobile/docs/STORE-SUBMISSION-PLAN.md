@@ -21,7 +21,7 @@ External:
 
 ## Status board (update as you go)
 
-Last code pass: **2026-07-13** · Last live App Links check: **2026-07-13** (both `.well-known/*` → **200**, still `X-App-Links-Config: incomplete`)
+Last code pass: **2026-07-13** · Failure-modes P0/P1 code: seed individuals-first align, North Star funnel. Live App Links still incomplete; store Phases 0–2 / 5 / 7–10 still human. Version **0.4.0** until Phase 8.
 
 | Phase | Owner | Status | Blocker |
 |------:|-------|--------|---------|

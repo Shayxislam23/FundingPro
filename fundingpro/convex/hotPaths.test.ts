@@ -596,6 +596,9 @@ describe("adminStats.dashboard", () => {
     });
     expect(funnel.signups).toBeGreaterThanOrEqual(1);
     expect(funnel.withApplication).toBeGreaterThanOrEqual(1);
+    expect(funnel.labParticipants).toBeGreaterThanOrEqual(0);
+    expect(funnel.withVerifiedApplication).toBeGreaterThanOrEqual(0);
+    expect(funnel.northStarRate).toBeGreaterThanOrEqual(0);
   });
 });
 

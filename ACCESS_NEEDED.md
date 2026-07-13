@@ -1,6 +1,8 @@
 # ACCESS_NEEDED — что нужно от тебя для полного запуска
 
-Обновлено: **2026-07-13** | Live verify после попытки prod seed; human unblock ниже.
+Обновлено: **2026-07-13** | Failure-modes plan execution: seed align + North Star funnel; live catalog still empty until deploy key.
+
+См. также: [`fundingpro/docs/FAILURE_MODES_100.md`](fundingpro/docs/FAILURE_MODES_100.md), [`fundingpro/docs/TECH_DEBT_P3.md`](fundingpro/docs/TECH_DEBT_P3.md).
 
 ---
 
@@ -20,7 +22,9 @@
 | Ghost workflow `BuildFailed` | 🗑️ Удалён | id 306385397 — отключи уведомления (см. §3) |
 | GitHub repo visibility | ✅ Public | Public не снимает billing lock на аккаунте |
 | Vercel GitHub auto-deploy | ⚠️ Отключён | Reconnect в Vercel Dashboard — Root Directory **`.`** (рекомендуется) или `fundingpro` (см. §3b). CLI deploy работает. |
-| Convex prod seed | ❌ BLOCKED | `npm run convex:seed:prod` → нет `CONVEX_DEPLOY_KEY` в shell / `fundingpro/.env.production.local` |
+| Convex prod seed | ❌ BLOCKED | Нет `CONVEX_DEPLOY_KEY`. Seed **код** обновлён (физлица в grants + Consulting=INDIVIDUAL) — применить после ключа |
+| Admin North Star | ✅ Code | `/admin/funnel` показывает `northStarRate` (lab proof submitted/completed) |
+| `ignoreBuildErrors` | ✅ Removed | typecheck green; см. TECH_DEBT_P3.md |
 | EAS CLI | ❌ Не установлен | `eas` не найден на машине |
 
 **Критичный gap:** сайт живой, но каталог тарифов/грантов пустой. После успешного seed ожидается ~6 plans и grants > 0 (см. `fundingpro/docs/PROD-SEED.md`).

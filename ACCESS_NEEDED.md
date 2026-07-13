@@ -1,29 +1,76 @@
 # ACCESS_NEEDED — что нужно от тебя для полного запуска
 
-Обновлено: 2026-07-10 (повторная проверка CI) | CI/deploy gate fixes в коде; human unblock ниже.
+Обновлено: **2026-07-13** | Live verify после попытки prod seed; human unblock ниже.
 
 ---
 
-## Текущий live-статус
+## Текущий live-статус (2026-07-13)
 
 | Компонент | Статус | Детали |
 |---|---|---|
-| **fundingpro.uz** | ✅ LIVE | 200 OK, Next.js SSR работает, Vercel READY |
-| `www.fundingpro.uz/.well-known/apple-app-site-association` | ⚠️ Неполный | 200 OK ✅ · `X-App-Links-Config: incomplete` · Нужен APPLE_TEAM_ID на Vercel |
-| `www.fundingpro.uz/.well-known/assetlinks.json` | ⚠️ Неполный | 200 OK ✅ · `X-App-Links-Config: incomplete` · Нужен ANDROID_RELEASE_SHA256 на Vercel |
+| **www.fundingpro.uz** | ✅ LIVE | Health `ok`, DB ok, AI ok, **payments.enabled: false** |
+| Landing / product | ✅ OK | Individuals-first copy на проде |
+| `/api/v1/plans` | ❌ Пусто | `total: 0` — Convex production **не засеян** |
+| `/api/v1/grants` | ❌ Пусто | `total: 0` |
+| `/.well-known/apple-app-site-association` | ⚠️ Неполный | 200 OK · `X-App-Links-Config: incomplete` · нужны `APPLE_TEAM_ID`, `ANDROID_RELEASE_SHA256` |
+| `/.well-known/assetlinks.json` | ⚠️ Неполный | То же |
 | `fundingpro.uz` → `www.fundingpro.uz` | ✅ OK | 307 redirect — штатное поведение Vercel |
-| GitHub Actions CI (`main-ci.yml`) | ❌ BILLING LOCK | Проверено **2026-07-10** — runs `29077750889`, `29077752343` всё ещё `billing issue` |
-| GitHub Release Gate (`release-gate.yml`) | ⏳ NEW | Scheduled prod smoke каждые 6ч + push main |
+| GitHub Actions CI (`main-ci.yml`) | ❌ BILLING LOCK | Проверено **2026-07-13** — runs `29224989839`, `29224847321` (~4–5s): *account locked due to a billing issue* |
+| GitHub Release Gate (`release-gate.yml`) | ❌ BILLING LOCK | `29224761180` (push main), `29218435343` (schedule) — то же |
 | Ghost workflow `BuildFailed` | 🗑️ Удалён | id 306385397 — отключи уведомления (см. §3) |
-| GitHub repo visibility | ✅ Public | Public repo не снимает billing lock на аккаунте |
-| Vercel GitHub auto-deploy | ⚠️ Отключён | Reconnect в Vercel Dashboard — Root Directory **`.`** (рекомендуется) или `fundingpro` (см. §3b) |
+| GitHub repo visibility | ✅ Public | Public не снимает billing lock на аккаунте |
+| Vercel GitHub auto-deploy | ⚠️ Отключён | Reconnect в Vercel Dashboard — Root Directory **`.`** (рекомендуется) или `fundingpro` (см. §3b). CLI deploy работает. |
+| Convex prod seed | ❌ BLOCKED | `npm run convex:seed:prod` → нет `CONVEX_DEPLOY_KEY` в shell / `fundingpro/.env.production.local` |
 | EAS CLI | ❌ Не установлен | `eas` не найден на машине |
+
+**Критичный gap:** сайт живой, но каталог тарифов/грантов пустой. После успешного seed ожидается ~6 plans и grants > 0 (см. `fundingpro/docs/PROD-SEED.md`).
+
+---
+
+## Чеклист для тебя (human, параллельно)
+
+1. **Convex prod seed** — добавить `CONVEX_DEPLOY_KEY` и запустить seed (см. §0 ниже).
+2. **GitHub billing** — [settings/billing](https://github.com/settings/billing) — снять lock, иначе CI/Release Gate не стартуют.
+3. **`bash paste-secrets.sh`** — `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` на Vercel → App Links complete.
+4. **Vercel ↔ GitHub reconnect** — Root Directory `.` — auto-deploy с `main`.
+5. **Apple $99 + Google $25** — store accounts / listings (см. §4–5).
+
+---
+
+### ⚡ 0. CONVEX_DEPLOY_KEY → production seed ← продуктовый приоритет
+
+Без этого `/api/v1/plans` и `/api/v1/grants` остаются пустыми.
+
+1. Convex Dashboard → **production** deployment → **Settings** → **Deploy Key** → создать/скопировать.
+2. Добавить в `fundingpro/.env.production.local` (файл **не** коммитить):
+
+```bash
+CONVEX_DEPLOY_KEY="prod:…your-key…"
+```
+
+3. Из корня монорепо:
+
+```bash
+npm run convex:seed:prod
+```
+
+4. Проверка:
+
+```bash
+curl -s https://www.fundingpro.uz/api/v1/plans | head -c 500
+curl -s "https://www.fundingpro.uz/api/v1/grants?limit=1" | head -c 300
+# Ожидание: plans ~6, grants total > 0
+```
+
+Полная инструкция: [`fundingpro/docs/PROD-SEED.md`](fundingpro/docs/PROD-SEED.md).
+
+**Статус 2026-07-13:** ключ в локальных env **отсутствует** — агент seed не смог выполнить.
 
 ---
 
 ## Секреты/доступы, которые нужно добавить тебе
 
-### ⚡ БЫСТРЫЙ СТАРТ — 30 секунд
+### ⚡ БЫСТРЫЙ СТАРТ App Links — 30 секунд
 
 Открой терминал в корне проекта и запусти:
 ```bash
@@ -76,16 +123,16 @@ npx vercel --prod
 
 **Проверка после редеплоя:**
 ```bash
-curl -sI https://www.fundingpro.uz/.well-known/apple-app-site-association | grep x-app-links
-curl -sI https://www.fundingpro.uz/.well-known/assetlinks.json | grep x-app-links
-# Ожидаемый результат: заголовок x-app-links-missing ОТСУТСТВУЕТ
+curl -sI https://www.fundingpro.uz/.well-known/apple-app-site-association | grep -i x-app-links
+curl -sI https://www.fundingpro.uz/.well-known/assetlinks.json | grep -i x-app-links
+# Ожидаемый результат: `x-app-links-config: incomplete` и `x-app-links-missing` ОТСУТСТВУЮТ
 ```
 
 ---
 
-### 🔐 3. GitHub Actions — BILLING LOCK ← ГЛАВНЫЙ БЛОКЕР
+### 🔐 3. GitHub Actions — BILLING LOCK ← блокер автоматики
 
-**Реальная причина:** Аккаунт GitHub (`Shayxislam23`) **заблокирован по биллингу** — это не нехватка минут, а именно блокировка аккаунта. Сообщение в CI: `"The job was not started because your account is locked due to a billing issue."`
+**Реальная причина:** Аккаунт GitHub (`Shayxislam23`) **заблокирован по биллингу**. Сообщение в CI: `"The job was not started because your account is locked due to a billing issue."`
 
 **Что было сделано агентом:**
 - ✅ Репозиторий переведён в **public** (неограниченные минуты для публичных репо)
@@ -100,7 +147,7 @@ GitHub → Settings → Billing & plans →
 
 После разблокировки биллинга CI должен заработать сразу (репо уже public).
 
-**Последняя проверка (2026-07-10):** workflow dispatch запускается, но jobs падают с `"The job was not started because your account is locked due to a billing issue."` — биллинг **ещё заблокирован**.
+**Последняя проверка (2026-07-13):** Dependabot CI `29224989839` и Release Gate `29224761180` падают за ~4–5s с billing lock — биллинг **ещё заблокирован**.
 
 **Проверка после разблокировки:**
 ```bash
@@ -111,13 +158,13 @@ gh run list --limit 3
 gh run view <latest-run-id>
 ```
 
-**Уведомления:** ghost workflow `BuildFailed` удалён. Если письма с пустым именем workflow продолжаются — GitHub → Settings → Notifications → отключить failed workflows для deleted.
+**Уведомления:** ghost workflow `BuildFailed` удалён. Если письма с пустым именем workflow продолжаются — GitHub → Settings → Notifications → отключить failed workflows for deleted.
 
 ---
 
 ### 🔐 3b. Vercel ↔ GitHub reconnect (автодеплой main)
 
-Merge в `main` не обновляет prod, пока Git integration отключена.
+Merge в `main` не обновляет prod, пока Git integration отключена. **На 2026-07-13 это по-прежнему актуально.**
 
 **Если OAuth «Connect GitHub» в Vercel не открывается / падает:** сначала переподключи GitHub в [github.com/settings/applications](https://github.com/settings/applications) → Authorized OAuth Apps → Vercel → Grant (или Revoke + заново Connect в Vercel). Альтернатива без dashboard OAuth: deploy вручную `cd fundingpro && npx vercel --prod --yes` после каждого merge (см. `fundingpro/docs/DOMAIN-STRATEGY.md`).
 
@@ -161,7 +208,7 @@ Name: SMOKE_BASE_URL_PROD
 Value: https://www.fundingpro.uz
 ```
 
-Локальная проверка App Links (скрипт работает, `--live` проверен 2026-07-10):
+Локальная проверка App Links:
 ```bash
 cd fundingpro
 SMOKE_BASE_URL=https://www.fundingpro.uz npm run app-links:check -- --live
@@ -199,8 +246,11 @@ SMOKE_BASE_URL=https://www.fundingpro.uz npm run app-links:check -- --live
 ## Команды для запуска после добавления секретов
 
 ```bash
+# 0. Prod catalog seed (нужен CONVEX_DEPLOY_KEY)
+npm run convex:seed:prod
+
 # 1. Проверить App Links после редеплоя
-curl -sI https://www.fundingpro.uz/.well-known/apple-app-site-association | grep x-app-links
+curl -sI https://www.fundingpro.uz/.well-known/apple-app-site-association | grep -i x-app-links
 # Ожидаемый результат: строк x-app-links-missing и x-app-links-config нет
 
 # 2. Собрать production build мобильного приложения (нужен EAS)
@@ -219,11 +269,10 @@ eas submit --platform android --profile production
 
 | Действие | Результат |
 |---|---|
-| Проверил live-статус всех .well-known endpoints | ✅ Структура правильная, AASA и assetlinks отдают 200 |
+| Проверил live-статус .well-known / health / plans / grants (2026-07-13) | ✅ Health OK; App Links incomplete; **plans=0, grants=0** |
+| Попытка `npm run convex:seed:prod` | ❌ Нет `CONVEX_DEPLOY_KEY` — seed не выполнен |
+| Проверил CI / Release Gate (2026-07-13) | ❌ BILLING LOCK подтверждён |
 | Проверил, что `app.json` настроен на `www.fundingpro.uz` | ✅ `associatedDomains` и `intentFilters` корректны |
 | Перевёл репозиторий в **public** | ✅ Сделано 2026-07-08 |
-| Диагностировал реальную причину CI failures | ❌ BILLING LOCK на аккаунте GitHub (не минуты) |
-| Проверил Vercel env vars | ✅ APPLE_TEAM_ID и ANDROID_RELEASE_SHA256 отсутствуют — нужно добавить |
-| Создал `SECRETS_TO_PASTE.env.example` | ✅ Пустые placeholder'ы |
-| Создал `paste-secrets.sh` | ✅ 30-секундный скрипт добавления секретов |
-| Проверил live-сайт (HTML, Clerk, Next.js) | ✅ Сайт полностью работает |
+| Создал `SECRETS_TO_PASTE.env.example` + `paste-secrets.sh` | ✅ |
+| Проверил live-сайт (HTML, Clerk, Next.js) | ✅ Сайт работает; каталог пуст до seed |

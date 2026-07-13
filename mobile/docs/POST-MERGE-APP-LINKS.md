@@ -1,6 +1,6 @@
 # Post-merge App Links cheat sheet
 
-> **Status (2026-07-08):** PR #8 merged ✅ · Site live at `www.fundingpro.uz` ✅ · Both `.well-known` endpoints return 200 ✅ · `X-App-Links-Config: incomplete` still present — needs Vercel env vars (Step 1 below).
+> **Status (2026-07-13):** Site live at `www.fundingpro.uz` ✅ · Both `.well-known` endpoints return **200** ✅ · `X-App-Links-Config: incomplete` still present — needs Vercel env vars (Step 1 below). Do **not** invent Team ID / SHA-256.
 
 Run these steps **immediately after** the PR is merged and Vercel finishes its production deploy.
 

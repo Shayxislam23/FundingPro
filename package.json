@@ -46,6 +46,7 @@
     "contract:mobile-api": "node fundingpro/scripts/mobile-api-contract.mjs",
     "mobile:dev": "bash mobile/scripts/dev-client.sh",
     "mobile:rebuild-ios": "bash mobile/scripts/rebuild-ios-dev-client.sh",
+    "mobile:maestro": "npm run maestro --workspace=@fundingpro/mobile",
     "convex:seed:prod": "node fundingpro/scripts/seed-production-safe.mjs"
   }
 }

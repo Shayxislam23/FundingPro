@@ -134,7 +134,7 @@ export default function DashboardHome() {
             <Text className="text-sm text-gray-500 mt-1">
               {totalGrants} грантов в базе
               {onboarding && !onboarding.isComplete
-                ? ` · ${onboarding.completedCount}/${onboarding.totalSteps} шагов онбординга`
+                ? ` · ${onboarding.completedCount}/${onboarding.totalSteps} шагов «Мой путь»`
                 : savedGrantsCount > 0
                   ? ` · ${savedGrantsCount} сохранённых`
                   : ""}

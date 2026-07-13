@@ -44,7 +44,15 @@ Single flow:
 maestro test mobile/maestro/public-grants.yaml
 maestro test mobile/maestro/auth-login.yaml
 maestro test mobile/maestro/onboarding-checklist.yaml
+maestro test mobile/maestro/my-path.yaml
 maestro test mobile/maestro/subscription-consent.yaml
+```
+
+Or from `mobile/`:
+
+```bash
+npm run maestro
+npm run maestro:my-path
 ```
 
 Interactive debug (step through UI):
@@ -60,6 +68,7 @@ maestro studio
 | `public-grants.yaml` | Landing → tap «Публичные гранты» → grants screen header |
 | `auth-login.yaml` | Landing → login → Clerk email OTP → dashboard «Главная» |
 | `onboarding-checklist.yaml` | After login → home onboarding card «Первые шаги в FundingPro» |
+| `my-path.yaml` | After login → «Пройти по шагам» → screen title «Мой путь» + first step |
 | `subscription-consent.yaml` | After login → Ещё → Подписка → payment terms consent copy |
 
 ### `public-grants.yaml`
@@ -100,6 +109,12 @@ Do not enable Clerk test mode on production.
 - Runs `auth-login.yaml` first via `runFlow`.
 - Expects the test user to have **incomplete onboarding** (checklist visible on home).
 - If all steps are done, the card is hidden — use a fresh `+clerk_test` user or reset onboarding in backend.
+
+### `my-path.yaml`
+
+- Runs `auth-login.yaml`, taps **Пройти по шагам** on the home checklist.
+- Asserts wizard screen title **«Мой путь»** and first step «Заполнить личный профиль».
+- Same incomplete-onboarding prerequisite as `onboarding-checklist.yaml`.
 
 ### `subscription-consent.yaml`
 

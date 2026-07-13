@@ -7,21 +7,25 @@
 - **App Links stubs**: iOS `associatedDomains` + Android `intentFilters` for `https://www.fundingpro.uz/mobile/*`
 - **Account deletion**: in-app request flow via support ticket from profile screen
 - **Web SEO**: metadata, Open Graph, JSON-LD on landing, grants, donors, pricing pages
-- **Universal Links hosting**: `.well-known/apple-app-site-association` and `assetlinks.json` on web
+- **Universal Links hosting**: `.well-known/apple-app-site-association` and `assetlinks.json` on web (env-driven Team ID / SHA-256)
+- **Maestro** `my-path.yaml` for «Мой путь» wizard smoke
+- **`secrets/README.md`**: local EAS submit credential drop folder (keys gitignored)
 
 ### Changed
 - Version bump `0.3.0` → `0.4.0`
+- Home progress copy + store review notes use «Мой путь» (individuals-first)
+- `eas.json` Android submit: `track: internal` + `releaseStatus: draft` for safer first upload
 
 ### User action required (EAS preview — not run in CI)
 ```bash
 cd mobile
 eas secret:create --name EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY --value "<key>"
-eas secret:create --name EXPO_PUBLIC_API_URL --value "https://www.fundingpro.uz"
+eas secret:create --name EXPO_PUBLIC_API_URL --value "https://www.fundingpro.uz/api/v1"
 eas build --profile preview --platform ios
 eas build --profile preview --platform android
 maestro test mobile/maestro/
 ```
-Replace `TEAM_ID` in web AASA and SHA256 in `assetlinks.json` before production submit.
+Set Vercel `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` (see `paste-secrets.sh` / `docs/POST-MERGE-APP-LINKS.md`) before production store submit.
 
 ## [0.3.0] — Feature parity + push + dashboard polish
 

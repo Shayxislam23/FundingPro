@@ -21,37 +21,40 @@ External:
 
 ## Status board (update as you go)
 
-Last code pass: **2026-07-08** · Last analysis: **2026-07-09 00:17 +05**
+Last code pass: **2026-07-13** · Last live App Links check: **2026-07-13** (both `.well-known/*` → **200**, still `X-App-Links-Config: incomplete`)
 
 | Phase | Owner | Status | Blocker |
 |------:|-------|--------|---------|
 | 0 Developer accounts | Human / billing | ⬜ | $99 Apple + $25 Google |
 | 1 Draft listings | Human | ⬜ | Needs Phase 0 |
-| 2 EAS submit credentials | Human | ⬜ | Needs Phase 1 IDs; `eas.json` skeleton ✅ code-complete |
-| 3 App Links (code) | Dev | ⚠️ env vars missing | Code ✅ live. Both `.well-known/*` → **200 OK** ✅ (confirmed 2026-07-09). **`X-App-Links-Config: incomplete`** — needs `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` on Vercel Production, then `npx vercel --prod`. Run `bash paste-secrets.sh` from repo root. |
+| 2 EAS submit credentials | Human | ⬜ | Needs Phase 1 IDs; `eas.json` skeleton ✅ (`releaseStatus: draft` for first Play upload) |
+| 3 App Links (code) | Dev | ⚠️ env vars missing | Code ✅ live. Both `.well-known/*` → **200 OK**. **`X-App-Links-Config: incomplete`** — needs `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` on Vercel Production, then `npx vercel --prod`. Run `bash paste-secrets.sh` from repo root. |
 | 4 Store listing copy | Done in repo | ✅ draft | Paste into consoles (`STORE-LISTING-COPY.md`) |
-| 5 Screenshots / feature graphic | Human / design | ⬜ | After Clay verify; «Мой путь» screen now titled correctly |
+| 5 Screenshots / feature graphic | Human / design | ⬜ | After Clay verify; «Мой путь» screen titled correctly |
 | 6 Privacy / Data Safety forms | Human | ✅ answers ready | Fill from `APP-PRIVACY-DATA-SAFETY.md` |
 | 7 Production builds + first Android manual upload | Dev | ⬜ | Needs Phase 0–2 |
-| 8 Device QA + version bump to 1.0.0 | QA | ⬜ | Gate before bump |
+| 8 Device QA + version bump to 1.0.0 | QA | ⬜ | Gate before bump; stay on **0.4.0** until then |
 | 9 `eas submit` both platforms | Dev | ⬜ | Waiting for Review |
 | 10 Review outcome | Dev + product | ⬜ | Fix + resubmit if rejected |
 
-### Code-complete checklist (as of 2026-07-08)
+### Code-complete checklist (as of 2026-07-13)
 
 - [x] `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json` route handlers (`fundingpro/app/api/well-known/*/route.ts`)
 - [x] `next.config.mjs` rewrites routing `/.well-known/*` → API routes (survives Next.js App Router quirks)
 - [x] Android SHA-256 fingerprint normalised to `AA:BB:CC:…` colon format in `lib/mobile-app-links.ts`
 - [x] `X-App-Links-Config: incomplete` diagnostic header when env vars missing
-- [x] `eas.json` submit skeleton with placeholder `ascAppId` / `appleTeamId` (no invented values)
-- [x] `mobile/.gitignore` covers `secrets/`, `*service-account*.json`, `*.p8`
+- [x] `eas.json` submit skeleton with placeholder `ascAppId` / `appleTeamId` (no invented values); Android `track: internal` + `releaseStatus: draft`
+- [x] `mobile/.gitignore` covers `secrets/*` (except `secrets/README.md`), `*service-account*.json`, `*.p8`
 - [x] Onboarding screen title → **«Мой путь»** (was «Онбординг»)
 - [x] More menu + Home quick actions already link to «Мой путь» (`/(app)/onboarding`)
+- [x] Home progress copy uses «Мой путь» (not generic «онбординг»)
 - [x] Maestro `onboarding-checklist.yaml` NGO assertion fixed → `assertVisible: "Заполнить личный профиль"`
+- [x] Maestro `my-path.yaml` opens checklist CTA → asserts screen title «Мой путь»
 - [x] `public-fallback.ts` plan groups include `individual` tier; no individuals-first regression
 - [x] Store listing copy: физлица framing, not NGO-only (`STORE-LISTING-COPY.md`)
 - [x] App review notes include «Мой путь» path (`STORE-LAUNCH.md`)
 - [x] Account deletion: in-app button → `api.requestAccountDeletion()` with support-ticket fallback; copy policy-aligned
+- [x] Mobile lint clean under `--max-warnings=0` (unused import cleanup)
 
 ### Human-blocked items (no code can unblock)
 

@@ -33,14 +33,17 @@ Bundle / package (already in `app.json`): `uz.fundingpro.app`.
       },
       "android": {
         "serviceAccountKeyPath": "./secrets/play-service-account.json",
-        "track": "internal"
+        "track": "internal",
+        "releaseStatus": "draft"
       }
     }
   }
 }
 ```
 
-Keep `./secrets/**` and `*service-account*.json` gitignored. Prefer `eas credentials` to store secrets on Expo’s side instead of committing paths with real files.
+`releaseStatus: "draft"` keeps the first Play upload as a draft (safe when listing metadata is incomplete). Promote / set `completed` later.
+
+Keep `./secrets/**` (except `secrets/README.md`) and `*service-account*.json` gitignored. Prefer `eas credentials` to store secrets on Expo’s side instead of committing paths with real files.
 
 ## Unblocks together
 

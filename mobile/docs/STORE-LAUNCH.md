@@ -57,7 +57,7 @@ Account deletion: Profile → «Запросить удаление аккаун
 
 AI: In-app disclosure at Dashboard → AI → «Раскрытие AI».
 
-Мой путь: Ещё / Онбординг — пошаговый путь физлица до реальной заявки
+Мой путь: Ещё → «Мой путь» (или Home → «Пройти по шагам») — пошаговый путь физлица до реальной заявки
   (профиль → документы → грант → eligibility → AI-черновик).
 
 Legal URLs (live):
@@ -89,6 +89,7 @@ All flows live in [`mobile/maestro/`](../maestro/). See [`maestro/README.md`](..
 | `public-grants.yaml` | Public catalog navigation |
 | `auth-login.yaml` | Clerk email OTP → «Главная» |
 | `onboarding-checklist.yaml` | Home onboarding card |
+| `my-path.yaml` | Checklist CTA → screen title «Мой путь» |
 | `subscription-consent.yaml` | Subscription payment terms consent |
 
 CI runs Maestro when CLI is available; full execution needs `MAESTRO_APP_PATH` to a simulator `.app` (optional, `continue-on-error`).

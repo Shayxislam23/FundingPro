@@ -105,6 +105,8 @@ eas build --profile development --platform ios
 | `npm run start` | Expo dev server |
 | `npm run typecheck` | TypeScript check |
 | `npm run lint` | ESLint |
+| `npm run maestro` | Maestro smoke (`maestro/`) |
+| `npm run maestro:my-path` | «Мой путь» wizard smoke only |
 | `npm run android` | Android emulator |
 | `npm run ios` | iOS simulator |
 
@@ -113,6 +115,7 @@ eas build --profile development --platform ios
 ```bash
 npm run mobile:dev              # Metro --dev-client --clear (Projects path)
 npm run mobile:rebuild-ios      # expo run:ios dev client rebuild
+npm run mobile:maestro          # Maestro smoke from monorepo root
 npm run convex:seed:prod        # prod Convex seed + verify (needs CONVEX_DEPLOY_KEY)
 npm run mobile:start            # обычный expo start
 npm run mobile:typecheck

@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, router } from "expo-router";
+import { Link } from "expo-router";
 import { FlashListSized, FLASH_LIST_ITEM_SIZE } from "../../../components/ui/FlashListSized";
 import { Pressable, RefreshControl, Text, View } from "react-native";
 import { formatDeadlineDisplay, formatGrantAmount } from "@fundingpro/shared";
 import { Card } from "../../../components/ui/Card";
 import { Screen } from "../../../components/ui/Screen";
 import { EmptyState, ErrorState, LoadingState } from "../../../components/ui/States";
-import { Button } from "../../../components/ui/Button";
 import { api } from "../../../lib/api/client";
 import { getStatusLabel, getStatusStyle } from "../../../lib/application-status";
 import { t } from "../../../lib/i18n";

@@ -60,9 +60,12 @@ Deep link handler validates `fundingpro://auth/callback`, `https://www.fundingpr
 cd mobile
 eas build --profile preview --platform all
 eas build --profile production --platform all
-eas submit --platform ios
-eas submit --platform android
+# After Phase 0–2 credentials are filled in eas.json:
+eas submit --platform ios --profile production
+eas submit --platform android --profile production
 ```
+
+Android submit uses `track: internal` + `releaseStatus: draft` until you promote in Play Console.
 
 ## Deep links to test
 

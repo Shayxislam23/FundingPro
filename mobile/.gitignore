@@ -30,20 +30,17 @@ yarn-error.*
 .DS_Store
 
 # EAS submit secrets — never commit service account keys or ASC credentials
-secrets/
+secrets/*
+!secrets/README.md
 *service-account*.json
 *.p8
 *.pem
-
-# local env files
-.env*.local
-
-# store / EAS submit secrets (never commit)
-secrets/
-*service-account*.json
 AuthKey_*.p8
 google-services.json
 GoogleService-Info.plist
+
+# local env files
+.env*.local
 
 # typescript
 *.tsbuildinfo

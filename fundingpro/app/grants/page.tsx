@@ -4,7 +4,7 @@ import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
 import { GrantCard } from "@/components/design/GrantCard";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { listPublicGrants } from "@/lib/public-grants";
+import { listPublicGrants, type GrantListItem } from "@/lib/public-grants";
 import {
   formatGrantAmount,
   formatDeadlineDate,
@@ -44,7 +44,7 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
   const search = sp.q?.trim() ?? "";
 
-  let grants: Awaited<ReturnType<typeof listPublicGrants>>["grants"] = [];
+  let grants: GrantListItem[] = [];
   let total = 0;
   let pages = 1;
 

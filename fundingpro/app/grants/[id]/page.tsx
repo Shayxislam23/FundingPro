@@ -5,7 +5,7 @@ import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
 import { ShareGrantButton } from "@/components/grants/ShareGrantButton";
 import { getPublicGrantById } from "@/lib/public-grants";
-import type { GrantRequirement } from "@fundingpro/api-types";
+import type { GrantDetail, GrantRequirement } from "@fundingpro/api-types";
 import { formatGrantAmount, formatDeadlineDate } from "@fundingpro/shared";
 import { translateSector } from "@fundingpro/shared";
 import {
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicGrantDetailPage({ params }: PageProps) {
   const { id } = await params;
-  let grant: Awaited<ReturnType<typeof getPublicGrantById>> = null;
+  let grant: GrantDetail | null = null;
 
   try {
     grant = await getPublicGrantById(id);

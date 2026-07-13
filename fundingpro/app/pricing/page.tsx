@@ -5,7 +5,7 @@ import { LegalFooter } from "@/components/design/LegalFooter";
 import { PricingCard } from "@/components/design/PricingCard";
 import { SectionLabel } from "@/components/design/SectionLabel";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { listIndividualPlans, listPlans } from "@/lib/db/plans";
+import { listIndividualPlans, listPlans, type PlanRow } from "@/lib/db/plans";
 import { formatPlanPriceDisplay } from "@/lib/format-plan";
 import { getUsdUzsRate } from "@/lib/legal/documents";
 import { absoluteUrl, hreflangAlternates, openGraphPage, siteConfig } from "@/lib/seo/site";
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PricingPage() {
-  let plans: Awaited<ReturnType<typeof listPlans>> = [];
+  let plans: PlanRow[] = [];
   try {
     plans = listIndividualPlans(await listPlans());
   } catch {

@@ -5,6 +5,7 @@ import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
 import { ShareGrantButton } from "@/components/grants/ShareGrantButton";
 import { getPublicGrantById } from "@/lib/public-grants";
+import type { GrantRequirement } from "@fundingpro/api-types";
 import { formatGrantAmount, formatDeadlineDate } from "@fundingpro/shared";
 import { translateSector } from "@fundingpro/shared";
 import {
@@ -70,6 +71,7 @@ export default async function PublicGrantDetailPage({ params }: PageProps) {
   const deadline = formatDeadlineDate(grant.deadline);
   const sectors: string[] = (grant.sectors ?? []).map((sector: string) => translateSector(sector));
   const countries = (grant.country_scope ?? []).join(", ");
+  const requirements: GrantRequirement[] = grant.grant_requirements ?? [];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -160,11 +162,11 @@ export default async function PublicGrantDetailPage({ params }: PageProps) {
             </div>
           )}
 
-          {(grant.grant_requirements?.length ?? 0) > 0 && (
+          {requirements.length > 0 && (
             <div className="mb-8">
               <h2 className="text-sm font-semibold text-funding-black mb-3">Требования</h2>
               <ul className="space-y-2">
-                {(grant.grant_requirements ?? []).map((req) => (
+                {requirements.map((req) => (
                   <li key={req.id} className="flex items-start gap-2 text-sm text-gray-600">
                     <span
                       className={`mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0 ${req.required ? "bg-funding-green" : "bg-gray-300"}`}

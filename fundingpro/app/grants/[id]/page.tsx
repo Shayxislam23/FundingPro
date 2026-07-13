@@ -68,8 +68,8 @@ export default async function PublicGrantDetailPage({ params }: PageProps) {
   const donorName = grant.donor.name_ru ?? grant.donor.name;
   const amount = formatGrantAmount(grant.amount_min, grant.amount_max);
   const deadline = formatDeadlineDate(grant.deadline);
-  const sectors = grant.sectors.map(translateSector);
-  const countries = grant.country_scope.join(", ");
+  const sectors: string[] = (grant.sectors ?? []).map((sector: string) => translateSector(sector));
+  const countries = (grant.country_scope ?? []).join(", ");
 
   const jsonLd = {
     "@context": "https://schema.org",

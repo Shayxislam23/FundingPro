@@ -7,7 +7,7 @@ export function LandingTrustStripSection({ grantCountLabel }: LandingTrustStripS
     <section className="py-10 px-6 border-t border-white/5" style={{ background: "#020703" }}>
       <div className="max-w-4xl mx-auto text-center">
         <p className="text-xs uppercase tracking-widest mb-4" style={{ color: "#A7B8AA" }}>
-          Для физических лиц в Узбекистане
+          Для бизнеса и молодёжи Узбекистана
         </p>
         <div
           className="flex flex-wrap justify-center gap-8 text-sm font-semibold"

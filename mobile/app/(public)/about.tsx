@@ -19,7 +19,7 @@ export default function AboutScreen() {
         <GradientHero variant="card" className="mb-6">
           <FundingProLogo variant="light" size="lg" />
           <Text className="text-white/90 mt-4 leading-6 text-body">
-            FundingPro помогает физическим лицам в Узбекистане находить гранты, стипендии и программы,
+            FundingPro помогает бизнесу и молодёжи в Узбекистане находить гранты, стипендии и конкурсы,
             проверять соответствие требованиям и готовить заявки с помощью AI.
           </Text>
         </GradientHero>

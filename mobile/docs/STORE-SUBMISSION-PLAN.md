@@ -2,7 +2,7 @@
 
 Executable plan for App Store + Google Play submission. **End results** are fixed; how you get there is up to the executor.
 
-**Current product positioning (v1):** физические лица — поиск грантов/стипендий/программ, проверка соответствия, AI-черновик, «Мой путь» (онбординг). Не NGO-only; сегменты «бизнес / НКО» — позже.
+**Current product positioning:** бизнес и молодёжь Узбекистана — поиск грантов/стипендий/конкурсов, проверка соответствия, AI-черновик, «Мой путь» (онбординг). Self-serve checkout today covers individual/youth-tier plans; business-tier self-serve checkout is still being wired up (see catalog + `plan-business-*` in `convex/seedData.ts`). NGO segment deferred.
 
 **App version gate:** stay on `0.4.0` until Phase 8 passes; bump to `1.0.0` only after device QA sign-off (`STORE-LAUNCH.md`).
 
@@ -51,7 +51,7 @@ Last code pass: **2026-07-13** · Failure-modes P0/P1 code: seed individuals-fir
 - [x] Maestro `onboarding-checklist.yaml` NGO assertion fixed → `assertVisible: "Заполнить личный профиль"`
 - [x] Maestro `my-path.yaml` opens checklist CTA → asserts screen title «Мой путь»
 - [x] `public-fallback.ts` plan groups include `individual` tier; no individuals-first regression
-- [x] Store listing copy: физлица framing, not NGO-only (`STORE-LISTING-COPY.md`)
+- [x] Store listing copy: business + youth framing, not NGO-only (`STORE-LISTING-COPY.md`)
 - [x] App review notes include «Мой путь» path (`STORE-LAUNCH.md`)
 - [x] Account deletion: in-app button → `api.requestAccountDeletion()` with support-ticket fallback; copy policy-aligned
 - [x] Mobile lint clean under `--max-warnings=0` (unused import cleanup)
@@ -126,11 +126,11 @@ Do not submit for store review until app-links:check passes on the live domain.
 
 **Done when:** titles, short/full descriptions, keywords, support + marketing URLs are pasted into both consoles from [`STORE-LISTING-COPY.md`](./STORE-LISTING-COPY.md).
 
-Must match in-app positioning: **физлица**, not NGO regression.
+Must match in-app positioning: **бизнес и молодёжь**, not NGO regression.
 
 ## Phase 5 — Visual assets
 
-**Done when:** screenshots per [`STORE-LAUNCH.md`](./STORE-LAUNCH.md) (7 screens, including «Мой путь» / onboarding) + Play feature graphic **1024×500**. Assets show current individuals-first UI.
+**Done when:** screenshots per [`STORE-LAUNCH.md`](./STORE-LAUNCH.md) (7 screens, including «Мой путь» / onboarding) + Play feature graphic **1024×500**. Assets show current business + youth positioning.
 
 ## Phase 6 — Compliance forms
 
@@ -169,7 +169,7 @@ Both consoles show Waiting for Review (or equivalent).
 
 - Do **not** bump past `0.4.0` before Phase 8.
 - Do **not** invent `ascAppId` / Team ID / SHA-256 — leave placeholders until Phase 0–1.
-- Do **not** regress listing or screenshots to NGO-only framing.
+- Do **not** regress listing or screenshots to NGO-only or individuals-only framing — positioning is business + youth.
 - Do **not** commit ASC API keys, `.p8`, or Google service-account JSON (gitignored).
 
 ---

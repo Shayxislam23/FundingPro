@@ -4,7 +4,7 @@ Checklist for **store submission** after preview builds and Maestro smoke pass. 
 
 **Current version:** `0.4.0` (RC). **Target store release:** `1.0.0` — bump only after TestFlight/preview sign-off ([Version path](#version-path-to-v100)).
 
-**Positioning:** физические лица (гранты, стипендии, программы). Not NGO-only.
+**Positioning:** бизнес и молодёжь Узбекистана (гранты, стипендии, конкурсы). Not NGO-only.
 
 ---
 
@@ -27,7 +27,7 @@ Capture on **physical device** or simulator at **6.7" iPhone** and **Phone (1080
 
 | # | Screen | RU caption idea | Notes |
 |---|--------|-----------------|-------|
-| 1 | Public landing | «Гранты для физических лиц в Узбекистане» | Hero + CTA к публичным грантам |
+| 1 | Public landing | «Гранты для бизнеса и молодёжи Узбекистана» | Hero + CTA к публичным грантам |
 | 2 | Grants catalog | «Поиск и фильтры грантов» | Хотя бы одна карточка гранта |
 | 3 | Home dashboard | «Ваш прогресс и заявки» | Stats + onboarding, если не завершён |
 | 4 | Мой путь / онбординг | «Путь к заявке шаг за шагом» | Progress bar + следующий шаг |
@@ -57,8 +57,8 @@ Account deletion: Profile → «Запросить удаление аккаун
 
 AI: In-app disclosure at Dashboard → AI → «Раскрытие AI».
 
-Мой путь: Ещё → «Мой путь» (или Home → «Пройти по шагам») — пошаговый путь физлица до реальной заявки
-  (профиль → документы → грант → eligibility → AI-черновик).
+Мой путь: Ещё → «Мой путь» (или Home → «Пройти по шагам») — пошаговый путь до реальной заявки
+  для бизнеса и молодёжи (профиль → документы → грант → eligibility → AI-черновик).
 
 Legal URLs (live):
   Privacy: https://www.fundingpro.uz/legal/privacy

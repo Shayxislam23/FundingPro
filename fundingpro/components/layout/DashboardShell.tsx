@@ -37,7 +37,7 @@ type NavItem = {
   icon: typeof LayoutDashboard;
 };
 
-/** Единая навигация для физлиц (v1). НКО/организации — позже. */
+/** Единая навигация (v1): бизнес и молодёжь через один self-serve профиль. НКО — позже. */
 const individualNavItems: NavItem[] = [
   { label: "Главная", href: "/dashboard", icon: LayoutDashboard },
   { label: "Гранты", href: "/dashboard/grants", icon: BookOpen },

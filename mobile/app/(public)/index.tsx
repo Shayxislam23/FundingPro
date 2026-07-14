@@ -86,7 +86,7 @@ export default function PublicLanding() {
         <GradientHero variant="hero">
           <FundingProLogo variant="light" size="lg" />
           <Text className="mt-3 text-body text-white/90 leading-6 max-w-sm">
-            AI-платформа для физических лиц: гранты, стипендии и программы в Узбекистане
+            AI-платформа для бизнеса и молодёжи: гранты, стипендии и конкурсы в Узбекистане
           </Text>
         </GradientHero>
 
@@ -108,7 +108,7 @@ export default function PublicLanding() {
           <ClaySurface variant="raised" className="mt-8 rounded-[24px] p-5">
             <Text className="text-base font-bold text-funding-black">Подборка грантов на email</Text>
             <Text className="text-sm text-gray-500 mt-1 leading-5">
-              Получите актуальные гранты и программы для физических лиц в Узбекистане.
+              Получите актуальные гранты, стипендии и конкурсы для бизнеса и молодёжи Узбекистана.
             </Text>
             {leadDone ? (
               <Text className="text-sm text-funding-green font-medium mt-4">

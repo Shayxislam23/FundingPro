@@ -4,7 +4,7 @@ env:
   CLERK_TEST_OTP: "424242"
 ---
 # Smoke: home dashboard onboarding checklist (requires incomplete onboarding for test user)
-# Positioning: физические лица — not NGO-only.
+# Positioning: business + youth — not NGO-only.
 - runFlow: auth-login.yaml
 - extendedWaitUntil:
     visible: "Первые шаги в FundingPro"

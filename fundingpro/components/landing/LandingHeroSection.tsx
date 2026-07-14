@@ -65,8 +65,8 @@ export function LandingHeroSection({ grantCountLabel }: LandingHeroSectionProps)
           </h1>
 
           <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed" style={{ color: "#A7B8AA" }}>
-            AI-платформа для физических лиц: поиск стипендий, грантов и программ, проверка соответствия
-            требованиям и подготовка заявок. Юридические документы — на русском и узбекском.
+            AI-платформа для поиска международных грантов, проверки соответствия требованиям и подготовки
+            профессиональных предложений. Юридические документы — на русском и узбекском.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

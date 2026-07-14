@@ -4,7 +4,7 @@ Fill these **in the store dashboards** (not in code):
 - Apple: App Store Connect → App Privacy
 - Google Play: App content → Data safety (+ content rating questionnaire)
 
-Answers derived from mobile + web payment code as of 2026-07-08 (individuals-first pivot). Sources: Clerk auth, Sentry, SecureStore, profile/onboarding, documents picker, PSP redirect checkout.
+Answers derived from mobile + web payment code as of 2026-07-13. Sources: Clerk auth, Sentry, SecureStore, profile/onboarding, documents picker, PSP redirect checkout.
 
 ## Data collected
 

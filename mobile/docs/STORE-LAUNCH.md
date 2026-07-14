@@ -53,7 +53,7 @@ Sign-in: Email OTP only (no social login required).
 Payments: Uzum / Payme / card checkout may be disabled in review build (PAYMENTS_ENABLED=false).
   Subscription screen still shows plan list and payment terms consent.
 
-Account deletion: Profile → «Запросить удаление аккаунта» (support ticket; backend erasure planned).
+Account deletion: Profile → «Запросить удаление аккаунта» — in-app, no ticket. Auth identity and data are purged automatically after a 30-day grace period.
 
 AI: In-app disclosure at Dashboard → AI → «Раскрытие AI».
 

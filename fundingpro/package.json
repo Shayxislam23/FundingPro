@@ -19,6 +19,7 @@
     "test:convex": "npx vitest run --config vitest.config.ts",
     "test:smoke": "node scripts/smoke-test.mjs",
     "prod:content-check": "node scripts/production-content-check.mjs",
+    "go-live:check": "node scripts/go-live-check.mjs",
     "test:integration": "node scripts/api-auth-integration.mjs",
     "test:e2e": "playwright test",
     "uzum:check": "node scripts/uzum-go-live.mjs",

@@ -132,7 +132,7 @@ export default function DashboardHome() {
           <p className="text-sm text-gray-500">
             {onboardingStatus
               ? `${onboardingStatus.completedCount}/${onboardingStatus.totalSteps} шагов · ${onboardingStatus.progressPercent}% к заявке`
-              : `${totalGrants} грантов в базе · для физических лиц`}
+              : `${totalGrants} грантов в базе · для бизнеса и молодёжи`}
           </p>
         </div>
         <Link

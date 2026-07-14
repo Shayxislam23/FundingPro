@@ -25,7 +25,7 @@ function normalizeTargetType(targetType: string): string {
   return targetType.trim().toUpperCase();
 }
 
-/** v1 public surface: individuals only (физлица). */
+/** v1 self-serve checkout surface: individual/youth-tier plans (business tiers shown separately). */
 export function isIndividualPlan(plan: Pick<PlanRow, "targetType">): boolean {
   return normalizeTargetType(plan.targetType) === "INDIVIDUAL";
 }

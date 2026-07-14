@@ -25,7 +25,7 @@ export const POST = withPublic(async (req: NextRequest) => {
   await resend.emails.send({
     from: "FundingPro <info@fundingpro.uz>",
     to: email,
-    subject: "FundingPro — подборка грантов для физических лиц",
+    subject: "FundingPro — подборка грантов для бизнеса и молодёжи",
     html: `
         <p>Здравствуйте!</p>
         <p>Спасибо за интерес к FundingPro. Начните с каталога актуальных грантов:</p>

@@ -2,7 +2,7 @@ import type { Doc, Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { userModeValidator } from "./validators";
 
-/** Active product mode: физлицо first. NGO/org modes reserved for later. */
+/** Active product mode: individual accounts today; NGO/org modes reserved for later. */
 export type UserMode = "individual" | "mentor" | "admin";
 
 export { userModeValidator };

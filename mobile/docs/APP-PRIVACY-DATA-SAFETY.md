@@ -29,9 +29,7 @@ Answers derived from mobile + web payment code as of 2026-07-08 (individuals-fir
 
 ## Data deletion
 
-Today: Profile → «Запросить удаление аккаунта» (support ticket).
-
-**Store policy gap:** Apple 5.1.1(v) and Google account-deletion policy increasingly expect **in-app self-service deletion**, not only a ticket. Flag for product: retention of applications/documents after delete. Do not ship long-term relying only on support tickets.
+In-app self-service: Profile → «Запросить удаление аккаунта» calls `POST /api/v1/me/delete-request` directly (no manual ticket). The account is marked for deletion immediately; a 30-day grace period follows per the privacy policy, after which a daily cron (`convex/accountErasure.ts`) deletes the Clerk auth identity via the Clerk Backend API and purges all Convex-side data (applications, documents, push tokens, org memberships) and scrubs PII. Both steps are automatic — no manual ops step remains (fixed 2026-07-14).
 
 ## Suggested Apple App Privacy answers
 
@@ -46,7 +44,7 @@ Today: Profile → «Запросить удаление аккаунта» (sup
 - App activity: In-app actions (onboarding, applications) — collected, not shared
 - App info and performance: Crash logs / diagnostics — collected, not shared
 - Encrypted in transit: **Yes** (HTTPS)
-- Users can request deletion: **Yes** (support ticket; improve to in-app delete before relying on this long-term)
+- Users can request deletion: **Yes** — in-app self-service, full auth + data purge automated
 
 ## Content rating (Play)
 

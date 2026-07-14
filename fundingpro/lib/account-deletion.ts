@@ -24,9 +24,7 @@ export async function handleAccountDeletionRequest(
     return apiSuccess({
       ...result,
       message:
-        "Account marked for deletion. Clerk identity and remaining data are purged within 30 days per privacy policy.",
-      clerkNote:
-        "Ops: delete Clerk user via Dashboard API or support runbook after Convex purge completes.",
+        "Account marked for deletion. Clerk identity and remaining data are purged automatically within 30 days per privacy policy.",
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to request account deletion";

@@ -9,7 +9,7 @@ export class PaymeAuthError extends Error {
 }
 
 export function validatePaymeBasicAuth(authorizationHeader: string | null): void {
-  const { merchantKey } = getPaymeConfig();
+  const { merchantKey, merchantLogin } = getPaymeConfig();
   if (!merchantKey) {
     throw new PaymeAuthError(-32504);
   }
@@ -18,7 +18,7 @@ export function validatePaymeBasicAuth(authorizationHeader: string | null): void
   }
 
   const provided = authorizationHeader.slice(6).trim();
-  const expected = Buffer.from(`Payme:${merchantKey}`, "utf8").toString("base64");
+  const expected = Buffer.from(`${merchantLogin}:${merchantKey}`, "utf8").toString("base64");
   const a = Buffer.from(provided, "utf8");
   const b = Buffer.from(expected, "utf8");
   if (a.length !== b.length || !timingSafeEqual(a, b)) {

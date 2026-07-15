@@ -7,6 +7,30 @@ import {
 import { activateSubscriptionFromPayment, reverseSubscriptionFromPayment } from "../../activate-subscription";
 import { PAYME_STATE, paymeError, type PaymeRpcFailure, type PaymeRpcRequest, type PaymeRpcSuccess } from "./errors";
 
+/** Payme spec: a PENDING transaction not performed within 12h must be treated as expired (state -1, reason 4). */
+const PENDING_TIMEOUT_MS = 43_200_000;
+const CANCEL_REASON_TIMEOUT = 4;
+
+type PaymeTransactionRow = NonNullable<Awaited<ReturnType<typeof getPaymeTransaction>>>;
+
+/** Auto-cancels a PENDING transaction that has sat past the 12h window before it's read or acted on. */
+async function expireIfTimedOut(tx: PaymeTransactionRow): Promise<PaymeTransactionRow> {
+  if (tx.state !== PAYME_STATE.PENDING || !tx.createTime) return tx;
+  if (Date.now() - tx.createTime < PENDING_TIMEOUT_MS) return tx;
+
+  const cancelTime = Date.now();
+  await upsertPaymeTransaction({
+    paymeTransId: tx.paymeTransId,
+    paymentId: tx.paymentId,
+    state: PAYME_STATE.PENDING_CANCELLED,
+    amountTiyin: tx.amountTiyin,
+    createTime: tx.createTime,
+    cancelTime,
+    cancelReason: CANCEL_REASON_TIMEOUT,
+  });
+  return { ...tx, state: PAYME_STATE.PENDING_CANCELLED, cancelTime, cancelReason: CANCEL_REASON_TIMEOUT };
+}
+
 function resolveOrderId(account: unknown): string | null {
   if (!account || typeof account !== "object") return null;
   const orderId = (account as { order_id?: unknown }).order_id;
@@ -130,7 +154,7 @@ async function performTransaction(
   const paymeTransId = String(params.id ?? "");
   if (!paymeTransId) return rpcFailure(id, "INVALID_PARAMS");
 
-  const tx = await getPaymeTransaction(paymeTransId);
+  let tx = await getPaymeTransaction(paymeTransId);
   if (!tx) return rpcFailure(id, "TRANSACTION_NOT_FOUND");
 
   if (tx.state === PAYME_STATE.PAID) {
@@ -141,6 +165,7 @@ async function performTransaction(
     });
   }
 
+  tx = await expireIfTimedOut(tx);
   if (tx.state !== PAYME_STATE.PENDING) {
     return rpcFailure(id, "UNABLE_TO_PERFORM");
   }
@@ -174,6 +199,9 @@ async function cancelTransaction(
   if (!tx) return rpcFailure(id, "TRANSACTION_NOT_FOUND");
 
   const cancelTime = Date.now();
+  const reasonRaw = Number(params.reason);
+  const cancelReason = Number.isFinite(reasonRaw) ? reasonRaw : undefined;
+
   if (tx.state === PAYME_STATE.PAID) {
     await upsertPaymeTransaction({
       paymeTransId,
@@ -183,6 +211,7 @@ async function cancelTransaction(
       createTime: tx.createTime ?? undefined,
       performTime: tx.performTime ?? undefined,
       cancelTime,
+      cancelReason,
     });
     await reverseSubscriptionFromPayment(tx.paymentId, "payme_merchant", params);
     return rpcSuccess(id, {
@@ -200,6 +229,7 @@ async function cancelTransaction(
       amountTiyin: tx.amountTiyin,
       createTime: tx.createTime ?? undefined,
       cancelTime,
+      cancelReason,
     });
     return rpcSuccess(id, {
       cancel_time: cancelTime,
@@ -226,8 +256,9 @@ async function checkTransaction(
   const paymeTransId = String(params.id ?? "");
   if (!paymeTransId) return rpcFailure(id, "INVALID_PARAMS");
 
-  const tx = await getPaymeTransaction(paymeTransId);
+  let tx = await getPaymeTransaction(paymeTransId);
   if (!tx) return rpcFailure(id, "TRANSACTION_NOT_FOUND");
+  tx = await expireIfTimedOut(tx);
 
   return rpcSuccess(id, {
     create_time: tx.createTime,

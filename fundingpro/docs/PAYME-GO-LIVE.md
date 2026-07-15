@@ -28,9 +28,11 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ```
 POST https://www.fundingpro.uz/api/v1/payments/payme
-Authorization: Basic base64(Payme:MERCHANT_KEY)
+Authorization: Basic base64(Paycom:MERCHANT_KEY)
 Content-Type: application/json
 ```
+
+Payme's servers authenticate as login `Paycom` (their infra naming — see `checkout.paycom.uz`), not `Payme`. If the actual Business cabinet ever shows a different login string, override it with `PAYME_MERCHANT_LOGIN` — do not hardcode a second guess.
 
 ## Методы
 

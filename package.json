@@ -3,7 +3,8 @@
   "private": true,
   "dependencies": {
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-native-web": "^0.21.2"
   },
   "workspaces": [
     "fundingpro",
@@ -47,6 +48,8 @@
     "mobile:dev": "bash mobile/scripts/dev-client.sh",
     "mobile:rebuild-ios": "bash mobile/scripts/rebuild-ios-dev-client.sh",
     "mobile:maestro": "npm run maestro --workspace=@fundingpro/mobile",
-    "convex:seed:prod": "node fundingpro/scripts/seed-production-safe.mjs"
+    "convex:seed:prod": "node fundingpro/scripts/seed-production-safe.mjs",
+    "mobile:auto": "bash mobile/scripts/auto-dev.sh",
+    "stack:auto": "bash scripts/auto-stack.sh"
   }
 }

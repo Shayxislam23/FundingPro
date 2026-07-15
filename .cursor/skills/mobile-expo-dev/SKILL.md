@@ -6,9 +6,24 @@ disable-model-invocation: true
 
 # Mobile Expo Dev
 
-## Quick start
+## Quick start (auto)
 
-From the monorepo root:
+Full stack (Metro + Next + Convex agent) then mobile smoke:
+
+```bash
+npm run stack:auto
+```
+
+Mobile-only — Metro in tmux, smoke-tests iOS/Android/web bundles, typechecks:
+
+```bash
+npm run mobile:auto
+```
+
+`stack:auto` → `scripts/auto-stack.sh` (sessions: `expo-mobile`, `fundingpro-next`, `convex-dev`).  
+`mobile:auto` → `mobile/scripts/auto-dev.sh` (creates `mobile/.env` if missing).
+
+## Manual start
 
 ```bash
 npm install

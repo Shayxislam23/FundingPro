@@ -22,6 +22,8 @@ Use these skills when optimizing FundingPro landing copy, structured data, sitem
 
 | Command | Purpose |
 |---------|---------|
+| `npm run stack:auto` | Auto: Metro + Next (:3000) + Convex agent (:3210) + mobile smoke |
+| `npm run mobile:auto` | Auto: Metro in tmux + iOS/Android/web bundle smoke + typecheck |
 | `npm run mobile:dev` | Metro with `--dev-client --clear` (prefers `~/Projects/FundingPro/mobile`) |
 | `npm run mobile:rebuild-ios` | Native iOS dev client rebuild via `expo run:ios` |
 | `npm run convex:seed:prod` | Production Convex seed (requires `CONVEX_DEPLOY_KEY`) + API verify |

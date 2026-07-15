@@ -10,7 +10,8 @@ import { convexRun, loadEnvFiles, requireConvexUrl } from "./lib/convex-run.mjs"
 const env = loadEnvFiles();
 const BASE = process.env.PAYME_E2E_BASE_URL ?? process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
 const MERCHANT_KEY = process.env.PAYME_MERCHANT_KEY ?? "payme_test_secret";
-const authHeader = `Basic ${Buffer.from(`Payme:${MERCHANT_KEY}`, "utf8").toString("base64")}`;
+const MERCHANT_LOGIN = process.env.PAYME_MERCHANT_LOGIN ?? "Paycom";
+const authHeader = `Basic ${Buffer.from(`${MERCHANT_LOGIN}:${MERCHANT_KEY}`, "utf8").toString("base64")}`;
 
 let passed = 0;
 let failed = 0;

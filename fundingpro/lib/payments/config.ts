@@ -67,6 +67,8 @@ export function getPaymeConfig() {
   return {
     merchantId: process.env.PAYME_MERCHANT_ID ?? "",
     merchantKey: process.env.PAYME_MERCHANT_KEY ?? "",
+    /** Basic Auth login Payme's servers send — "Paycom" per their infra naming (checkout.paycom.uz), not "Payme". Override via env if the cabinet ever shows something else. */
+    merchantLogin: process.env.PAYME_MERCHANT_LOGIN ?? "Paycom",
     testMode: process.env.PAYME_TEST_MODE !== "false",
     checkoutBaseUrl:
       process.env.PAYME_CHECKOUT_BASE_URL ??

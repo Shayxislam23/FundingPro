@@ -1,4 +1,4 @@
-import { ClerkLoaded, ClerkProvider, useAuth as useClerkAuth, useUser } from "@clerk/clerk-expo";
+import { ClerkLoaded, ClerkProvider, useAuth as useClerkAuth, useUser } from "@clerk/expo";
 import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 import { getClerkPublishableKey, tokenCache } from "../clerk";
 import { registerAndSyncPushToken } from "../notifications";

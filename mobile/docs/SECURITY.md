@@ -6,7 +6,7 @@
 
 | Область | Статус |
 |--------|--------|
-| Аутентификация | Clerk (`@clerk/clerk-expo`), JWT template `convex`, токены в Expo SecureStore (chunked adapter) |
+| Аутентификация | Clerk (`@clerk/expo`), JWT template `convex`, токены в Expo SecureStore (chunked adapter) |
 | API | Bearer Convex JWT, `X-Client-Version`, серверная авторизация на всех `/api/v1/*` |
 | Платежи | `returnUrl` только на сервере (`platform=mobile` → фиксированный deeplink) |
 | Админ-панель | **Не в mobile** — только web (`fundingpro` dashboard) |

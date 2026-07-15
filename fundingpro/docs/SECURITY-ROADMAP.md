@@ -78,7 +78,7 @@ Last updated: 2026-06-27
 | `@clerk/nextjs` | 7.5.9 | Stricter publishable-key validation — CI uses `pk_test_Y2xlcmsuZGV2JHRlc3Qk` |
 | `eslint-config-next` | 15.5.19 | Aligned with `next` |
 | `postcss` | ^8.5.10 | Root override + nested `next` override for GHSA-qx2v-qp2m-jg93 |
-| `@clerk/clerk-expo` | 2.19.41 | Mobile override; clears GHSA-w24r-5266-9c3c chain |
+| `@clerk/expo` | 3.7.5 | Mobile Clerk SDK (replaces `@clerk/clerk-expo`); aligns with `@clerk/clerk-js` 6.x |
 | `ws` | 8.21.0 | Root + `viem` nested override |
 | `@next/swc-*` | 15.5.19 | Optional deps in `fundingpro/package.json` for monorepo hoisting |
 

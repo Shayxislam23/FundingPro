@@ -15,6 +15,7 @@
 - Version bump `0.3.0` → `0.4.0`
 - Home progress copy + store review notes use «Мой путь» (individuals-first)
 - `eas.json` Android submit: `track: internal` + `releaseStatus: draft` for safer first upload
+- **Auth**: `@clerk/clerk-expo` → `@clerk/expo@3.7.5` so Metro resolves `@clerk/clerk-js` 6.x (no `/headless` export)
 
 ### User action required (EAS preview — not run in CI)
 ```bash

@@ -1,4 +1,4 @@
-import { useSignIn, useSignUp } from "@clerk/clerk-expo";
+import { useSignIn, useSignUp } from "@clerk/expo/legacy";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";

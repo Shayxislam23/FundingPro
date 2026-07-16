@@ -1,4 +1,6 @@
 import { useSignIn, useSignUp } from "@clerk/expo/legacy";
+// Legacy hooks keep isLoaded / prepareFirstFactor / setActive OTP API.
+// Migrate to signal-based @clerk/expo hooks in a dedicated auth rewrite.
 import { router } from "expo-router";
 import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";

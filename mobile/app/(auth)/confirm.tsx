@@ -1,4 +1,5 @@
 import { useSignIn, useSignUp } from "@clerk/expo/legacy";
+// Legacy OTP hooks — see login.tsx.
 import { router } from "expo-router";
 import { useState } from "react";
 import { Text, View } from "react-native";

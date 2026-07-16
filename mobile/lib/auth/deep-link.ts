@@ -7,7 +7,10 @@ import {
   parseSubscriptionReturnUrl,
 } from "./callback-validation";
 
-/** Handle Clerk auth + payment return deep links (custom scheme and App Links). */
+/** Handle Clerk auth + payment return deep links (custom scheme and App Links).
+ * Auth callbacks validate URL shape only — session is established by Clerk,
+ * not by legacy Supabase `parseAuthCallbackUrl`.
+ */
 export function useAuthDeepLink() {
   const clerk = useClerk();
   const router = useRouter();

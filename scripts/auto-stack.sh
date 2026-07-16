@@ -48,7 +48,7 @@ wait_http() {
 if [[ ! -f "$ROOT/fundingpro/.env.local" ]]; then
   cp "$ROOT/fundingpro/.env.example" "$ROOT/fundingpro/.env.local"
   # CI-style placeholder publishable key mentioned in SECURITY-ROADMAP
-  sed -i 's/pk_test_\.\.\./pk_test_Y2xlcmsuZGV2JHRlc3Qk/' "$ROOT/fundingpro/.env.local"
+  sed -i 's/pk_test_\.\.\./pk_test_Zm9vLWJhci0xMy5jbGVyay5hY2NvdW50cy5kZXYk/' "$ROOT/fundingpro/.env.local"
   sed -i 's/sk_test_\.\.\./sk_test_placeholder/' "$ROOT/fundingpro/.env.local"
 fi
 if ! rg -q '^CLERK_JWT_ISSUER_DOMAIN="https?://.+"' "$ROOT/fundingpro/.env.local"; then

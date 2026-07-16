@@ -18,6 +18,11 @@ npx skills add aaron-he-zhu/seo-geo-claude-skills
 
 Use these skills when optimizing FundingPro landing copy, structured data, sitemap strategy, or locale-specific SEO — primarily for the **web** app (`fundingpro/`). Mobile clay-lite UI is separate; SEO skills apply to public web pages and marketing content.
 
+## Decision skills
+
+- **LLM Council** (Karpathy method): `.cursor/skills/llm-council/` — multi-perspective deliberation for go-live / next-step triage. Latest run: `fundingpro/docs/COUNCIL_NEXT_STEPS_2026-07.md`.
+- **Mobile Expo**: `.cursor/skills/mobile-expo-dev/` — Metro / `mobile:auto` / `stack:auto`.
+
 ## Mobile dev workflow
 
 | Command | Purpose |

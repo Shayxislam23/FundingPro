@@ -44,7 +44,7 @@
     "lint": "npm run lint --workspaces --if-present",
     "mobile:start": "npm run start --workspace=mobile",
     "mobile:typecheck": "npm run typecheck --workspace=mobile",
-    "contract:mobile-api": "node fundingpro/scripts/mobile-api-contract.mjs",
+    "contract:mobile-api": "npm run contract:mobile-api --workspace=fundingpro",
     "mobile:dev": "bash mobile/scripts/dev-client.sh",
     "mobile:rebuild-ios": "bash mobile/scripts/rebuild-ios-dev-client.sh",
     "mobile:maestro": "npm run maestro --workspace=@fundingpro/mobile",

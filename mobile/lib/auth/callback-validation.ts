@@ -49,6 +49,12 @@ export type AuthCallbackPayload =
   | { kind: "session"; access_token: string; refresh_token: string }
   | { kind: "otp"; token_hash: string; type: OtpType };
 
+/**
+ * @deprecated Supabase-era hash/query token parser. Live deep links use Clerk
+ * `handleRedirectCallback` + `isValidAuthCallbackUrl` only (see deep-link.ts).
+ * Kept for MSTG docs / mirrored unit tests in fundingpro/tests — do not wire
+ * into production auth flows.
+ */
 export function parseAuthCallbackUrl(url: string): AuthCallbackPayload | null {
   if (!isValidAuthCallbackUrl(url)) return null;
 

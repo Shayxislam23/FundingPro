@@ -18,10 +18,17 @@ npx skills add aaron-he-zhu/seo-geo-claude-skills
 
 Use these skills when optimizing FundingPro landing copy, structured data, sitemap strategy, or locale-specific SEO — primarily for the **web** app (`fundingpro/`). Mobile clay-lite UI is separate; SEO skills apply to public web pages and marketing content.
 
+## Decision skills
+
+- **LLM Council** (Karpathy method): `.cursor/skills/llm-council/` — multi-perspective deliberation for go-live / next-step triage. Latest run: `fundingpro/docs/COUNCIL_NEXT_STEPS_2026-07.md`.
+- **Mobile Expo**: `.cursor/skills/mobile-expo-dev/` — Metro / `mobile:auto` / `stack:auto`.
+
 ## Mobile dev workflow
 
 | Command | Purpose |
 |---------|---------|
+| `npm run stack:auto` | Auto: Metro + Next (:3000) + Convex agent (:3210) + mobile smoke |
+| `npm run mobile:auto` | Auto: Metro in tmux + iOS/Android/web bundle smoke + typecheck |
 | `npm run mobile:dev` | Metro with `--dev-client --clear` (prefers `~/Projects/FundingPro/mobile`) |
 | `npm run mobile:rebuild-ios` | Native iOS dev client rebuild via `expo run:ios` |
 | `npm run convex:seed:prod` | Production Convex seed (requires `CONVEX_DEPLOY_KEY`) + API verify |

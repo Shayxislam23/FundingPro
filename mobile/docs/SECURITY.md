@@ -6,7 +6,7 @@
 
 | Область | Статус |
 |--------|--------|
-| Аутентификация | Clerk (`@clerk/clerk-expo`), JWT template `convex`, токены в Expo SecureStore (chunked adapter) |
+| Аутентификация | Clerk (`@clerk/expo`), JWT template `convex`, токены в Expo SecureStore (chunked adapter) |
 | API | Bearer Convex JWT, `X-Client-Version`, серверная авторизация на всех `/api/v1/*` |
 | Платежи | `returnUrl` только на сервере (`platform=mobile` → фиксированный deeplink) |
 | Админ-панель | **Не в mobile** — только web (`fundingpro` dashboard) |
@@ -77,7 +77,7 @@ Clerk Expo → getToken({ template: "convex" }) → Authorization: Bearer <jwt> 
 | MSTG-AUTH-2 | Управление сессией | Clerk session lifecycle, logout очищает token cache |
 | MSTG-NETWORK-1 | TLS | HTTPS по умолчанию |
 | MSTG-NETWORK-4 | Нет доверия клиентским redirect | Server-side `returnUrl` |
-| MSTG-PLATFORM-3 | Deep link validation | `parseAuthCallbackUrl` |
+| MSTG-PLATFORM-3 | Deep link validation | `isValidAuthCallbackUrl` (+ deprecated `parseAuthCallbackUrl` quarantine) |
 | MSTG-CODE-4 | SAST в CI | Semgrep job |
 | MSTG-CODE-5 | Зависимости | `npm audit --audit-level=high` |
 

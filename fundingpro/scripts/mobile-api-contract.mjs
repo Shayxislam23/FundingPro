@@ -110,6 +110,22 @@ async function testClientVersionHeader() {
   console.log("OK  X-Client-Version header accepted");
 }
 
+async function testLabJourneyRequiresAuth() {
+  const res = await fetch(`${BASE}/api/v1/lab/journey`);
+  assert(res.status === 401, `lab/journey without auth should be 401, got ${res.status}`);
+  console.log("OK  GET /api/v1/lab/journey requires auth");
+}
+
+async function testLabProfileRequiresAuth() {
+  const res = await fetch(`${BASE}/api/v1/lab/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fullName: "Contract Test" }),
+  });
+  assert(res.status === 401, `lab/profile without auth should be 401, got ${res.status}`);
+  console.log("OK  PATCH /api/v1/lab/profile requires auth");
+}
+
 async function main() {
   console.log(`Contract tests against ${BASE}\n`);
   await testHealth();
@@ -119,6 +135,8 @@ async function main() {
   await testMeRequiresAuth();
   await testAdminCheckRequiresAuth();
   await testLegalConsentStatusRequiresAuth();
+  await testLabJourneyRequiresAuth();
+  await testLabProfileRequiresAuth();
   await testPaymentsStatus();
   await testClientVersionHeader();
   console.log("\nAll mobile API contract checks passed.");

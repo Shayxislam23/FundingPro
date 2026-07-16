@@ -1,4 +1,4 @@
-import { useClerk } from "@clerk/clerk-expo";
+import { useClerk } from "@clerk/expo";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -7,7 +7,10 @@ import {
   parseSubscriptionReturnUrl,
 } from "./callback-validation";
 
-/** Handle Clerk auth + payment return deep links (custom scheme and App Links). */
+/** Handle Clerk auth + payment return deep links (custom scheme and App Links).
+ * Auth callbacks validate URL shape only — session is established by Clerk,
+ * not by legacy Supabase `parseAuthCallbackUrl`.
+ */
 export function useAuthDeepLink() {
   const clerk = useClerk();
   const router = useRouter();

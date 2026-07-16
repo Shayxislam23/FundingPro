@@ -1,5 +1,5 @@
-import type { TokenCache } from "@clerk/clerk-expo";
-import { getClerkInstance } from "@clerk/clerk-expo";
+import type { TokenCache } from "@clerk/expo";
+import { getClerkInstance } from "@clerk/expo";
 import { chunkedSecureStoreAdapter } from "./secure-store-adapter";
 
 export const tokenCache: TokenCache = {

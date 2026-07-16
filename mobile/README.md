@@ -87,7 +87,7 @@ eas build --profile development --platform ios
 | `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (то же приложение, что web) |
 | `EXPO_PUBLIC_SENTRY_DSN` | Опционально — crash reporting |
 
-Мобильное приложение использует **Clerk** (не Supabase). Сессия и токены хранятся через `@clerk/clerk-expo` + chunked SecureStore adapter.
+Мобильное приложение использует **Clerk** (не Supabase). Сессия и токены хранятся через `@clerk/expo` + chunked SecureStore adapter.
 
 ### Настройка Clerk
 

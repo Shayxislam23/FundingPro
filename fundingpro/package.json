@@ -75,8 +75,8 @@
     "@types/pg": "^8.20.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "convex": "^1.42.0",
-    "convex-helpers": "^0.1.120",
+    "convex": "^1.43.0",
+    "convex-helpers": "^0.1.122",
     "lucide-react": "^1.16.0",
     "next": "15.5.19",
     "nodemailer": "^9.0.1",
@@ -88,7 +88,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@convex-dev/eslint-plugin": "^2.0.0",
+    "@convex-dev/eslint-plugin": "^3.0.0",
     "@edge-runtime/vm": "^5.0.0",
     "@playwright/test": "^1.51.0",
     "@types/node": "^20",
@@ -96,7 +96,7 @@
     "@types/react-dom": "19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
-    "convex-test": "^0.0.54",
+    "convex-test": "^0.0.55",
     "eslint": "^9.39.4",
     "eslint-config-next": "15.5.19",
     "postcss": "^8.5.10",

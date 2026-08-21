@@ -10,11 +10,13 @@
 - **Universal Links hosting**: `.well-known/apple-app-site-association` and `assetlinks.json` on web (env-driven Team ID / SHA-256)
 - **Maestro** `my-path.yaml` for «Мой путь» wizard smoke
 - **`secrets/README.md`**: local EAS submit credential drop folder (keys gitignored)
+- **Store submit runbook** + `npm run store:preflight`; EAS workflows `submit-ios.yml` / `submit-android.yml` (manual `eas workflow:run` only)
 
 ### Changed
 - Version bump `0.3.0` → `0.4.0`
 - Home progress copy + store review notes use «Мой путь» (individuals-first)
 - `eas.json` Android submit: `track: internal` + `releaseStatus: draft` for safer first upload
+- `eas.json` no longer ships fake `REPLACE_AFTER_*` iOS IDs or a committed Play JSON path — fill real `ascAppId` / Team ID after enrollment; store the service account with `eas credentials`
 
 ### User action required (EAS preview — not run in CI)
 ```bash

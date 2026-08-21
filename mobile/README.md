@@ -107,6 +107,9 @@ eas build --profile development --platform ios
 | `npm run lint` | ESLint |
 | `npm run maestro` | Maestro smoke (`maestro/`) |
 | `npm run maestro:my-path` | «Мой путь» wizard smoke only |
+| `npm run store:preflight` | Проверка `eas.json` / bundle id перед сабмитом |
+| `npm run store:build` | `eas build --profile production --platform all` |
+| `npm run store:submit:ios` / `:android` | `eas submit` (TestFlight / Play draft) |
 | `npm run android` | Android emulator |
 | `npm run ios` | iOS simulator |
 
@@ -256,10 +259,22 @@ eas build --profile development --platform android
 
 ## Store submission
 
-См. `mobile/docs/`:
+Путь в сторы: **EAS Build → EAS Submit → Review в консолях**. Начните с [`docs/STORE-SUBMIT-RUNBOOK.md`](./docs/STORE-SUBMIT-RUNBOOK.md).
+
+```bash
+cd mobile
+npm run store:preflight
+# после Apple ($99) + Google ($25) и черновиков в консолях:
+eas build --profile production --platform all
+eas submit --platform ios --profile production      # TestFlight
+eas submit --platform android --profile production  # Play internal/draft
+```
+
+`eas submit` не публикует Live: iOS остаётся в TestFlight, Android — draft на internal. Кнопки Review / Publish — в [App Store Connect](https://appstoreconnect.apple.com/) и [Play Console](https://play.google.com/console/). Каталог загрузок: [expo.dev submissions](https://expo.dev/accounts/shayxislam/projects/fundingpro/submissions).
 
 | Doc | Purpose |
 |-----|---------|
+| [`STORE-SUBMIT-RUNBOOK.md`](./docs/STORE-SUBMIT-RUNBOOK.md) | Пошаговый выпуск через EAS Submit |
 | [`STORE-SUBMISSION-PLAN.md`](./docs/STORE-SUBMISSION-PLAN.md) | 10 фаз до Live |
 | [`STORE-LISTING-COPY.md`](./docs/STORE-LISTING-COPY.md) | RU-текст для консолей |
 | [`STORE-LAUNCH.md`](./docs/STORE-LAUNCH.md) | Скриншоты, review notes, Maestro |

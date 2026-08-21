@@ -109,10 +109,13 @@ Do **not** bump version until Track 1 exit criteria are met:
 ```bash
 cd mobile
 # Edit app.json + package.json version → 1.0.0
+npm run store:preflight
 eas build --profile production --platform all
 eas submit --platform ios --profile production
 eas submit --platform android --profile production
 ```
+
+`eas submit` only uploads binaries. App Store **Submit for Review** and Play production promote stay in the consoles — see [`STORE-SUBMIT-RUNBOOK.md`](./STORE-SUBMIT-RUNBOOK.md).
 
 Update [`RELEASE.md`](./RELEASE.md) and [`CHANGELOG.md`](../CHANGELOG.md) when tagging v1.0.0.
 
@@ -120,6 +123,7 @@ Update [`RELEASE.md`](./RELEASE.md) and [`CHANGELOG.md`](../CHANGELOG.md) when t
 
 ## Related docs
 
+- [`STORE-SUBMIT-RUNBOOK.md`](./STORE-SUBMIT-RUNBOOK.md) — EAS Build → Submit → Review
 - [`STORE-SUBMISSION-PLAN.md`](./STORE-SUBMISSION-PLAN.md) — 10-phase board
 - [`STORE-LISTING-COPY.md`](./STORE-LISTING-COPY.md) — paste-ready RU listing
 - [`APP-PRIVACY-DATA-SAFETY.md`](./APP-PRIVACY-DATA-SAFETY.md) — privacy form answers

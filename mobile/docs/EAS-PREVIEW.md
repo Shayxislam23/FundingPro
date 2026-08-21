@@ -61,6 +61,6 @@ Requires [Maestro CLI](https://maestro.mobile.dev/) installed.
 - Set Vercel env: `APPLE_TEAM_ID`, `ANDROID_RELEASE_SHA256` (bundle id reads from `mobile/app.json` or `IOS_BUNDLE_ID`)
 - Verify `.well-known` — no `X-App-Links-Config: incomplete` header when env is set
 - Run preview smoke: `mobile/docs/EAS-SMOKE.md`
-- Run `eas build --profile production` then `eas submit`
+- Run `eas build --profile production` then `eas submit` (see [`STORE-SUBMIT-RUNBOOK.md`](./STORE-SUBMIT-RUNBOOK.md))
 
 See also `mobile/docs/RELEASE.md` and `mobile/CHANGELOG.md`.

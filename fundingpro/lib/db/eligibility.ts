@@ -1,12 +1,12 @@
 import { api, convexQuery, convexMutation } from "@/lib/convex-server";
 
-export async function getGrantForEligibility(grantId: string, accessToken: string) {
-  return convexQuery(api.eligibility.getGrant, { grantId }, accessToken);
+export async function getGrantForEligibility(opportunityId: string, accessToken: string) {
+  return convexQuery(api.eligibility.getGrant, { opportunityId }, accessToken);
 }
 
 export async function saveEligibilityCheck(
   params: {
-    grantId?: string | null;
+    opportunityId?: string | null;
     answers: Record<
       string,
       string | number | boolean | null | Array<string | number | boolean | null>

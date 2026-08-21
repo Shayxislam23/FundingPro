@@ -8,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), lastModified: now, changeFrequency: "weekly", priority: 1 },
     {
-      url: absoluteUrl("/grants"),
+      url: absoluteUrl("/opportunities"),
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.9,
@@ -41,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const grantEntries = await listGrantSitemapEntries();
   const grantPages: MetadataRoute.Sitemap = grantEntries.map((grant) => ({
-    url: absoluteUrl(`/grants/${grant.id}`),
+    url: absoluteUrl(`/opportunities/${grant.id}`),
     lastModified: grant.lastModified ?? now,
     changeFrequency: "weekly" as const,
     priority: 0.8,

@@ -60,11 +60,11 @@ describe("onboarding.updateLabProfile", () => {
     const profile = await asStudent.mutation(api.onboarding.updateLabProfile, {
       fullName: "Dilnoza K.",
       linkedinUrl: "https://linkedin.com/in/dilnoza",
-      interests: ["grants", "scholarships"],
+      interests: ["opportunities", "scholarships"],
     });
 
     expect(profile.fullName).toBe("Dilnoza K.");
-    expect(profile.interests).toEqual(["grants", "scholarships"]);
+    expect(profile.interests).toEqual(["opportunities", "scholarships"]);
 
     const user = await t.run((ctx) => ctx.db.get("users", userId));
     expect(user?.userMode).toBe("individual");
@@ -146,7 +146,7 @@ describe("onboarding.issueCertificateDecision", () => {
     await asStudent.mutation(api.onboarding.updateLabProfile, {
       fullName: "Dilnoza K.",
       linkedinUrl: "https://linkedin.com/in/dilnoza",
-      interests: ["grants"],
+      interests: ["opportunities"],
     });
     for (const taskType of REVIEWABLE_TASKS) {
       await asStudent.mutation(api.onboarding.submitTask, { taskType });
@@ -173,7 +173,7 @@ describe("onboarding.issueCertificateDecision", () => {
     await asStudent.mutation(api.onboarding.updateLabProfile, {
       fullName: "Dilnoza K.",
       linkedinUrl: "https://linkedin.com/in/dilnoza",
-      interests: ["grants"],
+      interests: ["opportunities"],
     });
     for (const taskType of REVIEWABLE_TASKS) {
       await asStudent.mutation(api.onboarding.submitTask, { taskType });

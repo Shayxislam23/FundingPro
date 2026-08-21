@@ -4,7 +4,7 @@ import { eligibilityAnswersValidator } from "./lib/validators";
 import type { Id } from "./_generated/dataModel";
 
 export const getGrant = authedQuery({
-  args: { grantId: v.string() },
+  args: { opportunityId: v.string() },
   returns: v.union(
     v.object({
       title: v.string(),
@@ -14,7 +14,7 @@ export const getGrant = authedQuery({
     v.null()
   ),
   handler: async (ctx, args) => {
-    const grant = await ctx.db.get("grants", args.grantId as Id<"grants">);
+    const grant = await ctx.db.get("opportunities", args.opportunityId as Id<"opportunities">);
     if (!grant) return null;
     return {
       title: grant.title,
@@ -26,7 +26,7 @@ export const getGrant = authedQuery({
 
 export const saveCheck = authedMutation({
   args: {
-    grantId: v.optional(v.union(v.string(), v.null())),
+    opportunityId: v.optional(v.union(v.string(), v.null())),
     answers: eligibilityAnswersValidator,
     score: v.number(),
     status: v.string(),
@@ -40,7 +40,7 @@ export const saveCheck = authedMutation({
     const now = Date.now();
     return await ctx.db.insert("eligibilityChecks", {
       userId: ctx.user._id,
-      grantId: args.grantId ? (args.grantId as Id<"grants">) : undefined,
+      opportunityId: args.opportunityId ? (args.opportunityId as Id<"opportunities">) : undefined,
       answers: args.answers,
       score: args.score,
       status: args.status,

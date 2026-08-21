@@ -21,7 +21,7 @@ interface GrantCardProps {
   className?: string;
 }
 
-export function GrantCard({
+export function OpportunityCard({
   id,
   title,
   donor,

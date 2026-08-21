@@ -61,7 +61,7 @@ export const LAB_STEPS: LabStepMeta[] = [
     description:
       "Первое задание — сохранить 10 подходящих возможностей: гранты, форумы, стипендии, конкурсы или стажировки.",
     action: "Открыть каталог",
-    href: "/dashboard/grants",
+    href: "/dashboard/opportunities",
   },
   {
     id: "motivation",
@@ -100,7 +100,7 @@ export const LAB_STEPS: LabStepMeta[] = [
 ];
 
 export const LAB_INTERESTS: { id: string; label: string }[] = [
-  { id: "grants", label: "Гранты" },
+  { id: "opportunities", label: "Гранты" },
   { id: "scholarships", label: "Стипендии" },
   { id: "forums", label: "Форумы" },
   { id: "competitions", label: "Конкурсы" },

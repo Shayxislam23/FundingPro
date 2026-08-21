@@ -63,7 +63,7 @@ async function listAdminApplications(
 }
 
 async function mapApplication(ctx: { db: QueryCtx["db"] }, app: Doc<"applications">) {
-  const grant = await ctx.db.get("grants", app.grantId);
+  const grant = await ctx.db.get("opportunities", app.opportunityId);
   let donor: Doc<"donors"> | null = null;
   if (grant) {
     donor = await ctx.db.get("donors", grant.donorId);
@@ -147,7 +147,7 @@ export const list = authedQuery({
 
 export const create = authedMutation({
   args: {
-    grantId: v.string(),
+    opportunityId: v.string(),
     notes: v.optional(v.union(v.string(), v.null())),
   },
   returns: v.union(
@@ -159,13 +159,13 @@ export const create = authedMutation({
     v.object({ error: v.literal("GRANT_NOT_FOUND") })
   ),
   handler: async (ctx, args) => {
-    const grant = await ctx.db.get("grants", args.grantId as Id<"grants">);
+    const grant = await ctx.db.get("opportunities", args.opportunityId as Id<"opportunities">);
     if (!grant) return { error: "GRANT_NOT_FOUND" as const };
 
     const existing = await ctx.db
       .query("applications")
       .withIndex("by_user_and_grant", (q) =>
-        q.eq("userId", ctx.user._id).eq("grantId", grant._id)
+        q.eq("userId", ctx.user._id).eq("opportunityId", grant._id)
       )
       .first();
 
@@ -180,7 +180,7 @@ export const create = authedMutation({
     const now = Date.now();
     const id = await ctx.db.insert("applications", {
       userId: ctx.user._id,
-      grantId: grant._id,
+      opportunityId: grant._id,
       status: "SAVED",
       notes: args.notes ?? undefined,
       createdAt: now,
@@ -226,7 +226,7 @@ export const update = authedMutation({
     if (nextStatus === "won" && args.wonAmountUsd !== undefined) {
       await recordWinIfNeeded(ctx, {
         applicationId: app._id,
-        grantId: app.grantId,
+        opportunityId: app.opportunityId,
         userId: app.userId,
         wonAmountUsd: args.wonAmountUsd,
       });

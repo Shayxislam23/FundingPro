@@ -3,8 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
-import { ShareGrantButton } from "@/components/grants/ShareGrantButton";
-import { getPublicGrantById } from "@/lib/public-grants";
+import { ShareGrantButton } from "@/components/opportunities/ShareGrantButton";
+import { getPublicGrantById } from "@/lib/public-opportunities";
 import type { GrantDetail, GrantRequirement } from "@fundingpro/api-types";
 import { formatGrantAmount, formatDeadlineDate } from "@fundingpro/shared";
 import { translateSector } from "@fundingpro/shared";
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       (grant.description_ru ?? grant.description)?.slice(0, 160) ??
       `Грант от ${grant.donor.name_ru ?? grant.donor.name}`;
 
-    const grantPath = `/grants/${id}`;
+    const grantPath = `/opportunities/${id}`;
 
     return {
       title,
@@ -84,7 +84,7 @@ export default async function PublicGrantDetailPage({ params }: PageProps) {
       url: grant.donor.website ?? undefined,
     },
     dateModified: grant.deadline ?? undefined,
-    mainEntityOfPage: absoluteUrl(`/grants/${grant.id}`),
+    mainEntityOfPage: absoluteUrl(`/opportunities/${grant.id}`),
   };
 
   return (
@@ -99,13 +99,13 @@ export default async function PublicGrantDetailPage({ params }: PageProps) {
           <Link href="/">
             <FundingProLogo variant="light" size="sm" />
           </Link>
-          <ShareGrantButton grantId={grant.id} title={title} />
+          <ShareGrantButton opportunityId={grant.id} title={title} />
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto w-full px-6 py-10 flex-1">
         <Link
-          href="/grants"
+          href="/opportunities"
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-funding-green mb-6"
         >
           <ArrowLeft className="w-3.5 h-3.5" />

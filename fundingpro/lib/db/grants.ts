@@ -4,7 +4,7 @@ import type {
   GrantListItem,
   ListGrantsParams,
   ListGrantsResult,
-} from "./grants.types";
+} from "./opportunities.types";
 
 export type { GrantDetail, GrantListItem, ListGrantsParams, ListGrantsResult };
 export type GrantListParams = ListGrantsParams;
@@ -13,7 +13,7 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
   try {
     if (params.cursor) {
       const limit = params.limit ?? 20;
-      const result = await convexPublicQuery(api.grants.list, {
+      const result = await convexPublicQuery(api.opportunities.list, {
         search: params.search,
         sector: params.sector,
         country: params.country,
@@ -28,7 +28,7 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
       return result;
     }
 
-    return await convexPublicQuery(api.grants.list, {
+    return await convexPublicQuery(api.opportunities.list, {
       search: params.search,
       sector: params.sector,
       country: params.country,
@@ -50,7 +50,7 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
 
 export async function getGrantById(id: string): Promise<GrantDetail | null> {
   try {
-    return await convexPublicQuery(api.grants.getById, { id });
+    return await convexPublicQuery(api.opportunities.getById, { id });
   } catch (err) {
     const { isSeedFallbackEnabled, seedFallbackGrantDetail } = await import("./catalog-fallback");
     if (isSeedFallbackEnabled()) return seedFallbackGrantDetail(id);
@@ -59,5 +59,5 @@ export async function getGrantById(id: string): Promise<GrantDetail | null> {
 }
 
 export async function grantsHealthCheck() {
-  await convexPublicQuery(api.grants.healthCheck, {});
+  await convexPublicQuery(api.opportunities.healthCheck, {});
 }

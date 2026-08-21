@@ -31,7 +31,7 @@ export const logRequest = authedMutation({
 export const saveProject = authedMutation({
   args: {
     title: v.string(),
-    grantId: v.optional(v.string()),
+    opportunityId: v.optional(v.string()),
     donorFormat: v.string(),
     sections: v.record(v.string(), v.string()),
   },
@@ -41,7 +41,7 @@ export const saveProject = authedMutation({
     const projectId = await ctx.db.insert("proposalProjects", {
       userId: ctx.user._id,
       title: args.title,
-      grantId: args.grantId ? (args.grantId as Id<"grants">) : undefined,
+      opportunityId: args.opportunityId ? (args.opportunityId as Id<"opportunities">) : undefined,
       donorFormat: args.donorFormat,
       status: "DRAFT",
       createdAt: now,
@@ -69,7 +69,7 @@ export const listProjects = authedQuery({
       id: v.string(),
       title: v.string(),
       status: v.string(),
-      grantId: v.union(v.string(), v.null()),
+      opportunityId: v.union(v.string(), v.null()),
       createdAt: v.string(),
     })
   ),
@@ -87,7 +87,7 @@ export const listProjects = authedQuery({
         id: p._id,
         title: p.title,
         status: p.status,
-        grantId: p.grantId ?? null,
+        opportunityId: p.opportunityId ?? null,
         createdAt: new Date(p.createdAt).toISOString(),
       }));
   },

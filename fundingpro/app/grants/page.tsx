@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { LegalFooter } from "@/components/design/LegalFooter";
-import { GrantCard } from "@/components/design/GrantCard";
+import { OpportunityCard } from "@/components/design/OpportunityCard";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { listPublicGrants, type GrantListItem } from "@/lib/public-grants";
+import { listPublicGrants, type GrantListItem } from "@/lib/public-opportunities";
 import {
   formatGrantAmount,
   formatDeadlineDate,
@@ -22,13 +22,13 @@ const pageDescription =
 export const metadata: Metadata = {
   title: pageTitle,
   description: pageDescription,
-  openGraph: openGraphPage(pageTitle, pageDescription, "/grants"),
+  openGraph: openGraphPage(pageTitle, pageDescription, "/opportunities"),
   twitter: {
     card: "summary_large_image",
     title: `${pageTitle} | ${siteConfig.name}`,
     description: pageDescription,
   },
-  alternates: hreflangAlternates("/grants"),
+  alternates: hreflangAlternates("/opportunities"),
 };
 
 const DEFAULT_COUNTRY = "Uzbekistan";
@@ -44,7 +44,7 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
   const search = sp.q?.trim() ?? "";
 
-  let grants: GrantListItem[] = [];
+  let opportunities: GrantListItem[] = [];
   let total = 0;
   let pages = 1;
 
@@ -55,11 +55,11 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
       limit: 24,
       search: search || undefined,
     });
-    grants = result.grants;
+    opportunities = result.opportunities;
     total = result.total;
     pages = result.pages;
   } catch {
-    grants = [];
+    opportunities = [];
   }
 
   const itemListJsonLd = {
@@ -67,12 +67,12 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
     "@type": "ItemList",
     name: pageTitle,
     description: pageDescription,
-    url: absoluteUrl("/grants"),
+    url: absoluteUrl("/opportunities"),
     numberOfItems: total,
-    itemListElement: grants.slice(0, 10).map((grant, index) => ({
+    itemListElement: opportunities.slice(0, 10).map((grant, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: absoluteUrl(`/grants/${grant.id}`),
+      url: absoluteUrl(`/opportunities/${grant.id}`),
       name: grant.title_ru ?? grant.title,
     })),
   };
@@ -108,9 +108,9 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
 
         <div className="flex flex-wrap gap-2 mb-8">
           {[
-            { label: "Узбекистан", value: DEFAULT_COUNTRY, href: "/grants" },
-            { label: "Казахстан", value: "Kazakhstan", href: "/grants?country=Kazakhstan" },
-            { label: "Все страны", value: "", href: "/grants?country=" },
+            { label: "Узбекистан", value: DEFAULT_COUNTRY, href: "/opportunities" },
+            { label: "Казахстан", value: "Kazakhstan", href: "/opportunities?country=Kazakhstan" },
+            { label: "Все страны", value: "", href: "/opportunities?country=" },
           ].map(({ label, value, href }) => {
             const active = countryFilter === value;
             return (
@@ -129,7 +129,7 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
           })}
         </div>
 
-        {grants.length === 0 ? (
+        {opportunities.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <p className="text-gray-500 mb-4">Гранты не найдены для выбранного фильтра.</p>
             <Link href="/auth" className="text-sm font-semibold text-funding-green hover:underline">
@@ -138,12 +138,12 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {grants.map((grant) => {
+            {opportunities.map((grant) => {
               const title = grant.title_ru ?? grant.title;
               const donor = grant.donor.name_ru ?? grant.donor.name;
               return (
-                <Link key={grant.id} href={`/grants/${grant.id}`} className="block">
-                  <GrantCard
+                <Link key={grant.id} href={`/opportunities/${grant.id}`} className="block">
+                  <OpportunityCard
                     id={grant.id}
                     title={title}
                     donor={donor}
@@ -165,7 +165,7 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
           <nav className="flex justify-center gap-3 mt-10">
             {page > 1 && (
               <Link
-                href={`/grants?${countryParam !== undefined ? `country=${encodeURIComponent(countryFilter)}&` : ""}page=${page - 1}${search ? `&q=${encodeURIComponent(search)}` : ""}`}
+                href={`/opportunities?${countryParam !== undefined ? `country=${encodeURIComponent(countryFilter)}&` : ""}page=${page - 1}${search ? `&q=${encodeURIComponent(search)}` : ""}`}
                 className="px-4 py-2 rounded-xl border border-gray-200 text-sm hover:border-funding-green/40"
               >
                 ← Назад
@@ -176,7 +176,7 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
             </span>
             {page < pages && (
               <Link
-                href={`/grants?${countryParam !== undefined ? `country=${encodeURIComponent(countryFilter)}&` : ""}page=${page + 1}${search ? `&q=${encodeURIComponent(search)}` : ""}`}
+                href={`/opportunities?${countryParam !== undefined ? `country=${encodeURIComponent(countryFilter)}&` : ""}page=${page + 1}${search ? `&q=${encodeURIComponent(search)}` : ""}`}
                 className="px-4 py-2 rounded-xl border border-gray-200 text-sm hover:border-funding-green/40"
               >
                 Далее →

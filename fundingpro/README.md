@@ -273,7 +273,7 @@ API: `GET /api/v1/legal`, `POST /api/v1/legal/consent`, `GET /api/v1/legal/conse
 
 ## Growth, SEO и SMM
 
-- Публичный каталог грантов: `/grants`, `/grants/[id]`
+- Публичный каталог грантов: `/opportunities`, `/opportunities/[id]`
 - SEO: `sitemap.xml`, `robots.txt`, Open Graph
 - Подробнее: [docs/GROWTH_PLAYBOOK.md](docs/GROWTH_PLAYBOOK.md)
 

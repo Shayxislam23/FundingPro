@@ -53,7 +53,7 @@ export default function AIWriterDashboard() {
 
 function AIWriterContent() {
   const searchParams = useSearchParams();
-  const grantId = searchParams.get("grantId");
+  const opportunityId = searchParams.get("opportunityId");
 
   const [step, setStep] = useState<"form" | "generating" | "output">("form");
   const [projectIdea, setProjectIdea] = useState("");
@@ -92,7 +92,7 @@ function AIWriterContent() {
           projectIdea,
           donorFormat,
           sections: selectedSections,
-          grantId: grantId ?? undefined,
+          opportunityId: opportunityId ?? undefined,
           confirmSave: true,
         }),
       });
@@ -150,7 +150,7 @@ function AIWriterContent() {
         <h1 className="text-2xl font-black text-funding-black">AI Генератор предложений</h1>
         <p className="text-sm text-gray-500 mt-1">
           Создайте черновик заявки в формате UNDP, EU, GIZ или World Bank
-          {grantId && (
+          {opportunityId && (
             <span className="ml-2 text-funding-green font-medium">· привязан к гранту</span>
           )}
         </p>
@@ -251,9 +251,9 @@ function AIWriterContent() {
               </div>
               <p className="text-xs text-amber-700 leading-relaxed">{result.disclaimer}</p>
             </div>
-            {grantId && (
+            {opportunityId && (
               <Link
-                href={`/dashboard/grants/${grantId}`}
+                href={`/dashboard/opportunities/${opportunityId}`}
                 className="block text-center py-2.5 rounded-xl text-sm font-semibold border border-funding-green text-funding-green hover:bg-funding-light-green transition-colors"
               >
                 Вернуться к гранту

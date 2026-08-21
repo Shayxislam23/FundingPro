@@ -44,7 +44,7 @@ export default function EligibilityDashboard() {
 
 function EligibilityContent() {
   const searchParams = useSearchParams();
-  const grantId = searchParams.get("grantId");
+  const opportunityId = searchParams.get("opportunityId");
   const [step, setStep] = useState<Step>("questions");
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -68,7 +68,7 @@ function EligibilityContent() {
         const res = await fetch("/api/v1/eligibility/check", {
           method: "POST",
           headers,
-          body: JSON.stringify({ answers: newAnswers, grantId: grantId ?? undefined }),
+          body: JSON.stringify({ answers: newAnswers, opportunityId: opportunityId ?? undefined }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -85,7 +85,7 @@ function EligibilityContent() {
           return;
         }
         setResult(data.data);
-        trackEvent("eligibility_run", { grant_id: grantId ?? "general" });
+        trackEvent("eligibility_run", { grant_id: opportunityId ?? "general" });
         trackEvent("onboarding_step_eligibility");
         setStep("result");
       } catch (e) {

@@ -32,7 +32,7 @@ const grantListValidator = v.object({
 });
 
 const listResultValidator = v.object({
-  grants: v.array(grantListValidator),
+  opportunities: v.array(grantListValidator),
   total: v.number(),
   page: v.number(),
   limit: v.number(),
@@ -45,7 +45,7 @@ const BATCH_SIZE = 50;
 
 /** Catalog scan budget: indexed paths (by_donor, by_featured, by_active_status_deadline) + in-memory filters for search/sector/country. Full-text search deferred — keep BATCH_SIZE pages bounded. */
 
-function mapGrantListItem(grant: Doc<"grants">, donor: Doc<"donors"> | null) {
+function mapGrantListItem(grant: Doc<"opportunities">, donor: Doc<"donors"> | null) {
   return {
     id: grant._id,
     title: grant.title,
@@ -65,7 +65,7 @@ function mapGrantListItem(grant: Doc<"grants">, donor: Doc<"donors"> | null) {
 }
 
 function matchesSearch(
-  grant: Doc<"grants">,
+  grant: Doc<"opportunities">,
   donor: Doc<"donors"> | null,
   search: string
 ): boolean {
@@ -96,7 +96,7 @@ type ListFilterArgs = {
 };
 
 function passesFilters(
-  grant: Doc<"grants">,
+  grant: Doc<"opportunities">,
   donor: Doc<"donors"> | null,
   args: ListFilterArgs
 ): boolean {
@@ -124,16 +124,16 @@ function passesFilters(
 function grantsIndexQuery(ctx: QueryCtx, args: ListFilterArgs) {
   if (args.donorId) {
     return ctx.db
-      .query("grants")
+      .query("opportunities")
       .withIndex("by_donor", (q) => q.eq("donorId", args.donorId as Id<"donors">));
   }
   if (args.featured) {
     return ctx.db
-      .query("grants")
+      .query("opportunities")
       .withIndex("by_featured", (q) => q.eq("isFeatured", true));
   }
   return ctx.db
-    .query("grants")
+    .query("opportunities")
     .withIndex("by_active_status_deadline", (q) => q.eq("isActive", true));
 }
 
@@ -149,7 +149,7 @@ async function listFilteredGrants(
     return donorCache.get(id) ?? null;
   }
 
-  const matched: Array<{ grant: Doc<"grants">; donor: Doc<"donors"> | null }> = [];
+  const matched: Array<{ grant: Doc<"opportunities">; donor: Doc<"donors"> | null }> = [];
   let cursor: string | null = null;
   let isDone = false;
 
@@ -209,7 +209,7 @@ export const list = query({
     };
 
     if (args.paginationOpts) {
-      const pageItems: Array<{ grant: Doc<"grants">; donor: Doc<"donors"> | null }> = [];
+      const pageItems: Array<{ grant: Doc<"opportunities">; donor: Doc<"donors"> | null }> = [];
       let cursor = args.paginationOpts.cursor;
       let isDone = false;
       const target = args.paginationOpts.numItems;
@@ -246,7 +246,7 @@ export const list = query({
 
       const limit = target;
       return {
-        grants: pageItems.map(({ grant, donor }) => mapGrantListItem(grant, donor)),
+        opportunities: pageItems.map(({ grant, donor }) => mapGrantListItem(grant, donor)),
         total: pageItems.length,
         page: 1,
         limit,
@@ -265,7 +265,7 @@ export const list = query({
     const hasMore = offset + limit < total;
 
     return {
-      grants: pageItems.map(({ grant, donor }) => mapGrantListItem(grant, donor)),
+      opportunities: pageItems.map(({ grant, donor }) => mapGrantListItem(grant, donor)),
       total,
       page,
       limit,
@@ -308,9 +308,9 @@ export const getById = query({
     v.null()
   ),
   handler: async (ctx, args) => {
-    let grant: Doc<"grants"> | null = null;
+    let grant: Doc<"opportunities"> | null = null;
     try {
-      grant = await ctx.db.get("grants", args.id as Id<"grants">);
+      grant = await ctx.db.get("opportunities", args.id as Id<"opportunities">);
     } catch {
       return null;
     }
@@ -319,8 +319,8 @@ export const getById = query({
     const donor = await ctx.db.get("donors", grant.donorId);
     const requirements = await paginateAll(
       ctx.db
-        .query("grantRequirements")
-        .withIndex("by_grant", (q) => q.eq("grantId", grant!._id))
+        .query("opportunityRequirements")
+        .withIndex("by_grant", (q) => q.eq("opportunityId", grant!._id))
     );
 
     const base = mapGrantListItem(grant, donor);
@@ -347,7 +347,7 @@ export const healthCheck = query({
   args: {},
   returns: v.boolean(),
   handler: async (ctx) => {
-    const grant = await ctx.db.query("grants").first();
+    const grant = await ctx.db.query("opportunities").first();
     return grant !== null || true;
   },
 });

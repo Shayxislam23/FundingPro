@@ -3,11 +3,11 @@ import { internalMutation } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
 
 export async function refreshPlatformStatsImpl(ctx: MutationCtx) {
-  const [users, organizations, grants, applications, tickets, subscriptions, requests, auditLogs] =
+  const [users, organizations, opportunities, applications, tickets, subscriptions, requests, auditLogs] =
     await Promise.all([
       ctx.db.query("users").take(10_000),
       ctx.db.query("organizations").take(10_000),
-      ctx.db.query("grants").take(10_000),
+      ctx.db.query("opportunities").take(10_000),
       ctx.db.query("applications").take(10_000),
       ctx.db.query("supportTickets").take(10_000),
       ctx.db.query("subscriptions").take(10_000),
@@ -25,7 +25,7 @@ export async function refreshPlatformStatsImpl(ctx: MutationCtx) {
     key: "global" as const,
     totalUsers: users.length,
     totalOrganizations: organizations.length,
-    totalGrants: grants.length,
+    totalGrants: opportunities.length,
     totalApplications: applications.length,
     totalSupportTickets: tickets.length,
     totalAuditLogs: auditLogs.length,

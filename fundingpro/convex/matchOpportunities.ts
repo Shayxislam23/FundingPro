@@ -39,7 +39,7 @@ export const match = authedQuery({
   },
   returns: v.array(
     v.object({
-      grantId: v.string(),
+      opportunityId: v.string(),
       title: v.string(),
       titleRu: v.union(v.string(), v.null()),
       score: v.number(),
@@ -54,35 +54,35 @@ export const match = authedQuery({
     const budget = candidateBudget(limit);
     const { sector, country, applicantType } = args.profile;
 
-    const candidates = new Map<string, Doc<"grants">>();
+    const candidates = new Map<string, Doc<"opportunities">>();
 
-    const addCandidates = (grants: Doc<"grants">[]) => {
-      for (const grant of grants) {
+    const addCandidates = (opportunities: Doc<"opportunities">[]) => {
+      for (const grant of opportunities) {
         if (grant.isActive) candidates.set(grant._id, grant);
       }
     };
 
     for (const status of MATCHABLE_STATUSES) {
       if (candidates.size >= budget) break;
-      const grants = await ctx.db
-        .query("grants")
+      const opportunities = await ctx.db
+        .query("opportunities")
         .withIndex("by_active_status_deadline", (q) =>
           q.eq("isActive", true).eq("status", status)
         )
         .order("asc")
         .take(budget - candidates.size);
-      addCandidates(grants);
+      addCandidates(opportunities);
     }
 
     const featured = await ctx.db
-      .query("grants")
+      .query("opportunities")
       .withIndex("by_featured", (q) => q.eq("isFeatured", true))
       .take(FEATURED_CANDIDATES);
     addCandidates(featured);
 
     if (candidates.size === 0) {
       const fallback = await ctx.db
-        .query("grants")
+        .query("opportunities")
         .withIndex("by_active", (q) => q.eq("isActive", true))
         .take(budget);
       addCandidates(fallback);
@@ -116,7 +116,7 @@ export const match = authedQuery({
       .slice(0, limit)) {
       const donor = await ctx.db.get("donors", grant.donorId);
       result.push({
-        grantId: grant._id,
+        opportunityId: grant._id,
         title: grant.title,
         titleRu: grant.titleRu ?? null,
         score,

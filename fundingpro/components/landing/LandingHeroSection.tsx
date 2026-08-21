@@ -15,7 +15,7 @@ export function LandingHeroSection({ grantCountLabel }: LandingHeroSectionProps)
       <nav className="flex items-center justify-between px-6 md:px-12 py-6 border-b border-white/5">
         <FundingProLogo variant="dark" size="md" />
         <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm" style={{ color: "#A7B8AA" }}>
-          <Link href="/grants" className="hover:text-white hidden sm:inline">
+          <Link href="/opportunities" className="hover:text-white hidden sm:inline">
             Гранты
           </Link>
           <Link href="/how-it-works" className="hover:text-white hidden sm:inline">
@@ -79,7 +79,7 @@ export function LandingHeroSection({ grantCountLabel }: LandingHeroSectionProps)
               Начать бесплатно <ChevronRight className="w-4 h-4" />
             </Link>
             <Link
-              href="/grants"
+              href="/opportunities"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-sm border transition-colors"
               style={{ borderColor: "rgba(255,255,255,0.2)", color: "#A7B8AA" }}
             >

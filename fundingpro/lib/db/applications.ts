@@ -37,11 +37,11 @@ export async function listApplications(
 }
 
 export async function createApplication(
-  grantId: string,
+  opportunityId: string,
   notes: string | null | undefined,
   accessToken: string
 ) {
-  return convexMutation(api.applications.create, { grantId, notes }, accessToken);
+  return convexMutation(api.applications.create, { opportunityId, notes }, accessToken);
 }
 
 export async function getApplicationForUser(

@@ -29,7 +29,7 @@ export const POST = withPublic(async (req: NextRequest) => {
     html: `
         <p>Здравствуйте!</p>
         <p>Спасибо за интерес к FundingPro. Начните с каталога актуальных грантов:</p>
-        <p><a href="${appUrl}/grants?utm_source=lead_magnet">${appUrl}/grants</a></p>
+        <p><a href="${appUrl}/opportunities?utm_source=lead_magnet">${appUrl}/opportunities</a></p>
         <p>Бесплатно: 2 проверки соответствия и 1 AI-черновик в месяц после регистрации.</p>
         <p>— Команда FundingPro</p>
       `,

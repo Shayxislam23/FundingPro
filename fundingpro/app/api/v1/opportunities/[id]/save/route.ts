@@ -2,8 +2,8 @@ export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
 import { withActiveUser, getRouteParam } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
-import { saveGrant, unsaveGrant } from "@/lib/db/saved-grants";
-import { getGrantById } from "@/lib/db/grants";
+import { saveGrant, unsaveGrant } from "@/lib/db/saved-opportunities";
+import { getGrantById } from "@/lib/db/opportunities";
 
 export const POST = withActiveUser(async (_req, authUser, ctx) => {
   const id = await getRouteParam(ctx, "id");
@@ -23,7 +23,7 @@ export const POST = withActiveUser(async (_req, authUser, ctx) => {
     entityId: id,
   });
 
-  return apiSuccess({ grantId: id, saved: true });
+  return apiSuccess({ opportunityId: id, saved: true });
 });
 
 export const DELETE = withActiveUser(async (_req, authUser, ctx) => {
@@ -39,5 +39,5 @@ export const DELETE = withActiveUser(async (_req, authUser, ctx) => {
     entityId: id,
   });
 
-  return apiSuccess({ grantId: id, saved: false });
+  return apiSuccess({ opportunityId: id, saved: false });
 });

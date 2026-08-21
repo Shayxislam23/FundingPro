@@ -95,7 +95,7 @@ export const grantListItemSchema = z.object({
 });
 
 export const listGrantsResultSchema = z.object({
-  grants: z.array(grantListItemSchema),
+  opportunities: z.array(grantListItemSchema),
   total: z.number(),
   page: z.number(),
   limit: z.number(),
@@ -107,7 +107,7 @@ export const listGrantsResultSchema = z.object({
 export type GrantListItem = z.infer<typeof grantListItemSchema>;
 export type ListGrantsResult = z.infer<typeof listGrantsResultSchema>;
 
-/** Query params for grants catalog (web lib/db + mobile API). */
+/** Query params for opportunities catalog (web lib/db + mobile API). */
 export const listGrantsParamsSchema = z.object({
   search: z.string().optional(),
   sector: z.string().optional(),
@@ -222,7 +222,7 @@ export type OnboardingStatus = z.infer<typeof onboardingStatusSchema>;
 
 export const applicationSchema = z.object({
   id: z.string(),
-  grantId: z.string(),
+  opportunityId: z.string(),
   status: z.string(),
   notes: z.string().nullable().optional(),
   createdAt: z.string().optional(),
@@ -371,7 +371,7 @@ export const documentsListSchema = z.object({
 
 export const aiProposalSchema = z.object({
   id: z.string(),
-  grantId: z.string().optional(),
+  opportunityId: z.string().optional(),
   title: z.string().optional(),
   status: z.string().optional(),
   createdAt: z.string().optional(),

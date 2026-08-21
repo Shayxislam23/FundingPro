@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
 import { withAdmin } from "@/lib/api-route";
-import { listDonors, createDonor } from "@/lib/db/admin-grants";
+import { listDonors, createDonor } from "@/lib/db/admin-opportunities";
 
 export const GET = withAdmin(async (_req, admin) => {
   const donors = await listDonors(admin.accessToken);

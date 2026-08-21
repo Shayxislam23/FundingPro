@@ -6,8 +6,8 @@ test.describe("public pages", () => {
     await expect(page).toHaveTitle(/FundingPro/i);
   });
 
-  test("public grants catalog loads", async ({ page }) => {
-    await page.goto("/grants");
+  test("public opportunities catalog loads", async ({ page }) => {
+    await page.goto("/opportunities");
     await expect(page.getByRole("heading", { name: /Гранты для Узбекистана/i })).toBeVisible();
   });
 });
@@ -20,11 +20,11 @@ test.describe("API smoke", () => {
     expect(body.service).toBe("FundingPro API");
   });
 
-  test("grants API is public", async ({ request }) => {
-    const res = await request.get("/api/v1/grants?limit=3");
+  test("opportunities API is public", async ({ request }) => {
+    const res = await request.get("/api/v1/opportunities?limit=3");
     expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(Array.isArray(body.data?.grants)).toBe(true);
+    expect(Array.isArray(body.data?.opportunities)).toBe(true);
   });
 
   test("protected /me returns 401 without auth", async ({ request }) => {

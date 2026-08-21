@@ -11,7 +11,7 @@ import { trackServerEvent } from "@/lib/analytics-server";
 
 export const POST = withActiveUser(async (req, authUser) => {
   const body = await req.json();
-  const { grantId, answers } = body;
+  const { opportunityId, answers } = body;
 
   if (!answers || typeof answers !== "object") {
     return apiError("answers required", 400, "MISSING_FIELDS");
@@ -28,8 +28,8 @@ export const POST = withActiveUser(async (req, authUser) => {
   }
 
   let grant: { title: string; sectors: string[]; country_scope: string[] } | null = null;
-  if (grantId) {
-    const data = await getGrantForEligibility(grantId, authUser.accessToken);
+  if (opportunityId) {
+    const data = await getGrantForEligibility(opportunityId, authUser.accessToken);
     if (data) {
       grant = {
         title: String(data.title),
@@ -59,7 +59,7 @@ export const POST = withActiveUser(async (req, authUser) => {
 
   const checkId = await saveEligibilityCheck(
     {
-      grantId: grantId ?? null,
+      opportunityId: opportunityId ?? null,
       answers,
       score,
       status,
@@ -73,7 +73,7 @@ export const POST = withActiveUser(async (req, authUser) => {
 
   trackServerEvent("eligibility_run", {
     userId: authUser.userId,
-    grantId: grantId ?? null,
+    opportunityId: opportunityId ?? null,
     status,
     score,
   });

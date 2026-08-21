@@ -11,7 +11,7 @@ import type { LabProfile, LabTaskReview, LabTaskType, OnboardingProgressState, O
 import type { LabAccess, LabOpportunityApplication, LabSubmissionMethod } from "@/lib/db/lab";
 
 const INTERESTS = [
-  { value: "grants", label: "Гранты" },
+  { value: "opportunities", label: "Гранты" },
   { value: "scholarships", label: "Стипендии" },
   { value: "forums", label: "Форумы" },
   { value: "competitions", label: "Конкурсы" },

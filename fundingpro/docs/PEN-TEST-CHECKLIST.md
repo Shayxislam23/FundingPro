@@ -72,7 +72,7 @@ Last updated: 2026-06-27
    cd fundingpro
    SMOKE_BASE_URL=https://www.fundingpro.uz npm run app-links:check -- --live
    ```
-4. Device smoke: tap `https://www.fundingpro.uz/grants/...` — opens native app (not browser-only).
+4. Device smoke: tap `https://www.fundingpro.uz/opportunities/...` — opens native app (not browser-only).
 5. Mark M-02 **Resolved** in [`SECURITY-ROADMAP.md`](./SECURITY-ROADMAP.md).
 
 ## 6. Data privacy & erasure (L-02)

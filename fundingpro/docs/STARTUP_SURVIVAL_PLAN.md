@@ -38,7 +38,7 @@ Secondary metrics:
 Current product strength:
 
 - Clear local pain: young people need guidance, opportunities, CV, LinkedIn, and application support.
-- Existing technical base: Next.js, Convex, Clerk, documents, grants, AI, payments, admin, tests.
+- Existing technical base: Next.js, Convex, Clerk, documents, opportunities, AI, payments, admin, tests.
 - Strong wedge: Karakalpak/Uzbek-friendly guided execution can beat generic global platforms.
 
 Current product weakness:
@@ -60,7 +60,7 @@ Verdict:
 
 Short positioning:
 
-FundingPro helps individuals in Uzbekistan find grants, scholarships, and programs, prepare documents, and submit real applications with optional mentor-guided execution («Мой путь»).
+FundingPro helps individuals in Uzbekistan find opportunities, scholarships, and programs, prepare documents, and submit real applications with optional mentor-guided execution («Мой путь»).
 
 Do not position as:
 
@@ -87,12 +87,12 @@ Promise:
 
 Shipped modes:
 
-- `individual` — default for all users (grants, eligibility, AI, «Мой путь»)
+- `individual` — default for all users (opportunities, eligibility, AI, «Мой путь»)
 - `mentor` / `admin` — internal roles
 
 Deferred (add later without breaking v1):
 
-- `organization` — NGO/business profile, team seats, org-specific grants
+- `organization` — NGO/business profile, team seats, org-specific opportunities
 
 Why individual-first:
 

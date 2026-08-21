@@ -1,4 +1,4 @@
-/** Sample grant detail payload aligned with convex/grants.getById and seedData. */
+/** Sample grant detail payload aligned with convex/opportunities.getById and seedData. */
 export const GRANT_DETAIL_FIXTURE = {
   id: "b2000001-0000-4000-8000-000000000001",
   title: "Climate Resilience for Central Asia",

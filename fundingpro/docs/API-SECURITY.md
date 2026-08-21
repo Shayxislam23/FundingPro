@@ -53,9 +53,9 @@ Generated from `app/api/v1/**/route.ts` — **64** route modules.
 | GET | `/api/v1/admin/dashboard` | `withAdmin` |
 | GET, POST | `/api/v1/admin/donors` | `withAdmin` |
 | GET | `/api/v1/admin/funnel` | `withAdmin` |
-| GET, POST | `/api/v1/admin/grants` | `withAdmin` |
-| PATCH | `/api/v1/admin/grants/[id]` | `withAdmin` |
-| GET, POST | `/api/v1/admin/grants/[id]/requirements` | `withAdmin` |
+| GET, POST | `/api/v1/admin/opportunities` | `withAdmin` |
+| PATCH | `/api/v1/admin/opportunities/[id]` | `withAdmin` |
+| GET, POST | `/api/v1/admin/opportunities/[id]/requirements` | `withAdmin` |
 | GET | `/api/v1/admin/organizations` | `withAdmin` |
 | PATCH | `/api/v1/admin/organizations/[id]/verify` | `withAdmin` |
 | GET | `/api/v1/admin/payments` | `withAdmin` |
@@ -63,7 +63,7 @@ Generated from `app/api/v1/**/route.ts` — **64** route modules.
 | GET | `/api/v1/admin/support-tickets` | `withAdmin` |
 | PATCH | `/api/v1/admin/support-tickets/[id]` | `withAdmin` |
 | GET, PATCH | `/api/v1/admin/users` | `withAdmin` |
-| POST | `/api/v1/ai/match-grants` | `withActiveUser` |
+| POST | `/api/v1/ai/match-opportunities` | `withActiveUser` |
 | POST | `/api/v1/ai/proposal/generate` | `withActiveUser` |
 | GET | `/api/v1/ai/proposals` | `withActiveUser` |
 | GET, POST | `/api/v1/applications` | `withActiveUser` |
@@ -77,9 +77,9 @@ Generated from `app/api/v1/**/route.ts` — **64** route modules.
 | POST | `/api/v1/documents/upload` | `withActiveUser` |
 | GET | `/api/v1/donors` | `withPublic` |
 | POST | `/api/v1/eligibility/check` | `withActiveUser` |
-| GET | `/api/v1/grants` | `withPublic` |
-| GET | `/api/v1/grants/[id]` | `withPublic` |
-| POST, DELETE | `/api/v1/grants/[id]/save` | `withActiveUser` |
+| GET | `/api/v1/opportunities` | `withPublic` |
+| GET | `/api/v1/opportunities/[id]` | `withPublic` |
+| POST, DELETE | `/api/v1/opportunities/[id]/save` | `withActiveUser` |
 | GET | `/api/v1/health` | `withPublic` |
 | POST | `/api/v1/lead-magnet` | `withPublic` |
 | GET | `/api/v1/legal` | `withPublic` |

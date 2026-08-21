@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { GrantCard } from "@/components/design/GrantCard";
+import { OpportunityCard } from "@/components/design/OpportunityCard";
 import { Search, Loader2 } from "lucide-react";
 import { translateSector } from "@fundingpro/shared";
 import { getAuthHeaders } from "@/lib/client-auth";
@@ -92,7 +92,7 @@ function GrantsPageContent() {
   const [orgProfile, setOrgProfile] = useState<Record<string, unknown> | null>(null);
   const [matchScores, setMatchScores] = useState<Map<string, MatchScoreDetails>>(new Map());
 
-  const [grants, setGrants] = useState<Grant[]>([]);
+  const [opportunities, setGrants] = useState<Grant[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -110,10 +110,10 @@ function GrantsPageContent() {
         const sectorSlug = SECTOR_SLUGS[activeSector];
         if (sectorSlug) params.set("sector", sectorSlug);
 
-        const res = await fetch(`/api/v1/grants?${params}`);
+        const res = await fetch(`/api/v1/opportunities?${params}`);
         if (!res.ok) throw new Error("Failed");
         const data = await res.json();
-        const list: Grant[] = data.data?.grants ?? [];
+        const list: Grant[] = data.data?.opportunities ?? [];
         setTotal(data.data?.total ?? 0);
         setHasMore(pg < (data.data?.pages ?? 1));
         setGrants((prev) => (append ? [...prev, ...list] : list));
@@ -149,13 +149,13 @@ function GrantsPageContent() {
   }, []);
 
   useEffect(() => {
-    if (!orgProfile || grants.length === 0) {
+    if (!orgProfile || opportunities.length === 0) {
       setMatchScores(new Map());
       return;
     }
     setMatchScores(
       buildMatchScoreDetails(
-        grants.map((g) => ({
+        opportunities.map((g) => ({
           id: g.id,
           sectors: g.sectors,
           country_scope: g.country_scope,
@@ -164,7 +164,7 @@ function GrantsPageContent() {
         orgProfile
       )
     );
-  }, [orgProfile, grants]);
+  }, [orgProfile, opportunities]);
 
   const loadMore = () => {
     const next = page + 1;
@@ -178,7 +178,7 @@ function GrantsPageContent() {
     try {
       const headers = await authHeaders();
       const method = isSaved ? "DELETE" : "POST";
-      const res = await fetch(`/api/v1/grants/${id}/save`, { method, headers });
+      const res = await fetch(`/api/v1/opportunities/${id}/save`, { method, headers });
       if (!res.ok) {
         setSaved((prev) => (isSaved ? [...prev, id] : prev.filter((s) => s !== id)));
       } else if (!isSaved) {
@@ -189,21 +189,21 @@ function GrantsPageContent() {
     }
   };
 
-  const filtered = grants.filter((g) => {
+  const filtered = opportunities.filter((g) => {
     if (listMode === "active") return true;
     const expired = isDeadlineExpired(g.deadline);
     return showExpired ? true : !expired;
   });
 
-  const activeCount = grants.filter((g) => !isDeadlineExpired(g.deadline)).length;
-  const expiredCount = grants.filter((g) => isDeadlineExpired(g.deadline)).length;
+  const activeCount = opportunities.filter((g) => !isDeadlineExpired(g.deadline)).length;
+  const expiredCount = opportunities.filter((g) => isDeadlineExpired(g.deadline)).length;
 
   return (
     <div>
       <div className="flex items-start justify-between mb-6">
         <div>
           <SectionLabel>База грантов</SectionLabel>
-          <h1 className="text-2xl font-black text-funding-black">Поиск грантов</h1>
+          <h1 className="text-2xl font-black text-funding-black">Поиск финансирования</h1>
         </div>
       </div>
 
@@ -309,7 +309,7 @@ function GrantsPageContent() {
                 const expired = isDeadlineExpired(g.deadline);
                 const urgency = getDeadlineUrgency(g.deadline);
                 return (
-                  <Link key={g.id} href={`/dashboard/grants/${g.id}`}>
+                  <Link key={g.id} href={`/dashboard/opportunities/${g.id}`}>
                     <div className="relative">
                       {(expired || urgency === "soon") && (
                         <div className="absolute top-3 right-10 z-10 flex gap-1">
@@ -325,7 +325,7 @@ function GrantsPageContent() {
                           )}
                         </div>
                       )}
-                      <GrantCard
+                      <OpportunityCard
                         id={g.id}
                         title={g.title_ru ?? g.title}
                         donor={g.donor.name_ru ?? g.donor.name ?? "—"}

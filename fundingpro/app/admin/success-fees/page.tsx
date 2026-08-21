@@ -9,7 +9,7 @@ import { getAuthHeaders } from "@/lib/client-auth";
 type FeeRecord = {
   id: string;
   userEmail: string | null;
-  grantTitle: string | null;
+  opportunityTitle: string | null;
   wonAmountUsd: number;
   feePercent: number;
   feeAmountUsd: number;
@@ -125,7 +125,7 @@ export default function AdminSuccessFeesPage() {
           <table className="w-full">
             <thead>
               <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
-                {["Пользователь", "Грант", "Сумма гранта", "% / Сумма fee", "Статус", ""].map((h) => (
+                {["Пользователь", "Грант", "Сумма финансирования", "% / Сумма fee", "Статус", ""].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">
                     {h}
                   </th>
@@ -136,7 +136,7 @@ export default function AdminSuccessFeesPage() {
               {records.map((r, i) => (
                 <tr key={r.id} style={{ borderBottom: i < records.length - 1 ? "1px solid #f9fafb" : "none" }} className="hover:bg-funding-light-bg">
                   <td className="px-4 py-3 text-sm text-gray-600">{r.userEmail ?? "—"}</td>
-                  <td className="px-4 py-3 text-sm text-funding-black">{r.grantTitle ?? "—"}</td>
+                  <td className="px-4 py-3 text-sm text-funding-black">{r.opportunityTitle ?? "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">${r.wonAmountUsd.toLocaleString("en-US")}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-funding-green">
                     {r.feePercent}% · ${r.feeAmountUsd.toLocaleString("en-US")}

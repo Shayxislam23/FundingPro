@@ -16,7 +16,7 @@ export const POST = withActiveUser(async (req, authUser) => {
   }
 
   const body = await req.json();
-  const { projectIdea, donorFormat, sections, grantId, confirmSave } = body;
+  const { projectIdea, donorFormat, sections, opportunityId, confirmSave } = body;
 
   const allowedSections = filterProposalSections(sections);
   if (!projectIdea || !donorFormat || allowedSections.length === 0) {
@@ -123,7 +123,7 @@ export const POST = withActiveUser(async (req, authUser) => {
     proposalId = await saveProposalProject(
       {
         title: projectIdea.slice(0, 120),
-        grantId: grantId ?? undefined,
+        opportunityId: opportunityId ?? undefined,
         donorFormat,
         sections: sectionContents,
       },

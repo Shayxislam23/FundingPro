@@ -42,7 +42,7 @@ export default function LandingPage() {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${absoluteUrl("/grants")}?q={search_term_string}`,
+        urlTemplate: `${absoluteUrl("/opportunities")}?q={search_term_string}`,
       },
       "query-input": "required name=search_term_string",
     },

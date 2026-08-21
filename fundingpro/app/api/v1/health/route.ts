@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { withPublic } from "@/lib/api-route";
-import { grantsHealthCheck } from "@/lib/db/grants";
+import { grantsHealthCheck } from "@/lib/db/opportunities";
 import { getCompanyHealthLabel } from "@/lib/company-info";
 import { buildHealthPayload, healthHttpStatus } from "@/lib/health-response";
 

@@ -104,7 +104,7 @@ export const funnel = adminQuery({
           .withIndex("by_user", (q) => q.eq("userId", user._id))
           .first(),
         ctx.db
-          .query("savedGrants")
+          .query("savedOpportunities")
           .withIndex("by_user", (q) => q.eq("userId", user._id))
           .first(),
         ctx.db

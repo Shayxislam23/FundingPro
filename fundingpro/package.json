@@ -34,7 +34,7 @@
     "uzum:enable": "node scripts/uzum-enable-payments.mjs",
     "uzum:webhooks": "node -e \"const u=process.env.UZUM_WEBHOOK_BASE_URL||'https://fundingpro.uz';['check','create','confirm','reverse','status'].forEach(e=>console.log('POST '+u.replace(/\\/$/,'')+'/api/v1/payments/uzum/'+e))\"",
     "pilot:check": "node scripts/pilot-check.mjs",
-    "telegram:digest": "node scripts/telegram-grants-digest.mjs",
+    "telegram:digest": "node scripts/telegram-opportunities-digest.mjs",
     "deploy:check": "node scripts/deploy-check.mjs",
     "deploy:prep": "npm run check && npm run lint && npm run deploy:check && npm run build",
     "deploy:env": "node scripts/vercel-env-push.mjs",

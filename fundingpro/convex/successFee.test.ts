@@ -31,7 +31,7 @@ async function seedGrantAndApplication(ctx: MutationCtx, userId: Id<"users">) {
     createdAt: now,
     updatedAt: now,
   });
-  const grantId = await ctx.db.insert("grants", {
+  const opportunityId = await ctx.db.insert("opportunities", {
     title: "Business Grant",
     donorId,
     sectors: [],
@@ -47,12 +47,12 @@ async function seedGrantAndApplication(ctx: MutationCtx, userId: Id<"users">) {
   });
   const applicationId = await ctx.db.insert("applications", {
     userId,
-    grantId,
+    opportunityId,
     status: "shortlisted",
     createdAt: now,
     updatedAt: now,
   });
-  return { grantId, applicationId };
+  return { opportunityId, applicationId };
 }
 
 function identity(tokenIdentifier: string, clerkId: string) {

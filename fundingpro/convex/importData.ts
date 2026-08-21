@@ -48,7 +48,7 @@ const pgOrganizationMemberValidator = v.object({
 const pgApplicationValidator = v.object({
   userId: v.string(),
   organizationId: v.union(v.string(), v.null()),
-  grantTitle: v.string(),
+  opportunityTitle: v.string(),
   status: v.string(),
   notes: v.union(v.string(), v.null()),
   submittedAt: v.union(v.number(), v.null()),
@@ -119,10 +119,10 @@ export const importBatch = internalMutation({
 
     const userIdByPg = new Map<string, Id<"users">>();
     const orgIdByPg = new Map<string, Id<"organizations">>();
-    const grantIdByTitle = new Map<string, Id<"grants">>();
+    const grantIdByTitle = new Map<string, Id<"opportunities">>();
 
-    const grants = await ctx.db.query("grants").take(500);
-    for (const grant of grants) {
+    const opportunities = await ctx.db.query("opportunities").take(500);
+    for (const grant of opportunities) {
       grantIdByTitle.set(grant.title, grant._id);
     }
 
@@ -204,8 +204,8 @@ export const importBatch = internalMutation({
     let applications = 0;
     for (const row of args.applications) {
       const userId = userIdByPg.get(row.userId);
-      const grantId = grantIdByTitle.get(row.grantTitle);
-      if (!userId || !grantId) continue;
+      const opportunityId = grantIdByTitle.get(row.opportunityTitle);
+      if (!userId || !opportunityId) continue;
 
       const organizationId = row.organizationId
         ? orgIdByPg.get(row.organizationId)
@@ -214,7 +214,7 @@ export const importBatch = internalMutation({
       await ctx.db.insert("applications", {
         userId,
         organizationId,
-        grantId,
+        opportunityId,
         status: row.status,
         notes: row.notes ?? undefined,
         submittedAt: row.submittedAt ?? undefined,

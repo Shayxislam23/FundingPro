@@ -101,7 +101,7 @@ export default async function DonorsPage() {
                     <p className="text-xs text-gray-400 mt-0.5">{donor.name}</p>
                   )}
                   <Link
-                    href={`/grants?q=${encodeURIComponent(donor.name)}`}
+                    href={`/opportunities?q=${encodeURIComponent(donor.name)}`}
                     className="inline-block text-xs font-medium text-funding-green mt-3 hover:underline"
                   >
                     Смотреть гранты →
@@ -114,7 +114,7 @@ export default async function DonorsPage() {
 
         <div className="mt-12 text-center">
           <Link
-            href="/grants"
+            href="/opportunities"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white"
             style={{ background: "#008A2E" }}
           >

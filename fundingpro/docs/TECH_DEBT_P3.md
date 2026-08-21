@@ -18,6 +18,6 @@ After App Links complete + payments sandbox pass.
 ## Data
 
 - [ ] Production seed (`CONVEX_DEPLOY_KEY` + `npm run convex:seed:prod`)
-- [ ] Verify grants include `Individual` applicant types after seed
+- [ ] Verify opportunities include `Individual` applicant types after seed
 
 Owner: founder + eng. Do not flip payments until this list is mostly checked.

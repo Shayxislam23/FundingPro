@@ -7,6 +7,7 @@ Executable plan for App Store + Google Play submission. **End results** are fixe
 **App version gate:** stay on `0.4.0` until Phase 8 passes; bump to `1.0.0` only after device QA sign-off (`STORE-LAUNCH.md`).
 
 Related local docs:
+- [`STORE-SUBMIT-RUNBOOK.md`](./STORE-SUBMIT-RUNBOOK.md) — **start here**: EAS Build → Submit → Review → Live
 - [`STORE-LAUNCH.md`](./STORE-LAUNCH.md) — screenshots, review notes, Maestro
 - [`STORE-LISTING-COPY.md`](./STORE-LISTING-COPY.md) — RU/EN listing text ready to paste
 - [`APP-PRIVACY-DATA-SAFETY.md`](./APP-PRIVACY-DATA-SAFETY.md) — App Privacy / Data Safety answers
@@ -21,18 +22,18 @@ External:
 
 ## Status board (update as you go)
 
-Last code pass: **2026-07-13** · Failure-modes P0/P1 code: seed individuals-first align, North Star funnel. Live App Links still incomplete; store Phases 0–2 / 5 / 7–10 still human. Version **0.4.0** until Phase 8.
+Last code pass: **2026-08-21** · Store submit runbook + EAS workflows (manual). Live App Links still incomplete; store Phases 0–2 / 5 / 7–10 still human. Version **0.4.0** until Phase 8.
 
 | Phase | Owner | Status | Blocker |
 |------:|-------|--------|---------|
 | 0 Developer accounts | Human / billing | ⬜ | $99 Apple + $25 Google |
 | 1 Draft listings | Human | ⬜ | Needs Phase 0 |
-| 2 EAS submit credentials | Human | ⬜ | Needs Phase 1 IDs; `eas.json` skeleton ✅ (`releaseStatus: draft` for first Play upload) |
+| 2 EAS submit credentials | Human | ⬜ | Needs Phase 1 IDs; `eas.json` Android track/draft ✅; iOS IDs omitted until real (no `REPLACE_*` placeholders) |
 | 3 App Links (code) | Dev | ⚠️ env vars missing | Code ✅ live. Both `.well-known/*` → **200 OK**. **`X-App-Links-Config: incomplete`** — needs `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` on Vercel Production, then `npx vercel --prod`. Run `bash paste-secrets.sh` from repo root. |
 | 4 Store listing copy | Done in repo | ✅ draft | Paste into consoles (`STORE-LISTING-COPY.md`) |
 | 5 Screenshots / feature graphic | Human / design | ⬜ | After Clay verify; «Мой путь» screen titled correctly |
 | 6 Privacy / Data Safety forms | Human | ✅ answers ready | Fill from `APP-PRIVACY-DATA-SAFETY.md` |
-| 7 Production builds + first Android manual upload | Dev | ⬜ | Needs Phase 0–2 |
+| 7 Production builds + first store upload | Dev | ⬜ | Needs Phase 0–2; `eas submit` → TestFlight + Play internal/draft |
 | 8 Device QA + version bump to 1.0.0 | QA | ⬜ | Gate before bump; stay on **0.4.0** until then |
 | 9 `eas submit` both platforms | Dev | ⬜ | Waiting for Review |
 | 10 Review outcome | Dev + product | ⬜ | Fix + resubmit if rejected |
@@ -43,7 +44,7 @@ Last code pass: **2026-07-13** · Failure-modes P0/P1 code: seed individuals-fir
 - [x] `next.config.mjs` rewrites routing `/.well-known/*` → API routes (survives Next.js App Router quirks)
 - [x] Android SHA-256 fingerprint normalised to `AA:BB:CC:…` colon format in `lib/mobile-app-links.ts`
 - [x] `X-App-Links-Config: incomplete` diagnostic header when env vars missing
-- [x] `eas.json` submit skeleton with placeholder `ascAppId` / `appleTeamId` (no invented values); Android `track: internal` + `releaseStatus: draft`
+- [x] `eas.json` submit skeleton: empty `ios` until real IDs; Android `track: internal` + `releaseStatus: draft`; Play service account via `eas credentials` (not a committed JSON path)
 - [x] `mobile/.gitignore` covers `secrets/*` (except `secrets/README.md`), `*service-account*.json`, `*.p8`
 - [x] Onboarding screen title → **«Мой путь»** (was «Онбординг»)
 - [x] More menu + Home quick actions already link to «Мой путь» (`/(app)/onboarding`)
@@ -63,7 +64,7 @@ Last code pass: **2026-07-13** · Failure-modes P0/P1 code: seed individuals-fir
 - [ ] **Phase 2:** Copy `appleTeamId` from Apple Membership → update `eas.json` + Vercel `APPLE_TEAM_ID`
 - [ ] **Phase 3 final:** Get `ANDROID_RELEASE_SHA256` from EAS/Play keystore → set on Vercel → redeploy → verify live 200
 - [ ] **Phase 5:** Take 7 screenshots on physical device after Clay verify
-- [ ] **Phase 7–10:** EAS production build → Android manual upload → TestFlight → QA → submit
+- [ ] **Phase 7–10:** EAS production build → `eas submit` (TestFlight + Play internal/draft) → QA → Submit for Review
 
 ### Known product gap (do not block submission)
 
@@ -141,9 +142,13 @@ Must match in-app positioning: **бизнес и молодёжь**, not NGO reg
 **Done when:**
 ```bash
 cd mobile
+npm run store:preflight
 eas build --profile production --platform all
+eas submit --platform ios --profile production      # → TestFlight
+eas submit --platform android --profile production  # → Play internal/draft
 ```
-- Android `.aab` uploaded **once manually** in Play Console (required before `eas submit` works)
+- Play app record exists; Google service account uploaded (`eas credentials`)
+- First Android package may be created by `eas submit` on the internal track (manual AAB upload is fallback)
 - iOS build appears in TestFlight
 
 ## Phase 8 — Device QA sign-off
@@ -168,7 +173,7 @@ Both consoles show Waiting for Review (or equivalent).
 ## What NOT to do
 
 - Do **not** bump past `0.4.0` before Phase 8.
-- Do **not** invent `ascAppId` / Team ID / SHA-256 — leave placeholders until Phase 0–1.
+- Do **not** invent `ascAppId` / Team ID / SHA-256 — leave `submit.production.ios` empty until Phase 0–1 (no `REPLACE_*` strings).
 - Do **not** regress listing or screenshots to NGO-only or individuals-only framing — positioning is business + youth.
 - Do **not** commit ASC API keys, `.p8`, or Google service-account JSON (gitignored).
 
@@ -180,5 +185,5 @@ Both consoles show Waiting for Review (or equivalent).
 2. Set Vercel App Links env → redeploy web → `app-links:check --live`  
 3. Paste listing copy + fill privacy forms  
 4. Capture screenshots  
-5. `eas build` → manual Android upload once → TestFlight  
-6. Device QA → bump `1.0.0` → `eas submit`
+5. `eas build` → `eas submit` (Android internal/draft + iOS TestFlight); manual AAB only if Play API rejects the first package  
+6. Device QA → bump `1.0.0` → Submit for Review in the consoles

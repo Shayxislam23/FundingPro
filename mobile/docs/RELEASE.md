@@ -60,12 +60,12 @@ Deep link handler validates `fundingpro://auth/callback`, `https://www.fundingpr
 cd mobile
 eas build --profile preview --platform all
 eas build --profile production --platform all
-# After Phase 0–2 credentials are filled in eas.json:
-eas submit --platform ios --profile production
-eas submit --platform android --profile production
+# After Apple/Google drafts exist (iOS IDs in eas.json or interactive prompt):
+eas submit --platform ios --profile production      # → TestFlight, not App Store Live
+eas submit --platform android --profile production  # → Play internal/draft
 ```
 
-Android submit uses `track: internal` + `releaseStatus: draft` until you promote in Play Console.
+Operator runbook: [`STORE-SUBMIT-RUNBOOK.md`](./STORE-SUBMIT-RUNBOOK.md). Android submit uses `track: internal` + `releaseStatus: draft` until you promote in Play Console. iOS needs **Submit for Review** in App Store Connect after TestFlight.
 
 ## Deep links to test
 
@@ -78,7 +78,7 @@ Android submit uses `track: internal` + `releaseStatus: draft` until you promote
 maestro test mobile/maestro/
 ```
 
-See [`STORE-LAUNCH.md`](./STORE-LAUNCH.md) for screenshots/review notes, [`STORE-SUBMISSION-PLAN.md`](./STORE-SUBMISSION-PLAN.md) for the 10-phase board, and [`STORE-LISTING-COPY.md`](./STORE-LISTING-COPY.md) for paste-ready RU listing text.
+See [`STORE-LAUNCH.md`](./STORE-LAUNCH.md) for screenshots/review notes, [`STORE-SUBMIT-RUNBOOK.md`](./STORE-SUBMIT-RUNBOOK.md) for EAS Submit, [`STORE-SUBMISSION-PLAN.md`](./STORE-SUBMISSION-PLAN.md) for the 10-phase board, and [`STORE-LISTING-COPY.md`](./STORE-LISTING-COPY.md) for paste-ready RU listing text.
 
 App Links: after setting `APPLE_TEAM_ID` + `ANDROID_RELEASE_SHA256` on Vercel, redeploy web and verify live `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json` return HTTP 200 (not 404).
 

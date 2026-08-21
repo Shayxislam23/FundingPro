@@ -1,0 +1,19 @@
+# Manual only: eas workflow:run submit-ios.yml
+# Does not run on push to main. Uploads a production .ipa to App Store Connect / TestFlight.
+# App Store Review is still a human click in App Store Connect.
+name: Submit iOS (TestFlight)
+
+jobs:
+  build_ios:
+    name: Build iOS production
+    type: build
+    params:
+      platform: ios
+      profile: production
+
+  submit_ios:
+    name: Submit to TestFlight
+    needs: [build_ios]
+    type: testflight
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}

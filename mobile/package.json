@@ -50,7 +50,11 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "maestro": "maestro test maestro/",
-    "maestro:my-path": "maestro test maestro/my-path.yaml"
+    "maestro:my-path": "maestro test maestro/my-path.yaml",
+    "store:preflight": "bash scripts/check-store-submit.sh",
+    "store:build": "eas build --profile production --platform all",
+    "store:submit:ios": "eas submit --platform ios --profile production",
+    "store:submit:android": "eas submit --platform android --profile production"
   },
   "private": true
 }

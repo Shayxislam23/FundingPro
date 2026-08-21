@@ -1,0 +1,20 @@
+# Manual only: eas workflow:run submit-android.yml
+# Does not run on push to main. Uploads a production .aab to Play internal/draft.
+# Production rollout and Play review stay in Google Play Console.
+name: Submit Android (Play internal)
+
+jobs:
+  build_android:
+    name: Build Android production
+    type: build
+    params:
+      platform: android
+      profile: production
+
+  submit_android:
+    name: Submit to Google Play
+    needs: [build_android]
+    type: submit
+    params:
+      profile: production
+      build_id: ${{ needs.build_android.outputs.build_id }}

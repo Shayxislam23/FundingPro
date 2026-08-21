@@ -242,8 +242,8 @@ SMOKE_BASE_URL=https://www.fundingpro.uz npm run app-links:check -- --live
 |---|---|
 | Play Developer Account | [play.google.com/apps/publish](https://play.google.com/apps/publish) |
 | Создать приложение в Play Console | Play Console → Все приложения → Создать приложение |
-| **Первый AAB нужно загрузить вручную** | Play Console → Production → Загрузить `.aab` |
-| Service Account JSON | Play Console → Настройка → API-доступ → Создать служебный аккаунт |
+| Первый релиз | `eas submit` может создать internal/draft; ручной AAB — запасной путь |
+| Service Account JSON | Play Console → Настройка → API-доступ → служебный аккаунт → `eas credentials --platform android` |
 
 ---
 
@@ -260,11 +260,13 @@ curl -sI https://www.fundingpro.uz/.well-known/apple-app-site-association | grep
 # 2. Собрать production build мобильного приложения (нужен EAS)
 npm install -g eas-cli
 cd mobile
+npm run store:preflight
 eas build --platform all --profile production
 
-# 3. Сабмит в сторы (после шагов 4 и 5 выше)
+# 3. Сабмит бинарников (после шагов 4 и 5 выше). Не Live: iOS → TestFlight, Android → internal/draft.
 eas submit --platform ios --profile production
 eas submit --platform android --profile production
+# Дальше Submit for Review / promote в консолях. Runbook: mobile/docs/STORE-SUBMIT-RUNBOOK.md
 ```
 
 ---

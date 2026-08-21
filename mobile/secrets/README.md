@@ -10,7 +10,7 @@ Place credential files here locally. **Never commit** real keys.
 ## Setup
 
 1. Create the file(s) in this folder after Phase 0–2 (see [`../docs/EAS-SUBMIT-CREDENTIALS.md`](../docs/EAS-SUBMIT-CREDENTIALS.md)).
-2. Keep placeholders in `eas.json` until you have real `ascAppId` / `appleTeamId`.
-3. Prefer storing secrets with `eas credentials` / Expo Secrets when possible.
+2. Leave `eas.json → submit.production.ios` empty until you have real numeric `ascAppId` and Team ID (no `REPLACE_*` strings).
+3. Prefer storing the Play JSON with `eas credentials --platform android` so `serviceAccountKeyPath` is optional.
 
 This `README.md` is tracked; everything else under `secrets/` is ignored by git.

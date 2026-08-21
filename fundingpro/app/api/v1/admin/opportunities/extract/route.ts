@@ -11,9 +11,9 @@ const MIN_ANNOUNCEMENT_LENGTH = 80;
 const MAX_ANNOUNCEMENT_LENGTH = 30_000;
 
 /**
- * POST /api/v1/admin/grants/extract
+ * POST /api/v1/admin/opportunities/extract
  * Admin intake tool: paste a raw grant announcement, receive a structured
- * draft to prefill the grants CMS form. Nothing is saved to the catalog here.
+ * draft to prefill the opportunities CMS form. Nothing is saved to the catalog here.
  */
 export const POST = withAdmin(async (req, admin) => {
   if (!(await checkAiRateLimitAsync(admin.userId))) {

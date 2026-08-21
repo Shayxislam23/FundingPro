@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
 import { withAdmin, getRouteParam } from "@/lib/api-route";
-import { listGrantRequirements, addGrantRequirement } from "@/lib/db/admin-grants";
+import { listGrantRequirements, addGrantRequirement } from "@/lib/db/admin-opportunities";
 
 export const GET = withAdmin(async (_req, admin, ctx) => {
   const id = await getRouteParam(ctx, "id");

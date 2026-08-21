@@ -341,7 +341,7 @@ function nextAction(steps: Record<string, boolean>) {
   if (!steps.interests) {
     return {
       title: "Choose your interests",
-      description: "Select grants, scholarships, forums, competitions, internships, volunteering, exchange programs, hackathons, or startup programs.",
+      description: "Select opportunities, scholarships, forums, competitions, internships, volunteering, exchange programs, hackathons, or startup programs.",
       href: "/dashboard/lab",
       buttonLabel: "Select interests",
       hint: "Qızıǵıwshılıqlarıńızdı belgileń.",
@@ -368,8 +368,8 @@ function nextAction(steps: Record<string, boolean>) {
   if (!steps.opportunities_10) {
     return {
       title: "Find 10 opportunities",
-      description: "Your first task is to find 10 relevant opportunities: grants, forums, scholarships, competitions, internships, or exchange programs.",
-      href: "/dashboard/grants",
+      description: "Your first task is to find 10 relevant opportunities: opportunities, forums, scholarships, competitions, internships, or exchange programs.",
+      href: "/dashboard/opportunities",
       buttonLabel: "Open opportunities",
       hint: "Ózińizge sáykes 10 imkaniyattı tańlań.",
     };
@@ -416,7 +416,7 @@ async function computeLabStatus(ctx: { db: QueryCtx["db"] }, userId: Id<"users">
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .take(20),
     ctx.db
-      .query("savedGrants")
+      .query("savedOpportunities")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .take(10),
     ctx.db

@@ -26,7 +26,7 @@ export function LandingPageClient() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/v1/grants?limit=1")
+    fetch("/api/v1/opportunities?limit=1")
       .then((r) => r.json())
       .then((d) => setGrantTotal(d.data?.total ?? null))
       .catch(() => setGrantTotal(null));

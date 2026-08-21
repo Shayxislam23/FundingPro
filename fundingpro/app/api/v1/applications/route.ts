@@ -21,9 +21,9 @@ export const GET = withActiveUser(async (req, authUser) => {
 
 export const POST = withActiveUser(async (req, authUser) => {
   const body = await req.json();
-  const { grantId, notes } = body;
-  if (!grantId || typeof grantId !== "string") {
-    return apiError("grantId required", 400, "MISSING_FIELDS");
+  const { opportunityId, notes } = body;
+  if (!opportunityId || typeof opportunityId !== "string") {
+    return apiError("opportunityId required", 400, "MISSING_FIELDS");
   }
   if (notes !== undefined && (typeof notes !== "string" || notes.length > 5000)) {
     return apiError("notes must be a string up to 5000 chars", 400, "INVALID_NOTES");
@@ -40,7 +40,7 @@ export const POST = withActiveUser(async (req, authUser) => {
   const normalizedNotes =
     notes === undefined ? undefined : typeof notes === "string" ? notes.trim() || null : null;
 
-  const result = await createApplication(grantId, normalizedNotes, authUser.accessToken);
+  const result = await createApplication(opportunityId, normalizedNotes, authUser.accessToken);
   if ("error" in result && result.error === "GRANT_NOT_FOUND") {
     return apiError("Grant not found", 404, "GRANT_NOT_FOUND");
   }
@@ -51,7 +51,7 @@ export const POST = withActiveUser(async (req, authUser) => {
       action: "application_create",
       entityType: "application",
       entityId: result.applicationId,
-      metadata: { grantId },
+      metadata: { opportunityId },
     });
   }
 

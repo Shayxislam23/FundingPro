@@ -13,7 +13,7 @@ import { ArrowRight } from "lucide-react";
 
 const pageTitle = "Тарифы и подписки";
 const pageDescription =
-  "Тарифные планы FundingPro для бизнеса и молодёжи: поиск грантов, стипендий и конкурсов, AI-проверка соответствия, черновики заявок. Оплата в UZS через Uzum.";
+  "Тарифные планы FundingPro для бизнеса и молодёжи: Поиск финансирования, стипендий и конкурсов, AI-проверка соответствия, черновики заявок. Оплата в UZS через Uzum.";
 
 export const metadata: Metadata = {
   title: pageTitle,

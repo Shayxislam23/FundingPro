@@ -36,7 +36,7 @@ const adminNav: AppNavItem[] = [
   { label: "Заявки", href: "/admin/applications", icon: ClipboardList },
   { label: "Согласия", href: "/admin/consents", icon: Shield },
   { label: "Организации", href: "/admin/organizations", icon: Building2 },
-  { label: "Гранты", href: "/admin/grants", icon: BookOpen },
+  { label: "Гранты", href: "/admin/opportunities", icon: BookOpen },
   { label: "Доноры", href: "/admin/donors", icon: Landmark },
   { label: "Заказы консультантов", href: "/admin/consultant-orders", icon: Briefcase },
   { label: "Платежи", href: "/admin/payments", icon: CreditCard },

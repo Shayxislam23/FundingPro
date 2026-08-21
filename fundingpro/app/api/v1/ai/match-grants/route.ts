@@ -4,7 +4,7 @@ import { withActiveUser } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
 import { checkAiRateLimitAsync } from "@/lib/ai-rate-limit";
 import { ensureInternalUser } from "@/lib/db/users";
-import { matchGrantsFromDatabase } from "@/lib/db/match-grants";
+import { matchGrantsFromDatabase } from "@/lib/db/match-opportunities";
 import { logAiRequest } from "@/lib/db/proposals";
 import { callAi, PROMPTS } from "@/lib/ai-gateway";
 
@@ -38,12 +38,12 @@ export const POST = withActiveUser(async (req, authUser) => {
   const dbMatches = await matchGrantsFromDatabase(safeProfile, authUser.accessToken, 10);
 
   const profileJson = JSON.stringify(safeProfile);
-  const prompt = PROMPTS["match-grants"](profileJson);
-  const aiResult = await callAi(prompt, { module: "match-grants", userId: authUser.userId });
+  const prompt = PROMPTS["match-opportunities"](profileJson);
+  const aiResult = await callAi(prompt, { module: "match-opportunities", userId: authUser.userId });
 
   const aiRequestId = await logAiRequest(
     {
-      requestType: "match-grants",
+      requestType: "match-opportunities",
       model: aiResult.provider,
       outputTokens: aiResult.tokensUsed,
       redactionApplied: aiResult.redactionFields.length > 0,
@@ -59,7 +59,7 @@ export const POST = withActiveUser(async (req, authUser) => {
     metadata: { matchCount: dbMatches.length, isMock: aiResult.isMock },
   });
 
-  let aiMatches: { grantId: string; score: number; reason: string }[] = [];
+  let aiMatches: { opportunityId: string; score: number; reason: string }[] = [];
   try {
     const parsed = JSON.parse(aiResult.content);
     if (Array.isArray(parsed)) aiMatches = parsed;
@@ -70,7 +70,7 @@ export const POST = withActiveUser(async (req, authUser) => {
   const matches =
     dbMatches.length > 0
       ? dbMatches.map((m) => ({
-          grantId: m.grantId,
+          opportunityId: m.opportunityId,
           title: m.titleRu ?? m.title,
           score: m.score,
           reason: m.reason,

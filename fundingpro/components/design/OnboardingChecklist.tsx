@@ -15,7 +15,7 @@ const STEPS: {
   { id: "interests", label: "Выбрать интересы", hint: "Отметьте, какие возможности вам интересны.", href: "/dashboard/lab" },
   { id: "cv", label: "Добавить CV", hint: "Загрузите резюме или отметьте, что нужна помощь.", href: "/dashboard/documents" },
   { id: "linkedin", label: "Добавить LinkedIn", hint: "Ссылка на профиль усилит заявку.", href: "/dashboard/lab" },
-  { id: "opportunities_10", label: "Выбрать 10 возможностей", hint: "Подберите 10 грантов или программ под себя.", href: "/dashboard/grants" },
+  { id: "opportunities_10", label: "Выбрать 10 возможностей", hint: "Подберите 10 грантов или программ под себя.", href: "/dashboard/opportunities" },
   { id: "motivation_letter", label: "Мотивационное письмо", hint: "Загрузите мотивационное письмо.", href: "/dashboard/documents" },
   { id: "chosen_opportunity", label: "Выбрать 1 реальную возможность", hint: "Определитесь с одной заявкой для подачи.", href: "/dashboard/tracker" },
   { id: "application_submitted", label: "Подать заявку", hint: "Подайте минимум одну реальную заявку.", href: "/dashboard/tracker" },

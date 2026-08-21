@@ -104,7 +104,7 @@ export default function TrackerDashboard() {
           <h1 className="text-2xl font-black text-funding-black">Трекер заявок</h1>
         </div>
         <Link
-          href="/dashboard/grants"
+          href="/dashboard/opportunities"
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold"
           style={{ background: "#008A2E" }}
         >
@@ -161,7 +161,7 @@ export default function TrackerDashboard() {
           title="Нет заявок"
           description="Начните с поиска подходящего гранта"
           action={
-            <Link href="/dashboard/grants" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#008A2E" }}>
+            <Link href="/dashboard/opportunities" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ background: "#008A2E" }}>
               Найти грант
             </Link>
           }
@@ -174,7 +174,7 @@ export default function TrackerDashboard() {
             const nextStatuses = NEXT_STATUSES[app.status];
             return (
               <div key={app.id} className="bg-white rounded-2xl border border-gray-100 p-4">
-                <Link href={`/dashboard/grants/${app.grant?.id ?? ""}`} className="text-sm font-semibold text-funding-black hover:text-funding-green">
+                <Link href={`/dashboard/opportunities/${app.grant?.id ?? ""}`} className="text-sm font-semibold text-funding-black hover:text-funding-green">
                   {app.grant?.title_ru ?? app.grant?.title ?? "—"}
                 </Link>
                 <p className="text-xs text-gray-400 mt-1">{app.grant?.donor?.name_ru ?? app.grant?.donor?.name ?? "—"}</p>
@@ -219,7 +219,7 @@ export default function TrackerDashboard() {
                     >
                       <td className="px-4 py-3">
                         <Link
-                          href={`/dashboard/grants/${app.grant?.id ?? ""}`}
+                          href={`/dashboard/opportunities/${app.grant?.id ?? ""}`}
                           className="text-sm font-semibold text-funding-black hover:text-funding-green"
                         >
                           {app.grant?.title_ru ?? app.grant?.title ?? "—"}

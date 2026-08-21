@@ -1,6 +1,6 @@
 # Production Convex seed
 
-Fill the live catalog on `fundingpro.uz` (plans, donors, grants). Until seed succeeds, mobile uses demo fallbacks from `mobile/lib/public-fallback.ts`.
+Fill the live catalog on `fundingpro.uz` (plans, donors, opportunities). Until seed succeeds, mobile uses demo fallbacks from `mobile/lib/public-fallback.ts`.
 
 ## Prerequisites
 
@@ -35,7 +35,7 @@ This runs `npm run convex:seed` in `fundingpro/` (idempotent — skips if donors
 ```bash
 curl -s https://www.fundingpro.uz/api/v1/plans | head -c 500
 curl -s https://www.fundingpro.uz/api/v1/donors | head -c 200
-curl -s https://www.fundingpro.uz/api/v1/grants | head -c 200
+curl -s https://www.fundingpro.uz/api/v1/opportunities | head -c 200
 ```
 
 Expected after seed:
@@ -44,7 +44,7 @@ Expected after seed:
 |----------|---------|
 | `/api/v1/plans` | **6** plans |
 | `/api/v1/donors` | **5** donors |
-| `/api/v1/grants` | **30** active grants |
+| `/api/v1/opportunities` | **30** active opportunities |
 
 Reload the mobile app — DemoBanner «Примеры из каталога» should disappear where live data is returned.
 

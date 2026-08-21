@@ -5,11 +5,11 @@ import { Share2, Check, Link2 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 
 type ShareGrantButtonProps = {
-  grantId: string;
+  opportunityId: string;
   title: string;
 };
 
-export function ShareGrantButton({ grantId, title }: ShareGrantButtonProps) {
+export function ShareGrantButton({ opportunityId, title }: ShareGrantButtonProps) {
   const [copied, setCopied] = useState(false);
 
   function buildShareUrl(): string {
@@ -17,7 +17,7 @@ export function ShareGrantButton({ grantId, title }: ShareGrantButtonProps) {
       typeof window !== "undefined"
         ? window.location.origin
         : process.env.NEXT_PUBLIC_APP_URL ?? "";
-    const url = new URL(`/grants/${grantId}`, base);
+    const url = new URL(`/opportunities/${opportunityId}`, base);
     url.searchParams.set("utm_source", "share");
     url.searchParams.set("utm_medium", "social");
     return url.toString();
@@ -25,7 +25,7 @@ export function ShareGrantButton({ grantId, title }: ShareGrantButtonProps) {
 
   async function handleShare() {
     const shareUrl = buildShareUrl();
-    trackEvent("grant_shared", { grant_id: grantId });
+    trackEvent("grant_shared", { grant_id: opportunityId });
 
     if (typeof navigator !== "undefined" && "share" in navigator) {
       try {

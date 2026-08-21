@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
 import { withAdmin } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
-import { listAdminGrants, createGrant } from "@/lib/db/admin-grants";
+import { listAdminGrants, createGrant } from "@/lib/db/admin-opportunities";
 
 export const GET = withAdmin(async (req, admin) => {
   const { searchParams } = new URL(req.url);
@@ -35,7 +35,7 @@ export const POST = withAdmin(async (req, admin) => {
     return apiError("title and donorId required", 400, "MISSING_FIELDS");
   }
 
-  const grantId = await createGrant(
+  const opportunityId = await createGrant(
     {
       title: title.trim(),
       titleRu: titleRu?.trim(),
@@ -57,9 +57,9 @@ export const POST = withAdmin(async (req, admin) => {
     userId: admin.userId,
     action: "admin_grant_create",
     entityType: "grant",
-    entityId: grantId,
+    entityId: opportunityId,
     metadata: { title },
   });
 
-  return apiSuccess({ grantId }, 201);
+  return apiSuccess({ opportunityId }, 201);
 });

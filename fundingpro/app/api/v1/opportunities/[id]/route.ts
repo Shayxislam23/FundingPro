@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
 import { withPublic, getRouteParam } from "@/lib/api-route";
-import { getGrantById } from "@/lib/db/grants";
+import { getGrantById } from "@/lib/db/opportunities";
 
 export const GET = withPublic(async (_req, ctx) => {
   const id = await getRouteParam(ctx, "id");

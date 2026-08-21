@@ -79,7 +79,7 @@ describe("accountErasure.purgeUserRecord", () => {
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
-      const grantId = await ctx.db.insert("grants", {
+      const opportunityId = await ctx.db.insert("opportunities", {
         title: "Grant",
         donorId,
         sectors: [],
@@ -95,7 +95,7 @@ describe("accountErasure.purgeUserRecord", () => {
       });
       await ctx.db.insert("applications", {
         userId: id,
-        grantId,
+        opportunityId,
         status: "saved",
         createdAt: Date.now(),
         updatedAt: Date.now(),

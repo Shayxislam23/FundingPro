@@ -201,7 +201,7 @@ export const SEED_CONSULTANTS = [
   {
     orgName: "Алексей Иванов",
     bio: "Специалист по международным грантам ПРООН и ЕС. Помогаю НКО и малым бизнесам в подготовке заявок.",
-    specialties: ["EU grants", "UNDP grants"],
+    specialties: ["EU opportunities", "UNDP opportunities"],
     country: "Узбекистан",
     rating: 4.9,
     reviewCount: 34,
@@ -209,7 +209,7 @@ export const SEED_CONSULTANTS = [
   {
     orgName: "Диана Рашидова",
     bio: "Опыт работы с GIZ более 8 лет. Специализация — сельское хозяйство и устойчивое развитие.",
-    specialties: ["GIZ grants", "climate grants"],
+    specialties: ["GIZ opportunities", "climate opportunities"],
     country: "Казахстан",
     rating: 4.8,
     reviewCount: 21,
@@ -217,7 +217,7 @@ export const SEED_CONSULTANTS = [
   {
     orgName: "Тимур Ахмедов",
     bio: "Финансовый консультант с опытом в проектах World Bank и ADB. Помогаю выстроить бюджетную структуру.",
-    specialties: ["World Bank grants", "business grants"],
+    specialties: ["World Bank opportunities", "business opportunities"],
     country: "Узбекистан",
     rating: 4.7,
     reviewCount: 18,
@@ -225,7 +225,7 @@ export const SEED_CONSULTANTS = [
   {
     orgName: "Малика Карабаева",
     bio: "Эксперт по грантам для НКО и инициатив в области прав человека и гендерного равенства.",
-    specialties: ["NGO grants", "gender grants"],
+    specialties: ["NGO opportunities", "gender opportunities"],
     country: "Кыргызстан",
     rating: 4.85,
     reviewCount: 27,
@@ -233,7 +233,7 @@ export const SEED_CONSULTANTS = [
   {
     orgName: "Сергей Петров",
     bio: "Консультант по грантам в сфере образования, науки и инноваций для университетов и школ.",
-    specialties: ["education grants", "EU grants"],
+    specialties: ["education opportunities", "EU opportunities"],
     country: "Узбекистан",
     rating: 4.75,
     reviewCount: 15,
@@ -257,14 +257,14 @@ type GrantSeed = {
   isFeatured: boolean;
 };
 
-/** Featured grants aligned with pilot stories in lib/public-stories.ts. */
+/** Featured opportunities aligned with pilot stories in lib/public-stories.ts. */
 export const SEED_STORY_GRANT_KEYS = [
   "b2000001-0000-4000-8000-000000000001", // ЭкоНКО — UNDP/EU climate
   "b2000001-0000-4000-8000-000000000003", // АгроКонсалт — GIZ green economy
   "b2000001-0000-4000-8000-000000000004", // Центр образования — World Bank education
 ] as const;
 
-/** Surface individual applicants first where eligible; keep pure Government-only mega-grants unchanged. */
+/** Surface individual applicants first where eligible; keep pure Government-only mega-opportunities unchanged. */
 function withIndividualsFirst(types: string[]): string[] {
   if (types.includes("Individual")) return types;
   if (types.length === 1 && types[0] === "Government") return types;
@@ -272,9 +272,9 @@ function withIndividualsFirst(types: string[]): string[] {
 }
 
 const SEED_GRANTS_RAW: GrantSeed[] = [
-  { key: "b2000001-0000-4000-8000-000000000001", title: "Climate Resilience for Central Asia", titleRu: "Устойчивость к изменению климата в Центральной Азии", description: "Support for climate adaptation projects in CA region.", descriptionRu: "Поддержка проектов адаптации к изменению климата в регионе ЦА.", donorKey: "a1000001-0000-4000-8000-000000000001", sectors: ["climate", "environment"], countryScope: ["Uzbekistan", "Kazakhstan", "Kyrgyzstan"], applicantTypes: ["NGO", "Government"], amountMin: 50000, amountMax: 250000, deadline: "2026-09-30", sourceUrl: "https://undp.org/grants/climate-ca", isFeatured: true },
-  { key: "b2000001-0000-4000-8000-000000000002", title: "EU Civil Society Support Programme", titleRu: "Программа поддержки гражданского общества ЕС", description: "Strengthening civil society organizations in Uzbekistan.", descriptionRu: "Укрепление организаций гражданского общества в Узбекистане.", donorKey: "a1000001-0000-4000-8000-000000000002", sectors: ["civil_society", "human_rights"], countryScope: ["Uzbekistan"], applicantTypes: ["NGO"], amountMin: 30000, amountMax: 150000, deadline: "2026-08-15", sourceUrl: "https://europa.eu/grants/cso-uz", isFeatured: true },
-  { key: "b2000001-0000-4000-8000-000000000003", title: "GIZ Green Economy Initiative", titleRu: "Инициатива GIZ по зелёной экономике", description: "Sustainable agriculture and green business development.", descriptionRu: "Устойчивое сельское хозяйство и развитие зелёного бизнеса.", donorKey: "a1000001-0000-4000-8000-000000000003", sectors: ["agriculture", "economy"], countryScope: ["Uzbekistan", "Tajikistan"], applicantTypes: ["NGO", "Business"], amountMin: 40000, amountMax: 200000, deadline: "2026-10-01", sourceUrl: "https://giz.de/grants/green-economy", isFeatured: false },
+  { key: "b2000001-0000-4000-8000-000000000001", title: "Climate Resilience for Central Asia", titleRu: "Устойчивость к изменению климата в Центральной Азии", description: "Support for climate adaptation projects in CA region.", descriptionRu: "Поддержка проектов адаптации к изменению климата в регионе ЦА.", donorKey: "a1000001-0000-4000-8000-000000000001", sectors: ["climate", "environment"], countryScope: ["Uzbekistan", "Kazakhstan", "Kyrgyzstan"], applicantTypes: ["NGO", "Government"], amountMin: 50000, amountMax: 250000, deadline: "2026-09-30", sourceUrl: "https://undp.org/opportunities/climate-ca", isFeatured: true },
+  { key: "b2000001-0000-4000-8000-000000000002", title: "EU Civil Society Support Programme", titleRu: "Программа поддержки гражданского общества ЕС", description: "Strengthening civil society organizations in Uzbekistan.", descriptionRu: "Укрепление организаций гражданского общества в Узбекистане.", donorKey: "a1000001-0000-4000-8000-000000000002", sectors: ["civil_society", "human_rights"], countryScope: ["Uzbekistan"], applicantTypes: ["NGO"], amountMin: 30000, amountMax: 150000, deadline: "2026-08-15", sourceUrl: "https://europa.eu/opportunities/cso-uz", isFeatured: true },
+  { key: "b2000001-0000-4000-8000-000000000003", title: "GIZ Green Economy Initiative", titleRu: "Инициатива GIZ по зелёной экономике", description: "Sustainable agriculture and green business development.", descriptionRu: "Устойчивое сельское хозяйство и развитие зелёного бизнеса.", donorKey: "a1000001-0000-4000-8000-000000000003", sectors: ["agriculture", "economy"], countryScope: ["Uzbekistan", "Tajikistan"], applicantTypes: ["NGO", "Business"], amountMin: 40000, amountMax: 200000, deadline: "2026-10-01", sourceUrl: "https://giz.de/opportunities/green-economy", isFeatured: false },
   { key: "b2000001-0000-4000-8000-000000000004", title: "World Bank Education Modernization", titleRu: "Модернизация образования — Всемирный банк", description: "Digital transformation of schools and universities.", descriptionRu: "Цифровая трансформация школ и университетов.", donorKey: "a1000001-0000-4000-8000-000000000004", sectors: ["education", "technology"], countryScope: ["Uzbekistan"], applicantTypes: ["Government", "Academic"], amountMin: 100000, amountMax: 500000, deadline: "2026-11-30", sourceUrl: "https://worldbank.org/education-uz", isFeatured: true },
   { key: "b2000001-0000-4000-8000-000000000005", title: "Swiss Water Management Fund", titleRu: "Швейцарский фонд управления водными ресурсами", description: "Water conservation and irrigation efficiency projects.", descriptionRu: "Проекты по сохранению воды и эффективности орошения.", donorKey: "a1000001-0000-4000-8000-000000000005", sectors: ["water", "environment"], countryScope: ["Uzbekistan"], applicantTypes: ["NGO", "Government"], amountMin: 25000, amountMax: 120000, deadline: "2026-07-20", sourceUrl: "https://eda.admin.ch/water-uz", isFeatured: false },
   { key: "b2000001-0000-4000-8000-000000000006", title: "UNDP Youth Employment Programme", titleRu: "Программа занятости молодёжи ПРООН", description: "Skills training and entrepreneurship for youth.", descriptionRu: "Обучение навыкам и предпринимательство для молодёжи.", donorKey: "a1000001-0000-4000-8000-000000000001", sectors: ["youth", "economy"], countryScope: ["Uzbekistan", "Kyrgyzstan"], applicantTypes: ["NGO", "Business"], amountMin: 20000, amountMax: 100000, deadline: "2026-08-30", sourceUrl: "https://undp.org/youth-employment", isFeatured: false },
@@ -305,9 +305,9 @@ const SEED_GRANTS_RAW: GrantSeed[] = [
 
   // ── Youth & individual-focused recurring programmes (real, verified sources;
   //    dates below are annual-cycle placeholders — refresh from sourceUrl each cycle) ──
-  { key: "b2000001-0000-4000-8000-000000000031", title: "GEF Small Grants Programme (Uzbekistan)", titleRu: "Программа малых грантов ГЭФ (Узбекистан)", description: "Annual UNDP-implemented small grants for environmental action: biodiversity, land and water management, climate adaptation, sustainable agriculture. Grants generally up to USD 50,000 with co-financing.", descriptionRu: "Ежегодные малые гранты ПРООН/ГЭФ на экологические проекты: биоразнообразие, управление землёй и водой, адаптация к климату, устойчивое сельское хозяйство. Обычно до 50 000 USD с софинансированием.", donorKey: "a1000001-0000-4000-8000-000000000001", sectors: ["environment", "climate", "biodiversity", "agriculture"], countryScope: ["Uzbekistan"], applicantTypes: ["NGO"], amountMin: 5000, amountMax: 50000, deadline: "2027-01-31", sourceUrl: "https://www.undp.org/uzbekistan/news/gef-small-grants-programme-sgp-uzbekistan", isFeatured: true },
-  { key: "b2000001-0000-4000-8000-000000000032", title: "NHC Small Grants Programme for Central Asia", titleRu: "Программа малых грантов НХК для Центральной Азии", description: "Norwegian Helsinki Committee small grants for NGOs, civil society groups, human rights defenders and journalists in Central Asia. Budgets from USD 500 up to USD 9,999.", descriptionRu: "Малые гранты Норвежского Хельсинкского комитета для НКО, гражданских инициатив, правозащитников и журналистов Центральной Азии. Бюджет от 500 до 9 999 USD.", donorKey: "a1000001-0000-4000-8000-000000000006", sectors: ["human_rights", "civil_society", "media"], countryScope: ["Uzbekistan", "Kazakhstan", "Kyrgyzstan", "Tajikistan"], applicantTypes: ["NGO", "Individual"], amountMin: 500, amountMax: 9999, deadline: "2026-12-31", sourceUrl: "https://nhc.no/en/norwegian-helsinki-committee-small-grants-program-for-central-asia/", isFeatured: true },
-  { key: "b2000001-0000-4000-8000-000000000033", title: "U.S. Embassy Tashkent Small Grants Program", titleRu: "Программа малых грантов Посольства США", description: "Grant programs of the U.S. Embassy in Uzbekistan supporting civil society, media, education and community initiatives. Calls are published on the embassy grants page.", descriptionRu: "Грантовые программы Посольства США в Узбекистане: гражданское общество, СМИ, образование и общественные инициативы. Конкурсы публикуются на странице грантов посольства.", donorKey: "a1000001-0000-4000-8000-000000000007", sectors: ["civil_society", "media", "education"], countryScope: ["Uzbekistan"], applicantTypes: ["NGO", "Individual", "Academic"], amountMin: 5000, amountMax: 100000, deadline: "2026-12-31", sourceUrl: "https://uz.usembassy.gov/grants/", isFeatured: false },
+  { key: "b2000001-0000-4000-8000-000000000031", title: "GEF Small Grants Programme (Uzbekistan)", titleRu: "Программа малых грантов ГЭФ (Узбекистан)", description: "Annual UNDP-implemented small opportunities for environmental action: biodiversity, land and water management, climate adaptation, sustainable agriculture. Grants generally up to USD 50,000 with co-financing.", descriptionRu: "Ежегодные малые гранты ПРООН/ГЭФ на экологические проекты: биоразнообразие, управление землёй и водой, адаптация к климату, устойчивое сельское хозяйство. Обычно до 50 000 USD с софинансированием.", donorKey: "a1000001-0000-4000-8000-000000000001", sectors: ["environment", "climate", "biodiversity", "agriculture"], countryScope: ["Uzbekistan"], applicantTypes: ["NGO"], amountMin: 5000, amountMax: 50000, deadline: "2027-01-31", sourceUrl: "https://www.undp.org/uzbekistan/news/gef-small-opportunities-programme-sgp-uzbekistan", isFeatured: true },
+  { key: "b2000001-0000-4000-8000-000000000032", title: "NHC Small Grants Programme for Central Asia", titleRu: "Программа малых грантов НХК для Центральной Азии", description: "Norwegian Helsinki Committee small opportunities for NGOs, civil society groups, human rights defenders and journalists in Central Asia. Budgets from USD 500 up to USD 9,999.", descriptionRu: "Малые гранты Норвежского Хельсинкского комитета для НКО, гражданских инициатив, правозащитников и журналистов Центральной Азии. Бюджет от 500 до 9 999 USD.", donorKey: "a1000001-0000-4000-8000-000000000006", sectors: ["human_rights", "civil_society", "media"], countryScope: ["Uzbekistan", "Kazakhstan", "Kyrgyzstan", "Tajikistan"], applicantTypes: ["NGO", "Individual"], amountMin: 500, amountMax: 9999, deadline: "2026-12-31", sourceUrl: "https://nhc.no/en/norwegian-helsinki-committee-small-opportunities-program-for-central-asia/", isFeatured: true },
+  { key: "b2000001-0000-4000-8000-000000000033", title: "U.S. Embassy Tashkent Small Grants Program", titleRu: "Программа малых грантов Посольства США", description: "Grant programs of the U.S. Embassy in Uzbekistan supporting civil society, media, education and community initiatives. Calls are published on the embassy opportunities page.", descriptionRu: "Грантовые программы Посольства США в Узбекистане: гражданское общество, СМИ, образование и общественные инициативы. Конкурсы публикуются на странице грантов посольства.", donorKey: "a1000001-0000-4000-8000-000000000007", sectors: ["civil_society", "media", "education"], countryScope: ["Uzbekistan"], applicantTypes: ["NGO", "Individual", "Academic"], amountMin: 5000, amountMax: 100000, deadline: "2026-12-31", sourceUrl: "https://uz.usembassy.gov/opportunities/", isFeatured: false },
   { key: "b2000001-0000-4000-8000-000000000034", title: "Alumni Engagement Innovation Fund (AEIF)", titleRu: "Фонд инноваций выпускников (AEIF)", description: "Annual U.S. Department of State competition for alumni of U.S. government exchange programs: community projects on education, inclusion, women's economic empowerment and youth.", descriptionRu: "Ежегодный конкурс Госдепартамента США для выпускников обменных программ: общественные проекты по образованию, инклюзии, экономическим возможностям женщин и молодёжи.", donorKey: "a1000001-0000-4000-8000-000000000007", sectors: ["education", "youth", "gender"], countryScope: ["Uzbekistan"], applicantTypes: ["Individual", "NGO"], amountMin: 5000, amountMax: 24000, deadline: "2027-02-28", sourceUrl: "https://uz.usembassy.gov/education-culture/study-usa/alumni/notice-of-funding-opportunity/", isFeatured: false },
   { key: "b2000001-0000-4000-8000-000000000035", title: "UNESCO Global Youth Grant Scheme", titleRu: "Глобальная молодёжная грантовая схема ЮНЕСКО", description: "UNESCO scheme supporting youth-led actions and research worldwide, building capacities of young people and youth organizations.", descriptionRu: "Схема ЮНЕСКО в поддержку молодёжных инициатив и исследований по всему миру, развитие потенциала молодёжи и молодёжных организаций.", donorKey: "a1000001-0000-4000-8000-000000000008", sectors: ["youth", "education", "research"], countryScope: ["Uzbekistan", "International"], applicantTypes: ["Individual", "NGO"], amountMin: 3000, amountMax: 30000, deadline: "2027-03-31", sourceUrl: "https://www.unesco.org/en/youth/global-grant-scheme", isFeatured: false },
   { key: "b2000001-0000-4000-8000-000000000036", title: "EU Calls for Proposals — Civil Society Uzbekistan", titleRu: "Конкурсы ЕС для гражданского общества Узбекистана", description: "Recurring EU Delegation calls supporting civil society organizations in Uzbekistan: inclusive development, gender equality, Green Agenda. Current calls are published on the EU Funding & Tenders portal.", descriptionRu: "Регулярные конкурсы Представительства ЕС для организаций гражданского общества Узбекистана: инклюзивное развитие, гендерное равенство, «зелёная» повестка. Актуальные конкурсы — на портале EU Funding & Tenders.", donorKey: "a1000001-0000-4000-8000-000000000002", sectors: ["civil_society", "gender", "climate"], countryScope: ["Uzbekistan"], applicantTypes: ["NGO"], amountMin: 20000, amountMax: 200000, deadline: "2027-01-31", sourceUrl: "https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/home", isFeatured: false },

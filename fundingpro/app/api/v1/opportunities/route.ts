@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { apiSuccess } from "@/lib/api";
 import { withPublic } from "@/lib/api-route";
-import { listGrants } from "@/lib/db/grants";
+import { listGrants } from "@/lib/db/opportunities";
 import { parsePagination, sanitizeLikePattern } from "@fundingpro/shared";
 
 export const GET = withPublic(async (req) => {

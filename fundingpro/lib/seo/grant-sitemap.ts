@@ -1,4 +1,4 @@
-import { listGrants } from "@/lib/db/grants";
+import { listGrants } from "@/lib/db/opportunities";
 import { SEED_GRANTS } from "../../convex/seedData";
 
 export type GrantSitemapEntry = {
@@ -15,7 +15,7 @@ async function listGrantIdsFromConvex(): Promise<GrantSitemapEntry[]> {
   do {
     const result = await listGrants({ page, limit });
     pages = result.pages;
-    for (const grant of result.grants) {
+    for (const grant of result.opportunities) {
       entries.push({
         id: grant.id,
         lastModified: grant.deadline ? new Date(grant.deadline) : undefined,

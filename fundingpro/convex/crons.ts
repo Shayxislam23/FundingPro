@@ -25,7 +25,7 @@ crons.interval(
 );
 
 crons.interval(
-  "close expired grants",
+  "close expired opportunities",
   { hours: 6 },
   internal.adminGrants.closeExpiredGrants,
   {}

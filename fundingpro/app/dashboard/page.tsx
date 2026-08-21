@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SectionLabel } from "@/components/design/SectionLabel";
-import { GrantCard } from "@/components/design/GrantCard";
+import { OpportunityCard } from "@/components/design/OpportunityCard";
 import { OrgOnboardingBanner } from "@/components/design/OrgOnboardingBanner";
 import { OnboardingChecklist } from "@/components/design/OnboardingChecklist";
 import { LabJourneySummaryCard } from "@/components/lab/LabJourneySummaryCard";
@@ -48,7 +48,7 @@ type Application = {
 };
 
 export default function DashboardHome() {
-  const [grants, setGrants] = useState<Grant[]>([]);
+  const [opportunities, setGrants] = useState<Grant[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [totalGrants, setTotalGrants] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -64,7 +64,7 @@ export default function DashboardHome() {
     try {
       const headers = await getAuthHeaders();
       const [grantsRes, appsRes, meRes, onboardingRes] = await Promise.all([
-        fetch("/api/v1/grants?limit=4"),
+        fetch("/api/v1/opportunities?limit=4"),
         fetch("/api/v1/applications?limit=3", { headers }),
         fetch("/api/v1/me", { headers }),
         fetch("/api/v1/onboarding/status", { headers }),
@@ -81,7 +81,7 @@ export default function DashboardHome() {
         onboardingRes.json(),
       ]);
 
-      setGrants(grantsData.data?.grants ?? []);
+      setGrants(grantsData.data?.opportunities ?? []);
       setTotalGrants(grantsData.data?.total ?? 0);
       setApplications(appsData.data?.applications ?? []);
       const labProfile = onboardingData.data?.steps?.profile;
@@ -201,15 +201,15 @@ export default function DashboardHome() {
               <SectionLabel>База грантов</SectionLabel>
               <h2 className="font-bold text-funding-black">Последние гранты</h2>
             </div>
-            <Link href="/dashboard/grants" className="text-sm font-semibold flex items-center gap-1" style={{ color: "#008A2E" }}>
+            <Link href="/dashboard/opportunities" className="text-sm font-semibold flex items-center gap-1" style={{ color: "#008A2E" }}>
               Все гранты <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           <div className="space-y-3">
-            {grants.map((g) => (
-              <Link key={g.id} href={`/dashboard/grants/${g.id}`}>
-                <GrantCard
+            {opportunities.map((g) => (
+              <Link key={g.id} href={`/dashboard/opportunities/${g.id}`}>
+                <OpportunityCard
                   id={g.id}
                   title={g.title_ru ?? g.title}
                   donor={g.donor.name_ru ?? g.donor.name ?? "—"}
@@ -236,7 +236,7 @@ export default function DashboardHome() {
             {applications.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center">
                 <p className="text-xs text-gray-400 mb-2">Нет активных заявок</p>
-                <Link href="/dashboard/grants" className="text-xs font-semibold text-funding-green">
+                <Link href="/dashboard/opportunities" className="text-xs font-semibold text-funding-green">
                   Найти грант →
                 </Link>
               </div>
@@ -273,7 +273,7 @@ export default function DashboardHome() {
             <div className="space-y-2">
               {[
                 { label: "Мой путь к заявке", href: "/dashboard/lab", icon: Target },
-                { label: "Найти гранты", href: "/dashboard/grants", icon: BookOpen },
+                { label: "Найти финансирование", href: "/dashboard/opportunities", icon: BookOpen },
                 { label: "Проверить соответствие", href: "/dashboard/eligibility", icon: CheckCircle2 },
                 { label: "Личный профиль", href: "/dashboard/profile", icon: FileText },
                 { label: "Загрузить документы", href: "/dashboard/documents", icon: FolderOpen },

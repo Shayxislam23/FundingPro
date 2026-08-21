@@ -40,7 +40,7 @@ type NavItem = {
 /** Единая навигация (v1): бизнес и молодёжь через один self-serve профиль. НКО — позже. */
 const individualNavItems: NavItem[] = [
   { label: "Главная", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Гранты", href: "/dashboard/grants", icon: BookOpen },
+  { label: "Гранты", href: "/dashboard/opportunities", icon: BookOpen },
   { label: "Opportunities Lab", href: "/dashboard/lab", icon: GraduationCap },
   { label: "Проверка соответствия", href: "/dashboard/eligibility", icon: CheckSquare },
   { label: "AI Предложение", href: "/dashboard/ai-writer", icon: FileText },
@@ -55,7 +55,7 @@ const individualNavItems: NavItem[] = [
 
 const individualMobileBottomNav: NavItem[] = [
   { label: "Главная", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Гранты", href: "/dashboard/grants", icon: BookOpen },
+  { label: "Гранты", href: "/dashboard/opportunities", icon: BookOpen },
   { label: "Проверка", href: "/dashboard/eligibility", icon: CheckSquare },
   { label: "Путь", href: "/dashboard/lab", icon: Target },
 ];
@@ -97,10 +97,10 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
     e.preventDefault();
     const q = searchQuery.trim();
     if (!q) {
-      router.push("/dashboard/grants");
+      router.push("/dashboard/opportunities");
       return;
     }
-    router.push(`/dashboard/grants?q=${encodeURIComponent(q)}`);
+    router.push(`/dashboard/opportunities?q=${encodeURIComponent(q)}`);
   }
 
   useEffect(() => {
@@ -229,7 +229,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Поиск грантов..."
+                placeholder="Поиск финансирования..."
                 className="pl-9 pr-4 py-2 bg-funding-light-bg rounded-xl text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-funding-green/20 w-full sm:w-48 md:w-64"
               />
             </form>

@@ -40,14 +40,14 @@ export function redactPii(text: string): RedactionResult {
 // ── PROMPT REGISTRY ───────────────────────────────────────────────────────────
 
 export const PROMPTS = {
-  "match-grants": (profile: string) =>
-    `You are a grant expert for Central Asia. Given this individual applicant profile, suggest the 5 most relevant grants and programs from our database.\n\nProfile:\n${profile}\n\nRespond in Russian. Format as JSON array with fields: grantId, matchScore (0-100), reason.`,
+  "match-opportunities": (profile: string) =>
+    `You are a grant expert for Central Asia. Given this individual applicant profile, suggest the 5 most relevant opportunities and programs from our database.\n\nProfile:\n${profile}\n\nRespond in Russian. Format as JSON array with fields: opportunityId, matchScore (0-100), reason.`,
 
-  "eligibility-review": (grantTitle: string, profile: string) =>
-    `You are a grant eligibility expert. Review this individual applicant's eligibility for the grant or program.\n\nGrant: ${grantTitle}\nApplicant: ${profile}\n\nRespond in Russian with: score (0-100), status (eligible/partially_eligible/not_eligible), strengths (array), gaps (array), nextSteps (array).`,
+  "eligibility-review": (opportunityTitle: string, profile: string) =>
+    `You are a grant eligibility expert. Review this individual applicant's eligibility for the grant or program.\n\nGrant: ${opportunityTitle}\nApplicant: ${profile}\n\nRespond in Russian with: score (0-100), status (eligible/partially_eligible/not_eligible), strengths (array), gaps (array), nextSteps (array).`,
 
-  "proposal-generate": (section: string, grantTitle: string, context: string) =>
-    `You are a professional grant writer. Write a ${section} section for a grant proposal.\n\nGrant: ${grantTitle}\nContext: ${context}\n\nWrite in Russian. Be professional, specific and compelling. Max 500 words.`,
+  "proposal-generate": (section: string, opportunityTitle: string, context: string) =>
+    `You are a professional grant writer. Write a ${section} section for a grant proposal.\n\nGrant: ${opportunityTitle}\nContext: ${context}\n\nWrite in Russian. Be professional, specific and compelling. Max 500 words.`,
 
   "logframe-generate": (goal: string, activities: string) =>
     `Create a logical framework (logframe) for this grant project.\n\nGoal: ${goal}\nActivities: ${activities}\n\nRespond in Russian as JSON with: goal, outcomes (array), outputs (array), activities (array), indicators (array).`,
@@ -56,7 +56,7 @@ export const PROMPTS = {
     `Write a budget narrative for these grant activities.\n\nActivities: ${activities}\nTotal budget: ${totalBudget} USD\n\nRespond in Russian. Be specific about cost justifications.`,
 
   "grant-extract": (announcement: string) =>
-    `You are a data-entry assistant for a grants catalog. Extract structured fields from this grant announcement.
+    `You are a data-entry assistant for a opportunities catalog. Extract structured fields from this grant announcement.
 
 Announcement:
 """

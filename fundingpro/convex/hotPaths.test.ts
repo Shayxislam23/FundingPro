@@ -19,7 +19,7 @@ async function seedCatalog(ctx: MutationCtx) {
     updatedAt: now,
   });
 
-  const grantId = await ctx.db.insert("grants", {
+  const opportunityId = await ctx.db.insert("opportunities", {
     title: "Climate Adaptation Grant",
     titleRu: "Грант адаптации",
     description: "Test grant for convex-test",
@@ -36,7 +36,7 @@ async function seedCatalog(ctx: MutationCtx) {
     updatedAt: now,
   });
 
-  return { donorId, grantId, now };
+  return { donorId, opportunityId, now };
 }
 
 async function seedUser(
@@ -90,15 +90,15 @@ describe("rateLimits.checkRateLimit", () => {
   });
 });
 
-describe("grants.list", () => {
+describe("opportunities.list", () => {
   test("returns paginated catalog shape", async () => {
     const t = convexTest(schema, modules);
     await t.run(async (ctx) => {
       await seedCatalog(ctx);
     });
 
-    const result = await t.query(api.grants.list, { page: 1, limit: 10 });
-    expect(result.grants.length).toBeGreaterThanOrEqual(1);
+    const result = await t.query(api.opportunities.list, { page: 1, limit: 10 });
+    expect(result.opportunities.length).toBeGreaterThanOrEqual(1);
     expect(typeof result.total).toBe("number");
     expect(result.page).toBe(1);
     expect(result.limit).toBe(10);
@@ -112,12 +112,12 @@ describe("grants.list", () => {
       donorId = seeded.donorId;
     });
 
-    const result = await t.query(api.grants.list, {
+    const result = await t.query(api.opportunities.list, {
       donorId,
       page: 1,
       limit: 20,
     });
-    expect(result.grants.every((g) => g.donor.id === donorId)).toBe(true);
+    expect(result.opportunities.every((g) => g.donor.id === donorId)).toBe(true);
   });
 });
 
@@ -126,14 +126,14 @@ describe("matchGrants.match", () => {
     const t = convexTest(schema, modules);
     const tokenIdentifier = `match|${Date.now()}`;
     const clerkId = `clerk-match-${Date.now()}`;
-    let climateGrantId = "" as Id<"grants">;
+    let climateGrantId = "" as Id<"opportunities">;
 
     await t.run(async (ctx) => {
       const seeded = await seedCatalog(ctx);
-      climateGrantId = seeded.grantId;
+      climateGrantId = seeded.opportunityId;
       await seedUser(ctx, tokenIdentifier, clerkId);
 
-      await ctx.db.insert("grants", {
+      await ctx.db.insert("opportunities", {
         title: "Business Expansion Grant",
         description: "A less relevant test grant",
         donorId: seeded.donorId,
@@ -161,7 +161,7 @@ describe("matchGrants.match", () => {
     });
 
     expect(result.length).toBeLessThanOrEqual(5);
-    expect(result[0]?.grantId).toBe(climateGrantId);
+    expect(result[0]?.opportunityId).toBe(climateGrantId);
     expect(result[0]?.score).toBe(100);
     expect(result[0]?.reasons).toContain("Совпадение по сектору");
     expect(result[0]?.reasons).toContain("Совпадение по стране");
@@ -174,25 +174,25 @@ describe("applications.create", () => {
     const t = convexTest(schema, modules);
     const tokenIdentifier = `test|app-${Date.now()}`;
     const clerkId = `clerk-app-${Date.now()}`;
-    let grantId = "" as Id<"grants">;
+    let opportunityId = "" as Id<"opportunities">;
 
     await t.run(async (ctx) => {
       const seeded = await seedCatalog(ctx);
-      grantId = seeded.grantId;
+      opportunityId = seeded.opportunityId;
       await seedUser(ctx, tokenIdentifier, clerkId);
     });
 
     const authed = t.withIdentity({ tokenIdentifier, subject: clerkId });
 
     const created = await authed.mutation(api.applications.create, {
-      grantId,
+      opportunityId,
       notes: "First save",
     });
     expect("applicationId" in created && created.alreadyExists).toBe(false);
     expect("applicationId" in created && created.status).toBe("SAVED");
 
     const duplicate = await authed.mutation(api.applications.create, {
-      grantId,
+      opportunityId,
     });
     expect("applicationId" in duplicate && duplicate.alreadyExists).toBe(true);
     expect("applicationId" in duplicate && duplicate.applicationId).toBe(
@@ -526,12 +526,12 @@ describe("adminStats.dashboard", () => {
 
     await t.run(async (ctx) => {
       await seedUser(ctx, tokenIdentifier, clerkId, "admin");
-      const { grantId } = await seedCatalog(ctx);
+      const { opportunityId } = await seedCatalog(ctx);
       const memberUser = await seedUser(ctx, `member|${Date.now()}`, `member-${Date.now()}`);
 
       await ctx.db.insert("applications", {
         userId: memberUser,
-        grantId,
+        opportunityId,
         status: "SAVED",
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -578,11 +578,11 @@ describe("adminStats.dashboard", () => {
 
     await t.run(async (ctx) => {
       await seedUser(ctx, tokenIdentifier, clerkId, "admin");
-      const { grantId } = await seedCatalog(ctx);
+      const { opportunityId } = await seedCatalog(ctx);
       const recentUser = await seedUser(ctx, `recent|${Date.now()}`, `recent-${Date.now()}`);
       await ctx.db.insert("applications", {
         userId: recentUser,
-        grantId,
+        opportunityId,
         status: "SAVED",
         createdAt: now,
         updatedAt: now,
@@ -717,15 +717,15 @@ describe("applications.list", () => {
     const t = convexTest(schema, modules);
     const tokenIdentifier = `apps-list|${Date.now()}`;
     const clerkId = `clerk-apps-list-${Date.now()}`;
-    let grantId = "" as Id<"grants">;
+    let opportunityId = "" as Id<"opportunities">;
 
     await t.run(async (ctx) => {
       const seeded = await seedCatalog(ctx);
-      grantId = seeded.grantId;
+      opportunityId = seeded.opportunityId;
       const userId = await seedUser(ctx, tokenIdentifier, clerkId);
       await ctx.db.insert("applications", {
         userId,
-        grantId,
+        opportunityId,
         status: "SAVED",
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -736,7 +736,7 @@ describe("applications.list", () => {
     const result = await authed.query(api.applications.list, { page: 1, limit: 10 });
     expect(result.applications.length).toBe(1);
     expect(result.total).toBe(1);
-    expect(result.applications[0]?.grant?.id).toBe(grantId);
+    expect(result.applications[0]?.grant?.id).toBe(opportunityId);
   });
 });
 
@@ -1003,7 +1003,7 @@ describe("onboarding.getStatus", () => {
 });
 
 describe("adminGrants.bulkImport", () => {
-  test("inserts new grants, reuses donors, dedupes by sourceUrl and title", async () => {
+  test("inserts new opportunities, reuses donors, dedupes by sourceUrl and title", async () => {
     const t = convexTest(schema, modules);
     const tokenIdentifier = `admin-import|${Date.now()}`;
     const clerkId = `clerk-admin-import-${Date.now()}`;
@@ -1015,7 +1015,7 @@ describe("adminGrants.bulkImport", () => {
 
     const authedAdmin = t.withIdentity({ tokenIdentifier, subject: clerkId });
     const result = await authedAdmin.mutation(api.adminGrants.bulkImport, {
-      grants: [
+      opportunities: [
         {
           title: "New Water Grant",
           donorName: "Test Donor",
@@ -1049,12 +1049,12 @@ describe("adminGrants.bulkImport", () => {
 });
 
 describe("adminGrants.closeExpiredGrants", () => {
-  test("closes active grants past deadline, keeps future and closed ones", async () => {
+  test("closes active opportunities past deadline, keeps future and closed ones", async () => {
     const t = convexTest(schema, modules);
     const now = Date.now();
     const DAY = 24 * 60 * 60 * 1000;
-    let expiredId = "" as Id<"grants">;
-    let futureId = "" as Id<"grants">;
+    let expiredId = "" as Id<"opportunities">;
+    let futureId = "" as Id<"opportunities">;
 
     await t.run(async (ctx) => {
       const { donorId } = await seedCatalog(ctx);
@@ -1069,21 +1069,21 @@ describe("adminGrants.closeExpiredGrants", () => {
         createdAt: now,
         updatedAt: now,
       };
-      expiredId = await ctx.db.insert("grants", {
+      expiredId = await ctx.db.insert("opportunities", {
         ...base,
         title: "Expired grant",
         status: "open",
         isActive: true,
         deadline: now - DAY,
       });
-      futureId = await ctx.db.insert("grants", {
+      futureId = await ctx.db.insert("opportunities", {
         ...base,
         title: "Future grant",
         status: "open",
         isActive: true,
         deadline: now + DAY,
       });
-      await ctx.db.insert("grants", {
+      await ctx.db.insert("opportunities", {
         ...base,
         title: "Already closed grant",
         status: "closed",
@@ -1096,7 +1096,7 @@ describe("adminGrants.closeExpiredGrants", () => {
     expect(result.closed).toBe(1);
 
     const [expired, future] = await t.run(async (ctx) =>
-      Promise.all([ctx.db.get("grants", expiredId), ctx.db.get("grants", futureId)])
+      Promise.all([ctx.db.get("opportunities", expiredId), ctx.db.get("opportunities", futureId)])
     );
     expect(expired?.isActive).toBe(false);
     expect(expired?.status).toBe("closed");
@@ -1108,16 +1108,16 @@ describe("adminGrants.closeExpiredGrants", () => {
 describe("adminGrants admin lists", () => {
   test("listDonors and listRequirements use paginated reads", async () => {
     const t = convexTest(schema, modules);
-    const tokenIdentifier = `admin-grants|${Date.now()}`;
-    const clerkId = `clerk-admin-grants-${Date.now()}`;
-    let grantId = "" as Id<"grants">;
+    const tokenIdentifier = `admin-opportunities|${Date.now()}`;
+    const clerkId = `clerk-admin-opportunities-${Date.now()}`;
+    let opportunityId = "" as Id<"opportunities">;
 
     await t.run(async (ctx) => {
       await seedUser(ctx, tokenIdentifier, clerkId, "admin");
       const seeded = await seedCatalog(ctx);
-      grantId = seeded.grantId;
-      await ctx.db.insert("grantRequirements", {
-        grantId,
+      opportunityId = seeded.opportunityId;
+      await ctx.db.insert("opportunityRequirements", {
+        opportunityId,
         requirementType: "general",
         text: "Must be registered NGO",
         required: true,
@@ -1131,7 +1131,7 @@ describe("adminGrants admin lists", () => {
     expect(donors.length).toBeGreaterThanOrEqual(1);
 
     const requirements = await authedAdmin.query(api.adminGrants.listRequirements, {
-      grantId,
+      opportunityId,
     });
     expect(requirements.length).toBe(1);
     expect(requirements[0]?.text).toBe("Must be registered NGO");

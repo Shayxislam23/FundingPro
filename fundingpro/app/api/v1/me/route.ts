@@ -9,7 +9,7 @@ import { getUserOrganizationDetails } from "@/lib/db/organizations";
 import { getPaymentIntegrationStatus } from "@/lib/payments";
 import { isPaymentIntegrationPending } from "@/lib/payments/integration-status";
 import { getUserSubscription } from "@/lib/db/users";
-import { listSavedGrantIds } from "@/lib/db/saved-grants";
+import { listSavedGrantIds } from "@/lib/db/saved-opportunities";
 import { handleAccountDeletionRequest } from "@/lib/account-deletion";
 
 export const GET = withActiveUser(async (_req, authUser) => {

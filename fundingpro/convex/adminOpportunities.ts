@@ -9,13 +9,13 @@ const ADMIN_GRANTS_BATCH = 100;
 
 async function collectAdminGrants(ctx: QueryCtx, search?: string) {
   const searchQ = search?.trim().toLowerCase();
-  const matched: Doc<"grants">[] = [];
+  const matched: Doc<"opportunities">[] = [];
   let cursor: string | null = null;
   let isDone = false;
 
   while (!isDone) {
     const batch = await ctx.db
-      .query("grants")
+      .query("opportunities")
       .withIndex("by_active", (q) => q.eq("isActive", true))
       .order("desc")
       .paginate({ numItems: ADMIN_GRANTS_BATCH, cursor });
@@ -33,7 +33,7 @@ async function collectAdminGrants(ctx: QueryCtx, search?: string) {
   isDone = false;
   while (!isDone) {
     const batch = await ctx.db
-      .query("grants")
+      .query("opportunities")
       .withIndex("by_active", (q) => q.eq("isActive", false))
       .order("desc")
       .paginate({ numItems: ADMIN_GRANTS_BATCH, cursor });
@@ -54,7 +54,7 @@ async function collectAdminGrants(ctx: QueryCtx, search?: string) {
 export const list = adminQuery({
   args: { search: v.optional(v.string()), page: v.number(), limit: v.number() },
   returns: v.object({
-    grants: v.array(
+    opportunities: v.array(
       v.object({
         id: v.string(),
         title: v.string(),
@@ -69,12 +69,12 @@ export const list = adminQuery({
     pages: v.number(),
   }),
   handler: async (ctx, args) => {
-    const grants = await collectAdminGrants(ctx, args.search);
-    const total = grants.length;
+    const opportunities = await collectAdminGrants(ctx, args.search);
+    const total = opportunities.length;
     const offset = (args.page - 1) * args.limit;
-    const page = grants.slice(offset, offset + args.limit);
+    const page = opportunities.slice(offset, offset + args.limit);
     return {
-      grants: page.map((g) => ({
+      opportunities: page.map((g) => ({
         id: g._id,
         title: g.title,
         status: g.status,
@@ -110,7 +110,7 @@ export const create = adminMutation({
   returns: v.string(),
   handler: async (ctx, args) => {
     const now = Date.now();
-    return await ctx.db.insert("grants", {
+    return await ctx.db.insert("opportunities", {
       title: args.title,
       titleRu: args.titleRu,
       donorId: args.donorId as Id<"donors">,
@@ -172,7 +172,7 @@ async function resolveDonorId(
   return donorId;
 }
 
-/** Bounded read: title dedupe covers the first 500 grants per donor. */
+/** Bounded read: title dedupe covers the first 500 opportunities per donor. */
 const DONOR_TITLES_READ_LIMIT = 500;
 
 async function donorTitles(
@@ -182,25 +182,25 @@ async function donorTitles(
 ): Promise<Set<string>> {
   const cached = cache.get(donorId);
   if (cached) return cached;
-  const grants = await ctx.db
-    .query("grants")
+  const opportunities = await ctx.db
+    .query("opportunities")
     .withIndex("by_donor", (q) => q.eq("donorId", donorId))
     .take(DONOR_TITLES_READ_LIMIT);
-  const titles = new Set(grants.map((g) => g.title.trim().toLowerCase()));
+  const titles = new Set(opportunities.map((g) => g.title.trim().toLowerCase()));
   cache.set(donorId, titles);
   return titles;
 }
 
 export const bulkImport = adminMutation({
-  args: { grants: v.array(importGrantValidator) },
+  args: { opportunities: v.array(importGrantValidator) },
   returns: v.object({
     inserted: v.number(),
     skipped: v.number(),
     skippedItems: v.array(v.object({ title: v.string(), reason: v.string() })),
   }),
   handler: async (ctx, args) => {
-    if (args.grants.length === 0 || args.grants.length > IMPORT_BATCH_LIMIT) {
-      throw new Error(`grants must contain 1-${IMPORT_BATCH_LIMIT} items`);
+    if (args.opportunities.length === 0 || args.opportunities.length > IMPORT_BATCH_LIMIT) {
+      throw new Error(`opportunities must contain 1-${IMPORT_BATCH_LIMIT} items`);
     }
 
     // One bounded read of the donor catalog for the whole batch (Convex allows
@@ -220,7 +220,7 @@ export const bulkImport = adminMutation({
     const skippedItems: { title: string; reason: string }[] = [];
     let inserted = 0;
 
-    for (const item of args.grants) {
+    for (const item of args.opportunities) {
       const title = item.title.trim();
       const sourceUrl = item.sourceUrl?.trim() || undefined;
       if (!title || !item.donorName.trim()) {
@@ -230,7 +230,7 @@ export const bulkImport = adminMutation({
 
       if (sourceUrl) {
         const bySource = await ctx.db
-          .query("grants")
+          .query("opportunities")
           .withIndex("by_sourceUrl", (q) => q.eq("sourceUrl", sourceUrl))
           .first();
         if (bySource) {
@@ -248,7 +248,7 @@ export const bulkImport = adminMutation({
       titles.add(title.toLowerCase());
 
       const now = Date.now();
-      await ctx.db.insert("grants", {
+      await ctx.db.insert("opportunities", {
         title,
         titleRu: item.titleRu?.trim() || undefined,
         donorId,
@@ -283,16 +283,16 @@ export const closeExpiredGrants = internalMutation({
   returns: v.object({ closed: v.number() }),
   handler: async (ctx) => {
     const now = Date.now();
-    // Filter before take so already-closed grants never crowd the batch out.
+    // Filter before take so already-closed opportunities never crowd the batch out.
     const dueForClosure = await ctx.db
-      .query("grants")
+      .query("opportunities")
       .withIndex("by_deadline", (q) => q.gt("deadline", 0).lt("deadline", now))
       .filter((q) => q.eq(q.field("isActive"), true))
       .take(CLOSE_EXPIRED_BATCH);
 
     let closed = 0;
     for (const grant of dueForClosure) {
-      await ctx.db.patch("grants", grant._id, {
+      await ctx.db.patch("opportunities", grant._id, {
         isActive: false,
         status: "closed",
         lastUpdatedAt: now,
@@ -316,7 +316,7 @@ export const update = adminMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const { id, ...patch } = args;
-    await ctx.db.patch("grants", id as Id<"grants">, {
+    await ctx.db.patch("opportunities", id as Id<"opportunities">, {
       ...patch,
       lastUpdatedAt: Date.now(),
       updatedAt: Date.now(),
@@ -371,7 +371,7 @@ export const createDonor = adminMutation({
 });
 
 export const listRequirements = adminQuery({
-  args: { grantId: v.string() },
+  args: { opportunityId: v.string() },
   returns: v.array(
     v.object({
       id: v.string(),
@@ -383,8 +383,8 @@ export const listRequirements = adminQuery({
   handler: async (ctx, args) => {
     const rows = await paginateAll(
       ctx.db
-        .query("grantRequirements")
-        .withIndex("by_grant", (q) => q.eq("grantId", args.grantId as Id<"grants">))
+        .query("opportunityRequirements")
+        .withIndex("by_grant", (q) => q.eq("opportunityId", args.opportunityId as Id<"opportunities">))
     );
     return rows.map((r) => ({
       id: r._id,
@@ -397,7 +397,7 @@ export const listRequirements = adminQuery({
 
 export const addRequirement = adminMutation({
   args: {
-    grantId: v.string(),
+    opportunityId: v.string(),
     text: v.string(),
     requirementType: v.optional(v.string()),
     required: v.optional(v.boolean()),
@@ -405,8 +405,8 @@ export const addRequirement = adminMutation({
   returns: v.string(),
   handler: async (ctx, args) => {
     const now = Date.now();
-    return await ctx.db.insert("grantRequirements", {
-      grantId: args.grantId as Id<"grants">,
+    return await ctx.db.insert("opportunityRequirements", {
+      opportunityId: args.opportunityId as Id<"opportunities">,
       requirementType: args.requirementType ?? "general",
       text: args.text,
       required: args.required ?? true,

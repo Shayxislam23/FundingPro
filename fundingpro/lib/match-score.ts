@@ -25,7 +25,7 @@ export type MatchScoreDetails = {
 function scoreGrants(
   rows: Record<string, unknown>[],
   ctx: { sectorTerms: string[]; country: string; orgType: string }
-): { grantId: string; score: number; reasons: string[] }[] {
+): { opportunityId: string; score: number; reasons: string[] }[] {
   // Scores start at 0 so an irrelevant grant reads as a genuinely low match —
   // no baseline inflation that would make every grant look "40% relevant".
   const scored = rows.map((row) => {
@@ -72,7 +72,7 @@ function scoreGrants(
       }
     }
 
-    return { grantId: String(row.id), score: Math.min(score, 100), reasons };
+    return { opportunityId: String(row.id), score: Math.min(score, 100), reasons };
   });
 
   return scored.sort((a, b) => b.score - a.score);
@@ -87,7 +87,7 @@ type MatchGrantInput = {
 };
 
 export function buildMatchScoreDetails(
-  grants: MatchGrantInput[],
+  opportunities: MatchGrantInput[],
   profile: Record<string, unknown>
 ): Map<string, MatchScoreDetails> {
   const sectorRaw = String(profile.sector ?? profile.sectors ?? "");
@@ -96,7 +96,7 @@ export function buildMatchScoreDetails(
   const sectorTerms = sectorRaw ? normalizeSector(sectorRaw) : [];
   const country = countryRaw || "Uzbekistan";
 
-  const rows = grants.map((g) => ({
+  const rows = opportunities.map((g) => ({
     id: g.id,
     sectors: g.sectors ?? [],
     country_scope: g.country_scope ?? [],
@@ -105,13 +105,13 @@ export function buildMatchScoreDetails(
   }));
 
   const scored = scoreGrants(rows, { sectorTerms, country, orgType });
-  return new Map(scored.map((s) => [s.grantId, { score: s.score, reasons: s.reasons }]));
+  return new Map(scored.map((s) => [s.opportunityId, { score: s.score, reasons: s.reasons }]));
 }
 
 export function buildMatchScoreMap(
-  grants: MatchGrantInput[],
+  opportunities: MatchGrantInput[],
   profile: Record<string, unknown>
 ): Map<string, number> {
-  const details = buildMatchScoreDetails(grants, profile);
-  return new Map([...details].map(([grantId, d]) => [grantId, d.score]));
+  const details = buildMatchScoreDetails(opportunities, profile);
+  return new Map([...details].map(([opportunityId, d]) => [opportunityId, d.score]));
 }

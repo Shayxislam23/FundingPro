@@ -49,7 +49,7 @@ export default function GrantDetailPage() {
   const [applying, setApplying] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/v1/grants/${id}`)
+    fetch(`/api/v1/opportunities/${id}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.success) setGrant(d.data);
@@ -66,7 +66,7 @@ export default function GrantDetailPage() {
       const res = await fetch("/api/v1/applications", {
         method: "POST",
         headers,
-        body: JSON.stringify({ grantId: id }),
+        body: JSON.stringify({ opportunityId: id }),
       });
       if (res.ok) setApplied(true);
     } finally {
@@ -83,7 +83,7 @@ export default function GrantDetailPage() {
   if (error || !grant) return (
     <div className="text-center py-20">
       <p className="text-gray-500 mb-4">{error || "Грант не найден"}</p>
-      <Link href="/dashboard/grants" className="text-sm font-semibold text-funding-green">← К списку</Link>
+      <Link href="/dashboard/opportunities" className="text-sm font-semibold text-funding-green">← К списку</Link>
     </div>
   );
 
@@ -95,7 +95,7 @@ export default function GrantDetailPage() {
 
   return (
     <div>
-      <Link href="/dashboard/grants" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-funding-green mb-5">
+      <Link href="/dashboard/opportunities" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-funding-green mb-5">
         <ArrowLeft className="w-3.5 h-3.5" />
         К списку грантов
       </Link>
@@ -182,13 +182,13 @@ export default function GrantDetailPage() {
               {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               {applied ? "Добавлено в трекер" : "Добавить в трекер"}
             </button>
-            <Link href={`/dashboard/eligibility?grantId=${grant.id}`}
+            <Link href={`/dashboard/eligibility?opportunityId=${grant.id}`}
               className="block w-full py-3 rounded-xl font-semibold text-sm text-center border"
               style={{ borderColor: "#008A2E", color: "#008A2E" }}
             >
               Проверить соответствие
             </Link>
-            <Link href={`/dashboard/ai-writer?grantId=${grant.id}`}
+            <Link href={`/dashboard/ai-writer?opportunityId=${grant.id}`}
               className="block w-full py-3 rounded-xl font-semibold text-sm text-center border border-gray-200 text-gray-600 hover:border-funding-green hover:text-funding-green transition-colors"
             >
               Создать AI-предложение

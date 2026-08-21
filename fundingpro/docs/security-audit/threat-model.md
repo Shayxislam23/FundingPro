@@ -40,12 +40,12 @@ flowchart LR
 | Lab cohort / mentor data | Convex `lab*` tables | High |
 | Payment records | Convex `payments`, PSP transaction tables | High |
 | Admin audit trail | Convex `auditLogs`, `aiRequests` | Medium |
-| Public catalog | Convex `grants`, `donors`, `plans` | Low |
+| Public catalog | Convex `opportunities`, `donors`, `plans` | Low |
 | Platform settings | Convex `settings` | Medium (admin/internal only) |
 
 ## Trust zones
 
-1. **Public** — landing, grants catalog, health, plans, legal pages
+1. **Public** — landing, opportunities catalog, health, plans, legal pages
 2. **Authenticated user** — dashboard, applications, documents, AI writer, Lab
 3. **Admin** — `/admin/*`, admin API (`withAdmin`), Convex `adminQuery` / `adminMutation`
 4. **Merchant / PSP** — Payme, Click, Uzum callback routes (provider-specific auth)

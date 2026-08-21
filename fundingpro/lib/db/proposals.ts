@@ -17,7 +17,7 @@ export async function logAiRequest(
 export async function saveProposalProject(
   params: {
     title: string;
-    grantId?: string;
+    opportunityId?: string;
     donorFormat: string;
     sections: Record<string, string>;
   },

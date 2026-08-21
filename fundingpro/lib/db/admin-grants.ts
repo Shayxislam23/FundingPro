@@ -76,11 +76,11 @@ export type ImportGrantInput = {
   sourceUrl?: string;
 };
 
-export async function bulkImportGrants(grants: ImportGrantInput[], accessToken: string) {
+export async function bulkImportGrants(opportunities: ImportGrantInput[], accessToken: string) {
   return convexMutation(
     api.adminGrants.bulkImport,
     {
-      grants: grants.map((g) => ({
+      opportunities: opportunities.map((g) => ({
         title: g.title,
         donorName: g.donorName,
         titleRu: g.titleRu,
@@ -133,14 +133,14 @@ export async function createDonor(
   return convexMutation(api.adminGrants.createDonor, input, accessToken);
 }
 
-export async function listGrantRequirements(grantId: string, accessToken: string) {
-  return convexQuery(api.adminGrants.listRequirements, { grantId }, accessToken);
+export async function listGrantRequirements(opportunityId: string, accessToken: string) {
+  return convexQuery(api.adminGrants.listRequirements, { opportunityId }, accessToken);
 }
 
 export async function addGrantRequirement(
-  grantId: string,
+  opportunityId: string,
   input: { text: string; requirementType?: string; required?: boolean },
   accessToken: string
 ) {
-  return convexMutation(api.adminGrants.addRequirement, { grantId, ...input }, accessToken);
+  return convexMutation(api.adminGrants.addRequirement, { opportunityId, ...input }, accessToken);
 }

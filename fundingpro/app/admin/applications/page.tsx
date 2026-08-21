@@ -122,7 +122,7 @@ export default function AdminApplicationsPage() {
               <tbody>
                 {applications.map((app, i) => {
                   const style = getStatusStyle(app.status);
-                  const grantTitle = app.grant?.titleRu ?? app.grant?.title ?? "—";
+                  const opportunityTitle = app.grant?.titleRu ?? app.grant?.title ?? "—";
                   return (
                     <tr
                       key={app.id}
@@ -130,7 +130,7 @@ export default function AdminApplicationsPage() {
                       className="hover:bg-funding-light-bg transition-colors"
                     >
                       <td className="px-4 py-3">
-                        <p className="text-sm font-medium text-funding-black truncate max-w-[200px]">{grantTitle}</p>
+                        <p className="text-sm font-medium text-funding-black truncate max-w-[200px]">{opportunityTitle}</p>
                         {app.grant?.donorName && (
                           <p className="text-xs text-gray-400 truncate max-w-[200px]">{app.grant.donorName}</p>
                         )}

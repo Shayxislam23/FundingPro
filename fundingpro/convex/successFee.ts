@@ -32,7 +32,7 @@ async function resolveFeePercent(ctx: MutationCtx): Promise<number> {
  */
 export async function recordWinIfNeeded(
   ctx: MutationCtx,
-  args: { applicationId: Id<"applications">; grantId: Id<"grants">; userId: Id<"users">; wonAmountUsd: number }
+  args: { applicationId: Id<"applications">; opportunityId: Id<"opportunities">; userId: Id<"users">; wonAmountUsd: number }
 ): Promise<void> {
   if (!Number.isFinite(args.wonAmountUsd) || args.wonAmountUsd <= 0) return;
 
@@ -48,7 +48,7 @@ export async function recordWinIfNeeded(
   if (!existing) {
     await ctx.db.insert("successFeeRecords", {
       applicationId: args.applicationId,
-      grantId: args.grantId,
+      opportunityId: args.opportunityId,
       userId: args.userId,
       wonAmountUsd: args.wonAmountUsd,
       feePercent,
@@ -107,7 +107,7 @@ export const adminList = adminQuery({
     v.object({
       id: v.string(),
       userEmail: v.union(v.string(), v.null()),
-      grantTitle: v.union(v.string(), v.null()),
+      opportunityTitle: v.union(v.string(), v.null()),
       wonAmountUsd: v.number(),
       feePercent: v.number(),
       feeAmountUsd: v.number(),
@@ -128,12 +128,12 @@ export const adminList = adminQuery({
     for (const r of records) {
       const [user, grant] = await Promise.all([
         ctx.db.get("users", r.userId),
-        ctx.db.get("grants", r.grantId),
+        ctx.db.get("opportunities", r.opportunityId),
       ]);
       rows.push({
         id: r._id,
         userEmail: user?.email ?? null,
-        grantTitle: grant?.titleRu ?? grant?.title ?? null,
+        opportunityTitle: grant?.titleRu ?? grant?.title ?? null,
         wonAmountUsd: r.wonAmountUsd,
         feePercent: r.feePercent,
         feeAmountUsd: r.feeAmountUsd,

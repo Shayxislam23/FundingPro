@@ -5,7 +5,7 @@ import { getLabProfile, updateLabProfile } from "@/lib/db/onboarding";
 import { setUserMode } from "@/lib/db/user-mode";
 
 const ALLOWED_INTERESTS = new Set([
-  "grants",
+  "opportunities",
   "scholarships",
   "forums",
   "competitions",

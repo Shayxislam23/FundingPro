@@ -39,7 +39,7 @@ const emptyForm = {
 };
 
 export default function AdminGrantsPage() {
-  const [grants, setGrants] = useState<Grant[]>([]);
+  const [opportunities, setGrants] = useState<Grant[]>([]);
   const [donors, setDonors] = useState<Donor[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -62,12 +62,12 @@ export default function AdminGrantsPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ inserted: number; skipped: number; skippedItems: { title: string; reason: string }[] } | null>(null);
 
-  const openRequirements = async (grantId: string) => {
-    setReqGrantId(grantId);
+  const openRequirements = async (opportunityId: string) => {
+    setReqGrantId(opportunityId);
     setReqLoading(true);
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch(`/api/v1/admin/grants/${grantId}/requirements`, { headers });
+      const res = await fetch(`/api/v1/admin/opportunities/${opportunityId}/requirements`, { headers });
       const data = await res.json();
       setRequirements(data.data?.requirements ?? []);
     } catch {
@@ -80,7 +80,7 @@ export default function AdminGrantsPage() {
   const addRequirement = async () => {
     if (!reqGrantId || !newReqText.trim()) return;
     const headers = await getAuthHeaders();
-    const res = await fetch(`/api/v1/admin/grants/${reqGrantId}/requirements`, {
+    const res = await fetch(`/api/v1/admin/opportunities/${reqGrantId}/requirements`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
       body: JSON.stringify({ text: newReqText.trim() }),
@@ -100,7 +100,7 @@ export default function AdminGrantsPage() {
       if (search) params.set("search", search);
 
       const [grantsRes, donorsRes] = await Promise.all([
-        fetch(`/api/v1/admin/grants?${params}`, { headers }),
+        fetch(`/api/v1/admin/opportunities?${params}`, { headers }),
         fetch("/api/v1/admin/donors", { headers }),
       ]);
 
@@ -109,7 +109,7 @@ export default function AdminGrantsPage() {
 
       if (!grantsRes.ok) throw new Error(grantsJson.error?.message ?? "Ошибка загрузки грантов");
 
-      setGrants(grantsJson.data?.grants ?? []);
+      setGrants(grantsJson.data?.opportunities ?? []);
       setTotal(grantsJson.data?.total ?? 0);
       setDonors(donorsJson.data?.donors ?? []);
     } catch (e) {
@@ -138,7 +138,7 @@ export default function AdminGrantsPage() {
     setExtractNote(null);
     try {
       const headers = await getAuthHeaders();
-      const res = await fetch("/api/v1/admin/grants/extract", {
+      const res = await fetch("/api/v1/admin/opportunities/extract", {
         method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({ announcementText: extractText }),
@@ -199,16 +199,16 @@ export default function AdminGrantsPage() {
       } catch {
         throw new Error("Невалидный JSON. Ожидается массив объектов с title и donorName.");
       }
-      const items = Array.isArray(parsed) ? parsed : (parsed as { grants?: unknown[] })?.grants;
+      const items = Array.isArray(parsed) ? parsed : (parsed as { opportunities?: unknown[] })?.opportunities;
       if (!Array.isArray(items) || items.length === 0) {
         throw new Error("Ожидается непустой массив грантов");
       }
 
       const headers = await getAuthHeaders();
-      const res = await fetch("/api/v1/admin/grants/import", {
+      const res = await fetch("/api/v1/admin/opportunities/import", {
         method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({ grants: items }),
+        body: JSON.stringify({ opportunities: items }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error?.message ?? "Ошибка импорта");
@@ -263,7 +263,7 @@ export default function AdminGrantsPage() {
       };
 
       const res = await fetch(
-        editing ? `/api/v1/admin/grants/${editing.id}` : "/api/v1/admin/grants",
+        editing ? `/api/v1/admin/opportunities/${editing.id}` : "/api/v1/admin/opportunities",
         {
           method: editing ? "PATCH" : "POST",
           headers,
@@ -494,7 +494,7 @@ export default function AdminGrantsPage() {
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-funding-green" /></div>
-      ) : grants.length === 0 ? (
+      ) : opportunities.length === 0 ? (
         <div className="text-center py-16 text-gray-400 text-sm flex flex-col items-center gap-2">
           <BookOpen className="w-8 h-8 opacity-30" />
           Грантов нет. Добавьте первый или примените seed.
@@ -510,8 +510,8 @@ export default function AdminGrantsPage() {
               </tr>
             </thead>
             <tbody>
-              {grants.map((g, i) => (
-                <tr key={g.id} style={{ borderBottom: i < grants.length - 1 ? "1px solid #f9fafb" : "none" }} className="hover:bg-funding-light-bg">
+              {opportunities.map((g, i) => (
+                <tr key={g.id} style={{ borderBottom: i < opportunities.length - 1 ? "1px solid #f9fafb" : "none" }} className="hover:bg-funding-light-bg">
                   <td className="px-4 py-3">
                     <p className="text-sm font-medium text-funding-black">{g.title_ru ?? g.title}</p>
                     {g.is_featured && <span className="text-[10px] text-funding-green font-semibold">★ Избранный</span>}
@@ -546,7 +546,7 @@ export default function AdminGrantsPage() {
       {reqGrantId && (
         <div className="mt-5 bg-white rounded-2xl border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-sm text-funding-black">Требования гранта</h2>
+            <h2 className="font-bold text-sm text-funding-black">Требования</h2>
             <button type="button" onClick={() => setReqGrantId(null)} className="text-gray-400 hover:text-gray-600">
               <X className="w-4 h-4" />
             </button>

@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
 import { withAdmin } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
-import { bulkImportGrants, type ImportGrantInput } from "@/lib/db/admin-grants";
+import { bulkImportGrants, type ImportGrantInput } from "@/lib/db/admin-opportunities";
 
 const MAX_IMPORT_ITEMS = 100;
 
@@ -26,33 +26,33 @@ function cleanNumberField(value: unknown): number | undefined {
 }
 
 /**
- * POST /api/v1/admin/grants/import
- * Bulk catalog intake: accepts up to 100 grants keyed by donorName,
+ * POST /api/v1/admin/opportunities/import
+ * Bulk catalog intake: accepts up to 100 opportunities keyed by donorName,
  * deduplicates by sourceUrl and by title within the same donor.
  */
 export const POST = withAdmin(async (req, admin) => {
   const body = await req.json();
-  const rawGrants = body?.grants;
+  const rawGrants = body?.opportunities;
 
   if (!Array.isArray(rawGrants) || rawGrants.length === 0) {
-    return apiError("grants array required", 400, "MISSING_FIELDS");
+    return apiError("opportunities array required", 400, "MISSING_FIELDS");
   }
   if (rawGrants.length > MAX_IMPORT_ITEMS) {
     return apiError(`too many items (max ${MAX_IMPORT_ITEMS})`, 400, "INPUT_TOO_LONG");
   }
 
-  const grants: ImportGrantInput[] = [];
+  const opportunities: ImportGrantInput[] = [];
   for (const [index, raw] of rawGrants.entries()) {
     if (!raw || typeof raw !== "object") {
-      return apiError(`grants[${index}] must be an object`, 400, "INVALID_ITEM");
+      return apiError(`opportunities[${index}] must be an object`, 400, "INVALID_ITEM");
     }
     const item = raw as Record<string, unknown>;
     const title = cleanStringField(item.title, 300);
     const donorName = cleanStringField(item.donorName, 200);
     if (!title || !donorName) {
-      return apiError(`grants[${index}] requires title and donorName`, 400, "INVALID_ITEM");
+      return apiError(`opportunities[${index}] requires title and donorName`, 400, "INVALID_ITEM");
     }
-    grants.push({
+    opportunities.push({
       title,
       donorName,
       titleRu: cleanStringField(item.titleRu, 300),
@@ -69,14 +69,14 @@ export const POST = withAdmin(async (req, admin) => {
     });
   }
 
-  const result = await bulkImportGrants(grants, admin.accessToken);
+  const result = await bulkImportGrants(opportunities, admin.accessToken);
 
   await writeAuditLog({
     userId: admin.userId,
     action: "admin_grants_import",
     entityType: "grant",
     metadata: {
-      requested: grants.length,
+      requested: opportunities.length,
       inserted: result.inserted,
       skipped: result.skipped,
     },

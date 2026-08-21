@@ -290,11 +290,18 @@ export default defineSchema({
     ...timestamps,
   }).index("by_active", ["isActive"]),
 
-  grants: defineTable({
+  opportunities: defineTable({
     title: v.string(),
     titleRu: v.optional(v.string()),
     description: v.optional(v.string()),
     descriptionRu: v.optional(v.string()),
+    opportunityType: v.union(
+      v.literal("grant"),
+      v.literal("loan"),
+      v.literal("competition"),
+      v.literal("scholarship")
+    ),
+    category: v.string(), // 'government', 'youth-entrepreneurship', 'innovation', etc
     donorId: v.id("donors"),
     sectors: v.array(v.string()),
     countryScope: v.array(v.string()),
@@ -302,8 +309,20 @@ export default defineSchema({
     amountMin: v.optional(v.number()),
     amountMax: v.optional(v.number()),
     currency: v.string(),
+    repaymentType: v.optional(v.union(
+      v.literal("non-repayable"),
+      v.literal("repayable"),
+      v.literal("n/a")
+    )),
+    interestRate: v.optional(v.string()), // For loans: "CB + 4%"
+    gracePeriodMonths: v.optional(v.number()), // For loans
     deadline: v.optional(v.number()),
     openDate: v.optional(v.number()),
+    deadlineType: v.optional(v.union(
+      v.literal("fixed"),
+      v.literal("rolling"),
+      v.literal("open")
+    )),
     sourceUrl: v.optional(v.string()),
     status: v.string(),
     isActive: v.boolean(),
@@ -312,32 +331,35 @@ export default defineSchema({
     ...timestamps,
   })
     .index("by_donor", ["donorId"])
+    .index("by_type", ["opportunityType"])
+    .index("by_category", ["category"])
     .index("by_active", ["isActive"])
     .index("by_deadline", ["deadline"])
     .index("by_featured", ["isFeatured"])
     .index("by_sourceUrl", ["sourceUrl"])
-    .index("by_active_status_deadline", ["isActive", "status", "deadline"]),
+    .index("by_active_status_deadline", ["isActive", "status", "deadline"])
+    .index("by_type_and_active", ["opportunityType", "isActive"]),
 
-  grantRequirements: defineTable({
-    grantId: v.id("grants"),
+  opportunityRequirements: defineTable({
+    opportunityId: v.id("opportunities"),
     requirementType: v.string(),
     text: v.string(),
     required: v.boolean(),
     ...timestamps,
-  }).index("by_grant", ["grantId"]),
+  }).index("by_opportunity", ["opportunityId"]),
 
-  savedGrants: defineTable({
+  savedOpportunities: defineTable({
     userId: v.id("users"),
-    grantId: v.id("grants"),
+    opportunityId: v.id("opportunities"),
     ...timestamps,
   })
     .index("by_user", ["userId"])
-    .index("by_grant", ["grantId"])
-    .index("by_user_grant", ["userId", "grantId"]),
+    .index("by_opportunity", ["opportunityId"])
+    .index("by_user_opportunity", ["userId", "opportunityId"]),
 
   eligibilityChecks: defineTable({
     userId: v.id("users"),
-    grantId: v.optional(v.id("grants")),
+    opportunityId: v.optional(v.id("opportunities")),
     answers: eligibilityAnswersValidator,
     score: v.number(),
     status: v.string(),
@@ -348,13 +370,13 @@ export default defineSchema({
     ...timestamps,
   })
     .index("by_user", ["userId"])
-    .index("by_grant", ["grantId"])
+    .index("by_opportunity", ["opportunityId"])
     .index("by_user_created", ["userId", "createdAt"]),
 
   proposalProjects: defineTable({
     userId: v.id("users"),
     title: v.string(),
-    grantId: v.optional(v.id("grants")),
+    opportunityId: v.optional(v.id("opportunities")),
     donorFormat: v.optional(v.string()),
     status: v.string(),
     ...timestamps,
@@ -374,16 +396,16 @@ export default defineSchema({
   applications: defineTable({
     userId: v.id("users"),
     organizationId: v.optional(v.id("organizations")),
-    grantId: v.id("grants"),
+    opportunityId: v.id("opportunities"),
     status: v.string(),
     notes: v.optional(v.string()),
     submittedAt: v.optional(v.number()),
     ...timestamps,
   })
     .index("by_user", ["userId"])
-    .index("by_grant", ["grantId"])
+    .index("by_opportunity", ["opportunityId"])
     .index("by_status", ["status"])
-    .index("by_user_and_grant", ["userId", "grantId"])
+    .index("by_user_and_opportunity", ["userId", "opportunityId"])
     .index("by_user_and_status", ["userId", "status"])
     .index("by_user_updated", ["userId", "updatedAt"]),
 
@@ -597,7 +619,8 @@ export default defineSchema({
     key: v.literal("global"),
     totalUsers: v.number(),
     totalOrganizations: v.number(),
-    totalGrants: v.number(),
+    totalOpportunities: v.number(),
+    totalGrants: v.number(), // Legacy - deprecated
     totalApplications: v.number(),
     totalSupportTickets: v.number(),
     totalAuditLogs: v.number(),
@@ -636,10 +659,10 @@ export default defineSchema({
     resetAt: v.number(),
   }).index("by_key", ["key"]),
 
-  /** Success-fee tracking (2-5% on won grants, per legal/success-fee) — additive. */
+  /** Success-fee tracking (2-5% on won opportunities, per legal/success-fee) — additive. */
   successFeeRecords: defineTable({
     applicationId: v.id("applications"),
-    grantId: v.id("grants"),
+    opportunityId: v.id("opportunities"),
     userId: v.id("users"),
     wonAmountUsd: v.number(),
     feePercent: v.number(),

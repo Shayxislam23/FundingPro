@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { apiSuccess, apiError } from "@/lib/api";
 import { withAdmin, getRouteParam } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
-import { updateGrant } from "@/lib/db/admin-grants";
+import { updateGrant } from "@/lib/db/admin-opportunities";
 
 export const PATCH = withAdmin(async (req, admin, ctx) => {
   const id = await getRouteParam(ctx, "id");
@@ -28,5 +28,5 @@ export const PATCH = withAdmin(async (req, admin, ctx) => {
     entityId: id,
   });
 
-  return apiSuccess({ grantId: id, updated: true });
+  return apiSuccess({ opportunityId: id, updated: true });
 });

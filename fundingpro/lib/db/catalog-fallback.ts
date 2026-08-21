@@ -1,6 +1,6 @@
 /**
  * Static seed-backed fallback for the public catalog endpoints
- * (/api/v1/plans, /api/v1/grants, /api/v1/grants/:id).
+ * (/api/v1/plans, /api/v1/opportunities, /api/v1/opportunities/:id).
  *
  * Used ONLY when PUBLIC_API_SEED_FALLBACK=1 and the Convex backend is
  * unreachable — CI integration runs against a placeholder Convex URL and
@@ -17,7 +17,7 @@ import {
   SEED_PLANS,
   parseDeadline,
 } from "../../convex/seedData";
-import type { GrantDetail, GrantListItem, ListGrantsParams, ListGrantsResult } from "./grants.types";
+import type { GrantDetail, GrantListItem, ListGrantsParams, ListGrantsResult } from "./opportunities.types";
 import type { PlanRow } from "./plans";
 
 export function isSeedFallbackEnabled(): boolean {
@@ -69,32 +69,32 @@ function toListItem(grant: (typeof SEED_GRANTS)[number]): GrantListItem {
 
 export function seedFallbackGrantsList(params: ListGrantsParams = {}): ListGrantsResult {
   const search = params.search?.trim().toLowerCase();
-  let grants = SEED_GRANTS.map(toListItem);
+  let opportunities = SEED_GRANTS.map(toListItem);
 
   if (search) {
-    grants = grants.filter(
+    opportunities = opportunities.filter(
       (g) =>
         g.title.toLowerCase().includes(search) ||
         (g.title_ru ?? "").toLowerCase().includes(search)
     );
   }
   if (params.sector) {
-    grants = grants.filter((g) => g.sectors.includes(params.sector as string));
+    opportunities = opportunities.filter((g) => g.sectors.includes(params.sector as string));
   }
   if (params.country) {
-    grants = grants.filter((g) => g.country_scope.includes(params.country as string));
+    opportunities = opportunities.filter((g) => g.country_scope.includes(params.country as string));
   }
   if (params.donorId) {
-    grants = grants.filter((g) => g.donor.id === params.donorId);
+    opportunities = opportunities.filter((g) => g.donor.id === params.donorId);
   }
 
   const page = Math.max(1, params.page ?? 1);
   const limit = Math.min(params.limit ?? 20, 100);
-  const total = grants.length;
+  const total = opportunities.length;
   const offset = (page - 1) * limit;
 
   return {
-    grants: grants.slice(offset, offset + limit),
+    opportunities: opportunities.slice(offset, offset + limit),
     total,
     page,
     limit,

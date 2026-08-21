@@ -24,8 +24,8 @@ const seedResultValidator = v.object({
   settings: v.number(),
   organizations: v.number(),
   consultants: v.number(),
-  grants: v.number(),
-  grantRequirements: v.number(),
+  opportunities: v.number(),
+  opportunityRequirements: v.number(),
 });
 
 function matchDonorKey(
@@ -162,9 +162,9 @@ export const run = internalMutation({
       }
     }
 
-    const existingGrants = await ctx.db.query("grants").collect();
+    const existingGrants = await ctx.db.query("opportunities").collect();
     const grantTitles = new Set(existingGrants.map((g) => g.title));
-    const grantIdByKey = new Map<string, Id<"grants">>();
+    const grantIdByKey = new Map<string, Id<"opportunities">>();
 
     for (const grant of existingGrants) {
       const seed = SEED_GRANTS.find((s) => s.title === grant.title);
@@ -184,7 +184,7 @@ export const run = internalMutation({
         throw new Error(`Missing donor for grant ${grant.key}`);
       }
 
-      const id = await ctx.db.insert("grants", {
+      const id = await ctx.db.insert("opportunities", {
         title: grant.title,
         titleRu: grant.titleRu,
         description: grant.description,
@@ -209,25 +209,25 @@ export const run = internalMutation({
       grantsInserted += 1;
     }
 
-    const existingRequirements = await ctx.db.query("grantRequirements").collect();
-    let grantRequirements = existingRequirements.length;
+    const existingRequirements = await ctx.db.query("opportunityRequirements").collect();
+    let opportunityRequirements = existingRequirements.length;
     if (existingRequirements.length === 0) {
-      grantRequirements = 0;
+      opportunityRequirements = 0;
       for (const req of SEED_GRANT_REQUIREMENTS) {
-        const grantId = grantIdByKey.get(req.grantKey);
-        if (!grantId) {
+        const opportunityId = grantIdByKey.get(req.grantKey);
+        if (!opportunityId) {
           throw new Error(`Missing grant for requirement ${req.grantKey}`);
         }
 
-        await ctx.db.insert("grantRequirements", {
-          grantId,
+        await ctx.db.insert("opportunityRequirements", {
+          opportunityId,
           requirementType: req.requirementType,
           text: req.text,
           required: req.required,
           createdAt: now,
           updatedAt: now,
         });
-        grantRequirements += 1;
+        opportunityRequirements += 1;
       }
     }
 
@@ -253,8 +253,8 @@ export const run = internalMutation({
       settings: existingSettings.length + settingsInserted,
       organizations: existingOrgs.length + organizationsInserted,
       consultants: existingConsultants.length + consultantsInserted,
-      grants: totalGrants,
-      grantRequirements,
+      opportunities: totalGrants,
+      opportunityRequirements,
     };
   },
 });

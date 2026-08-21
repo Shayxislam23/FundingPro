@@ -4,7 +4,7 @@ import {
   type GrantDetail,
   type GrantListItem,
   type ListGrantsResult,
-} from "@/lib/db/grants";
+} from "@/lib/db/opportunities";
 
 export type { GrantListItem, GrantDetail, ListGrantsResult };
 

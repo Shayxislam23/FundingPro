@@ -9,7 +9,19 @@ const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export function ConvexClerkProvider({ children }: { children: ReactNode }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: "#428238",
+          colorTextOnPrimaryBackground: "#ffffff",
+          borderRadius: "0.75rem",
+        },
+        elements: {
+          formButtonPrimary:
+            "bg-[#428238] hover:bg-[#4f9a45] text-sm normal-case",
+        },
+      }}
+    >
       <ConvexProviderWithClerk
         client={convex}
         // Clerk v5 vs convex/react-clerk type mismatch — runtime compatible

@@ -656,4 +656,27 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_status", ["status"]),
 
+  /** Bank / super-app partner SSO sessions (ZOOMRAD first). */
+  partnerSessions: defineTable({
+    channelSlug: v.string(),
+    externalUserId: v.string(),
+    sessionTokenHash: v.string(),
+    status: v.union(v.literal("pending"), v.literal("active"), v.literal("expired")),
+    userId: v.optional(v.id("users")),
+    locale: v.optional(v.union(v.literal("ru"), v.literal("uz"))),
+    displayName: v.optional(v.string()),
+    expiresAt: v.number(),
+    ...timestamps,
+  })
+    .index("by_token_hash", ["sessionTokenHash"])
+    .index("by_channel_external", ["channelSlug", "externalUserId"]),
+
+  /** Monthly completed partner-channel transactions for revenue-share tiers. */
+  partnerMonthlyStats: defineTable({
+    channelSlug: v.string(),
+    yearMonth: v.string(),
+    completedTransactions: v.number(),
+    ...timestamps,
+  }).index("by_channel_month", ["channelSlug", "yearMonth"]),
+
 });

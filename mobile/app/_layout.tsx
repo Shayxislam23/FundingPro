@@ -37,8 +37,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const inAuth = segments[0] === "(auth)";
     const inPublic = segments[0] === "(public)";
     const inLegal = segments[0] === "(legal)";
+    const inPartner = segments[0] === "partner";
 
-    if (!session && !inAuth && !inPublic && !inLegal) {
+    if (!session && !inAuth && !inPublic && !inLegal && !inPartner) {
       router.replace("/(auth)/login");
     } else if (session && inAuth) {
       router.replace("/(app)/(tabs)/home");
@@ -76,6 +77,7 @@ export default function RootLayout() {
             <Stack.Screen name="(public)" />
             <Stack.Screen name="(legal)" />
             <Stack.Screen name="(app)" />
+            <Stack.Screen name="partner" />
             <Stack.Screen name="subscription/return" />
             <Stack.Screen name="mobile" />
           </Stack>

@@ -7,7 +7,7 @@ const isProtectedRoute = createRouteMatcher([
   "/admin(.*)",
 ]);
 
-const isAuthRoute = createRouteMatcher(["/auth(.*)", "/sign-up(.*)"]);
+const isAuthRoute = createRouteMatcher(["/auth(.*)", "/sign-in(.*)", "/sign-up(.*)"]);
 
 const isRateLimitedApiRoute = createRouteMatcher([
   "/api/v1/ai/(.*)",
@@ -40,7 +40,7 @@ export default clerkMiddleware(async (auth, request) => {
 
   if (isProtectedRoute(request) && !userId) {
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/auth";
+    loginUrl.pathname = "/sign-in";
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -71,10 +71,12 @@ export const config = {
     "/dashboard/:path*",
     "/admin/:path*",
     "/auth/:path*",
+    "/sign-in/:path*",
     "/sign-up/:path*",
     "/dashboard",
     "/admin",
     "/auth",
+    "/sign-in",
     "/sign-up",
     "/api/v1/ai/:path*",
     "/api/v1/auth/:path*",

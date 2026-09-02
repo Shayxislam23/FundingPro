@@ -13,7 +13,6 @@ export function ConvexClerkProvider({ children }: { children: ReactNode }) {
       appearance={{
         variables: {
           colorPrimary: "#428238",
-          colorTextOnPrimaryBackground: "#ffffff",
           borderRadius: "0.75rem",
         },
         elements: {

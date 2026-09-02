@@ -8,6 +8,7 @@
     "convex:codegen": "npx convex codegen",
     "convex:collect-audit": "node scripts/convex-collect-audit.mjs",
     "convex:seed": "node scripts/convex-seed.mjs",
+    "clerk:seed-demo": "node scripts/clerk-seed-demo-user.mjs",
     "convex:export-pg": "node scripts/export-pg-to-convex.mjs",
     "convex:import-pg": "node scripts/import-to-convex.mjs",
     "build": "next build",

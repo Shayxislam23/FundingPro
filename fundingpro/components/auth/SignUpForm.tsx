@@ -1,7 +1,6 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
-import { useSignUp } from "@clerk/nextjs/legacy";
+import { useSignUp } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -11,8 +10,7 @@ import { AuthCardLayout } from "./AuthCardLayout";
 
 export function SignUpForm() {
   const router = useRouter();
-  const { isLoaded, signUp } = useSignUp();
-  const { setActive } = useClerk();
+  const { signUp, fetchStatus } = useSignUp();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,25 +19,39 @@ export function SignUpForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!isLoaded || !signUp) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      await signUp.create({
+      const { error: passwordError } = await signUp.password({
         emailAddress: email.trim(),
         password,
       });
 
-      if (signUp.status === "complete" && signUp.createdSessionId) {
-        await setActive({ session: signUp.createdSessionId });
-        router.replace("/dashboard");
+      if (passwordError) {
+        setError(clerkErrorMessage(passwordError));
+        return;
+      }
+
+      if (signUp.status === "complete") {
+        const { error: finalizeError } = await signUp.finalize({
+          navigate: ({ decorateUrl }) => {
+            router.replace(decorateUrl("/dashboard"));
+          },
+        });
+        if (finalizeError) {
+          setError(clerkErrorMessage(finalizeError));
+        }
         return;
       }
 
       if (signUp.status === "missing_requirements") {
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        const { error: verifyError } = await signUp.verifications.sendEmailCode();
+        if (verifyError) {
+          setError(clerkErrorMessage(verifyError));
+          return;
+        }
         router.push("/auth/confirm");
         return;
       }
@@ -51,6 +63,8 @@ export function SignUpForm() {
       setLoading(false);
     }
   }
+
+  const isBusy = loading || fetchStatus === "fetching";
 
   return (
     <AuthCardLayout
@@ -90,10 +104,10 @@ export function SignUpForm() {
 
         <button
           type="submit"
-          disabled={loading || !email.trim() || password.length < 8}
+          disabled={isBusy || !email.trim() || password.length < 8}
           className="w-full rounded-full bg-funding-green py-3 text-sm font-semibold text-white transition-colors hover:bg-funding-accent disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Создание…" : "Зарегистрироваться"}
+          {isBusy ? "Создание…" : "Зарегистрироваться"}
         </button>
       </form>
     </AuthCardLayout>

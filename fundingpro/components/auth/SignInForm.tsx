@@ -1,7 +1,6 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
-import { useSignIn } from "@clerk/nextjs/legacy";
+import { useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
@@ -16,8 +15,7 @@ const SHOW_DEMO_HINT = process.env.NODE_ENV !== "production";
 export function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isLoaded, signIn } = useSignIn();
-  const { setActive } = useClerk();
+  const { signIn, fetchStatus } = useSignIn();
 
   const redirectTo = searchParams.get("next") ?? searchParams.get("redirect") ?? "/dashboard";
 
@@ -27,26 +25,45 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null);
 
   const demoHint = useMemo(
-    () => (SHOW_DEMO_HINT ? `Локальный демо: ${DEMO_EMAIL} / ${DEMO_PASSWORD}` : null),
+    () =>
+      SHOW_DEMO_HINT
+        ? `Локальный демо: ${DEMO_EMAIL} / ${DEMO_PASSWORD}. Если вход не работает — npm run clerk:seed-demo`
+        : null,
     []
   );
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!isLoaded || !signIn) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      await signIn.create({
-        identifier: email.trim(),
+      const { error: passwordError } = await signIn.password({
+        emailAddress: email.trim(),
         password,
       });
 
-      if (signIn.status === "complete" && signIn.createdSessionId) {
-        await setActive({ session: signIn.createdSessionId });
-        router.replace(redirectTo.startsWith("/") ? redirectTo : "/dashboard");
+      if (passwordError) {
+        setError(clerkErrorMessage(passwordError));
+        return;
+      }
+
+      if (signIn.status === "complete") {
+        const { error: finalizeError } = await signIn.finalize({
+          navigate: ({ decorateUrl }) => {
+            const path = redirectTo.startsWith("/") ? redirectTo : "/dashboard";
+            router.replace(decorateUrl(path));
+          },
+        });
+        if (finalizeError) {
+          setError(clerkErrorMessage(finalizeError));
+        }
+        return;
+      }
+
+      if (signIn.status === "needs_second_factor") {
+        setError("Требуется двухфакторная аутентификация.");
         return;
       }
 
@@ -57,6 +74,8 @@ export function SignInForm() {
       setLoading(false);
     }
   }
+
+  const isBusy = loading || fetchStatus === "fetching";
 
   return (
     <AuthCardLayout
@@ -101,10 +120,10 @@ export function SignInForm() {
 
         <button
           type="submit"
-          disabled={loading || !email.trim() || !password}
+          disabled={isBusy || !email.trim() || !password}
           className="w-full rounded-full bg-funding-green py-3 text-sm font-semibold text-white transition-colors hover:bg-funding-accent disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Вход…" : "Войти"}
+          {isBusy ? "Вход…" : "Войти"}
         </button>
       </form>
     </AuthCardLayout>

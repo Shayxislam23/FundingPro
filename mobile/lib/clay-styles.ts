@@ -7,7 +7,9 @@ export const CLAY_COLORS = {
   highlight: "rgba(255, 255, 255, 0.72)",
   shadow: "rgba(0, 80, 30, 0.12)",
   shadowDark: "rgba(0, 50, 20, 0.18)",
-  green: "#008A2E",
+  green: "#428238",
+  /** ZOOMRAD partner channel only */
+  zoomradGreen: "#008A2E",
   greenDark: "#006B24",
 } as const;
 

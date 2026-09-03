@@ -37,7 +37,7 @@ export default function ZoomradPaymentPage() {
         </p>
         <Link
           href={`/auth?redirect=${encodeURIComponent(`/dashboard/subscription${planId ? `?plan=${planId}` : ""}`)}`}
-          className="block rounded-xl bg-[#008A2E] px-4 py-3 text-center font-semibold text-white"
+          className="block rounded-xl bg-funding-green px-4 py-3 text-center font-semibold text-white"
         >
           {locale === "uz" ? "Davom etish" : "Продолжить"}
         </Link>

@@ -17,7 +17,7 @@ export default function ZoomradOnboardingPage() {
     >
       <a
         href={`/auth?redirect=${encodeURIComponent(`/dashboard/onboarding`)}`}
-        className="block rounded-xl bg-[#008A2E] px-4 py-3 text-center text-sm font-semibold text-white"
+        className="block rounded-xl bg-funding-green px-4 py-3 text-center text-sm font-semibold text-white"
       >
         {locale === "uz" ? "Profilni to‘ldirish" : "Заполнить профиль"}
       </a>

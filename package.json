@@ -11,13 +11,18 @@
     "packages/*"
   ],
   "overrides": {
-    "postcss": "^8.5.10",
+    "postcss": "8.5.26",
+    "nanoid": "3.3.18",
+    "js-yaml": "4.3.2",
+    "brace-expansion@1": "1.1.18",
+    "brace-expansion@5": "5.0.9",
+    "browserslist": "4.28.8",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "next": {
-      "postcss": "^8.5.10"
+      "postcss": "8.5.26"
     },
     "@clerk/nextjs": "7.5.9",
     "@clerk/clerk-js": "6.22.0",
@@ -26,7 +31,7 @@
     "@clerk/clerk-react": "5.61.8",
     "@clerk/backend": "3.8.4",
     "@clerk/react": "6.11.1",
-    "eslint-config-next": "15.5.19",
+    "eslint-config-next": "15.5.25",
     "ws": "8.21.0",
     "viem": {
       "ws": "8.21.0"
@@ -48,6 +53,7 @@
     "mobile:dev": "bash mobile/scripts/dev-client.sh",
     "mobile:rebuild-ios": "bash mobile/scripts/rebuild-ios-dev-client.sh",
     "mobile:maestro": "npm run maestro --workspace=@fundingpro/mobile",
-    "convex:seed:prod": "node fundingpro/scripts/seed-production-safe.mjs"
+    "convex:seed:prod": "node fundingpro/scripts/seed-production-safe.mjs",
+    "ci:local": "node fundingpro/scripts/ci-local.mjs"
   }
 }

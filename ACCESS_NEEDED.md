@@ -2,6 +2,8 @@
 
 Обновлено: **2026-09-03** | PR #29 ZOOMRAD + custom sign-in; CI still billing-locked.
 
+**Локальный CI** (пока GitHub Actions billing lock): из корня `npm run ci:local` — typecheck/lint/tests + `npm audit --audit-level=high`.
+
 См. также: [`fundingpro/docs/FAILURE_MODES_100.md`](fundingpro/docs/FAILURE_MODES_100.md), [`fundingpro/docs/TECH_DEBT_P3.md`](fundingpro/docs/TECH_DEBT_P3.md).
 
 ---
@@ -13,7 +15,8 @@
 | **www.fundingpro.uz** | ✅ LIVE | Health `ok` (prod) |
 | Local Next `:3000` / Convex `:3210` / Metro `:8081` | ✅ OK | Cloud agent workspace |
 | Local Clerk keys | ❌ PLACEHOLDERS | Need real Dashboard keys for `/sign-in` + `npm run clerk:seed-demo` |
-| GitHub Actions CI (`main-ci.yml`) | ❌ BILLING LOCK | Проверено **2026-09-03** — PR #29 runs fail in ~5s (`33638807889` и др.); локальный typecheck/test/lint green |
+| GitHub Actions CI (`main-ci.yml`) | ❌ BILLING LOCK | Проверено **2026-09-03** — PR #29 runs fail in ~5s; локально: `npm run ci:local` (typecheck/lint/tests + audit high) |
+| npm audit high (local) | ✅ PASS | Next **15.5.25** + overrides (`postcss`/`nanoid`/`js-yaml`/…); remain 3× moderate via expo-router |
 | GitHub Release Gate (`release-gate.yml`) | ❌ BILLING LOCK | Без снятия billing CI не стартует |
 | GitHub repo visibility | ✅ Public | Public не снимает billing lock на аккаунте |
 | Vercel GitHub auto-deploy | ⚠️ Отключён | Reconnect в Vercel Dashboard — Root Directory **`.`** (рекомендуется) или `fundingpro` (см. §3b). CLI deploy работает. |

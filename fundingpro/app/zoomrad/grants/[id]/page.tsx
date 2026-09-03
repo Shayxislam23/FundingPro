@@ -43,7 +43,7 @@ export default async function ZoomradGrantDetailPage({ params, searchParams }: P
         </dl>
         <Link
           href={`/zoomrad/eligibility${suffix}`}
-          className="block rounded-xl bg-[#008A2E] px-4 py-3 text-center text-sm font-semibold text-white"
+          className="block rounded-xl bg-funding-green px-4 py-3 text-center text-sm font-semibold text-white"
         >
           {locale === "uz" ? "Moslikni tekshirish" : "Проверить соответствие"}
         </Link>

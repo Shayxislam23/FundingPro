@@ -9,8 +9,8 @@ import { clerkErrorMessage } from "@/lib/auth/clerk-errors";
 import { SIGN_UP_PATH } from "@/lib/auth/paths";
 import { AuthCardLayout } from "./AuthCardLayout";
 
-const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_LOGIN_EMAIL ?? "info@info.uz";
-const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_LOGIN_PASSWORD ?? "test12345";
+const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_LOGIN_EMAIL ?? "demo@fundingpro.local";
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_LOGIN_PASSWORD ?? "FundingPro!demo1";
 const SHOW_DEMO_HINT = process.env.NODE_ENV !== "production";
 const CLERK_READY = isClerkPublishableConfigured();
 
@@ -147,8 +147,21 @@ function SignInFormSetupRequired() {
     >
       <div className="space-y-4">
         <p className="rounded-xl bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
-          Clerk не настроен: вставьте реальные NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY и CLERK_SECRET_KEY
-          в fundingpro/.env.local, затем npm run clerk:seed-demo
+          Clerk не настроен. В{" "}
+          <code className="font-mono text-xs">fundingpro/.env.local</code> замените{" "}
+          <code className="font-mono text-xs">pk_test_…</code> /{" "}
+          <code className="font-mono text-xs">sk_test_…</code> на ключи из{" "}
+          <a
+            href="https://dashboard.clerk.com"
+            className="font-medium underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            dashboard.clerk.com
+          </a>
+          , задайте <code className="font-mono text-xs">CLERK_JWT_ISSUER_DOMAIN</code>, затем:{" "}
+          <code className="font-mono text-xs">npm run clerk:seed-demo</code> и перезапустите
+          Next.js.
         </p>
         <input
           type="email"

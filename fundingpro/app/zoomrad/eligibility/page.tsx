@@ -32,7 +32,7 @@ export default function ZoomradEligibilityPage() {
         </Link>
         <Link
           href={`/auth?redirect=${encodeURIComponent(`/zoomrad/eligibility${suffix}`)}`}
-          className="block rounded-xl bg-[#008A2E] px-4 py-3 text-center font-semibold text-white"
+          className="block rounded-xl bg-funding-green px-4 py-3 text-center font-semibold text-white"
         >
           {locale === "uz" ? "Kirish / ro‘yxatdan o‘tish" : "Войти / зарегистрироваться"}
         </Link>

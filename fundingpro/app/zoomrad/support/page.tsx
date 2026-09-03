@@ -21,7 +21,7 @@ export default function ZoomradSupportPage() {
         </p>
         <Link
           href={`/auth?redirect=${encodeURIComponent("/dashboard/support")}`}
-          className="block rounded-xl bg-[#008A2E] px-4 py-3 text-center font-semibold text-white"
+          className="block rounded-xl bg-funding-green px-4 py-3 text-center font-semibold text-white"
         >
           {locale === "uz" ? "Murojaat yaratish" : "Создать обращение"}
         </Link>

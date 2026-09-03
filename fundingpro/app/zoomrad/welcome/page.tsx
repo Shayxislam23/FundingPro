@@ -43,7 +43,7 @@ export default function ZoomradWelcomePage() {
         <div className="grid gap-3">
           <Link
             href={`/zoomrad/grants${suffix}`}
-            className="rounded-xl bg-[#008A2E] px-4 py-3 text-center text-sm font-semibold text-white"
+            className="rounded-xl bg-funding-green px-4 py-3 text-center text-sm font-semibold text-white"
           >
             {copy.ctaGrants}
           </Link>

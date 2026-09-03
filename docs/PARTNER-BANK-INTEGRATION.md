@@ -29,12 +29,22 @@ Do **not** reuse one key for both. `PARTNER_AUTH_ALLOW_UNSIGNED=true` works only
 
 Headers:
 
-- Auth: `X-Partner-Signature`, `X-Partner-Timestamp` (unix seconds), `X-Partner-Nonce` (≥8 chars, unique)
+- Auth: `X-Partner-Signature`, `X-Partner-Timestamp` (unix seconds preferred), `X-Partner-Nonce` (≥8 chars, unique)
 - Webhook: `X-Zoomrad-Signature`, `X-Zoomrad-Timestamp`, `X-Zoomrad-Nonce`
 
-HMAC-SHA256 hex over: `{timestamp}.{nonce}.{rawBody}`
+HMAC-SHA256 hex over: `{timestamp}.{nonce}.{rawBody}` where `{timestamp}` is the **exact header string** you send (do not normalize ms→sec before signing). Freshness accepts seconds or milliseconds (±300s).
 
-Skew window: ±300s. Nonces are stored and rejected on replay.
+Nonces are stored and rejected on replay (serialized per channel).
+
+### Session tokens
+
+| Token | Who holds it | Notes |
+|-------|--------------|--------|
+| `sessionToken` from `auth/init` | Bank server | Omitted when init **reuses** an open session; bank callback then uses `sessionId` |
+| `code` on `launchUrl` | WebView (one-time) | Exchanged via `auth/exchange` → client `sessionToken` in `sessionStorage` |
+| Client `sessionToken` | Mini app | Separate from bank bearer; first Clerk bind may rotate it |
+
+Bank `POST auth/callback` accepts `sessionToken` **or** `sessionId` (HMAC required either way).
 
 ## Adding a new bank channel
 
@@ -50,7 +60,7 @@ Skew window: ±300s. Nonces are stored and rejected on replay.
 |--------|------|---------|
 | POST | `/api/v1/zoomrad/auth/init` | Bank server starts SSO (HMAC + timestamp + nonce) → `launchUrl` with one-time `code` |
 | POST | `/api/v1/zoomrad/auth/exchange` | WebView exchanges `code` → `sessionToken` (store in sessionStorage; strip from URL) |
-| POST | `/api/v1/zoomrad/auth/callback` | Bank-signed session activate |
+| POST | `/api/v1/zoomrad/auth/callback` | Bank-signed session activate (`sessionToken` or `sessionId` on reuse) |
 | PATCH | `/api/v1/zoomrad/auth/callback` | Link session to Clerk user (uses sessionStorage token) |
 | POST | `/api/v1/zoomrad/payments/create` | Create pending payment (Clerk auth; amount from plan) |
 | POST | `/api/v1/zoomrad/payments/webhook` | Signed activation (`X-Zoomrad-Signature` + timestamp + nonce) |
@@ -58,8 +68,9 @@ Skew window: ±300s. Nonces are stored and rejected on replay.
 ## Session security notes
 
 - Long-lived session bearers are **never** placed on `launchUrl` or mini-app nav links.
-- Launch `code` TTL is ~2 minutes and single-use.
-- Replayed `auth/init` for an open bank user refreshes the launch code only — it does **not** rotate `sessionTokenHash`.
+- Launch `code` TTL is ~2 minutes and single-use. WebView exchange dedupes in-flight requests (React Strict Mode safe).
+- Replayed `auth/init` for an open bank user refreshes the launch code + TTL only — it does **not** rotate the bank `sessionTokenHash`.
+- WebView exchange writes `clientSessionTokenHash` and leaves the bank hash untouched.
 - Prefer injecting the launch code via the native WebView bridge when the bank shell supports it.
 
 ## Revenue share

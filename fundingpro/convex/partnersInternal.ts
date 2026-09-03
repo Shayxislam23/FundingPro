@@ -20,10 +20,37 @@ export const getSessionByTokenHash = internalQuery({
   args: { sessionTokenHash: v.string() },
   returns: v.union(partnerSessionValidator, v.null()),
   handler: async (ctx, args) => {
-    const row = await ctx.db
+    let row = await ctx.db
       .query("partnerSessions")
       .withIndex("by_token_hash", (q) => q.eq("sessionTokenHash", args.sessionTokenHash))
       .unique();
+    if (!row) {
+      row = await ctx.db
+        .query("partnerSessions")
+        .withIndex("by_client_token_hash", (q) =>
+          q.eq("clientSessionTokenHash", args.sessionTokenHash)
+        )
+        .unique();
+    }
+    if (!row) return null;
+    const now = Date.now();
+    const status = row.expiresAt <= now ? ("expired" as const) : row.status;
+    return {
+      sessionId: row._id,
+      channelSlug: row.channelSlug,
+      externalUserId: row.externalUserId,
+      status,
+      userId: row.userId ? String(row.userId) : null,
+      expiresAt: row.expiresAt,
+    };
+  },
+});
+
+export const getSessionById = internalQuery({
+  args: { sessionId: v.string() },
+  returns: v.union(partnerSessionValidator, v.null()),
+  handler: async (ctx, args) => {
+    const row = await ctx.db.get("partnerSessions", args.sessionId as Id<"partnerSessions">);
     if (!row) return null;
     const now = Date.now();
     const status = row.expiresAt <= now ? ("expired" as const) : row.status;
@@ -72,17 +99,18 @@ export const createSession = internalMutation({
 
     if (existing && existing.status !== "expired" && existing.expiresAt > now) {
       // Do not overwrite sessionTokenHash — that would hand a replayer a new bearer.
-      // Refresh launch code so the bank can open WebView again with a fresh one-time code.
+      // Refresh launch code + session TTL so re-init near expiry still works.
       await ctx.db.patch("partnerSessions", existing._id, {
         launchCodeHash: args.launchCodeHash,
         launchCodeExpiresAt,
+        expiresAt,
         locale: args.locale ?? existing.locale,
         displayName: args.displayName ?? existing.displayName,
         updatedAt: now,
       });
       return {
         sessionId: existing._id,
-        expiresAt: existing.expiresAt,
+        expiresAt,
         launchCodeExpiresAt,
         reused: true,
       };
@@ -106,11 +134,11 @@ export const createSession = internalMutation({
   },
 });
 
-/** Exchange one-time launch code → rotate session token (plaintext minted by Next.js). */
+/** Exchange one-time launch code → set WebView client token (bank sessionTokenHash untouched). */
 export const exchangeLaunchCode = internalMutation({
   args: {
     launchCodeHash: v.string(),
-    newSessionTokenHash: v.string(),
+    clientSessionTokenHash: v.string(),
   },
   returns: v.union(
     v.object({
@@ -148,7 +176,7 @@ export const exchangeLaunchCode = internalMutation({
     }
 
     await ctx.db.patch("partnerSessions", row._id, {
-      sessionTokenHash: args.newSessionTokenHash,
+      clientSessionTokenHash: args.clientSessionTokenHash,
       launchCodeHash: undefined,
       launchCodeExpiresAt: undefined,
       status: "active",
@@ -164,7 +192,7 @@ export const exchangeLaunchCode = internalMutation({
   },
 });
 
-/** Persist a partner request nonce; returns false if already used. */
+/** Persist a partner request nonce; returns false if already used. Serialized per channel via lock. */
 export const consumeRequestNonce = internalMutation({
   args: {
     channelSlug: v.string(),
@@ -173,6 +201,22 @@ export const consumeRequestNonce = internalMutation({
   returns: v.boolean(),
   handler: async (ctx, args) => {
     const now = Date.now();
+
+    let lock = await ctx.db
+      .query("partnerNonceLocks")
+      .withIndex("by_channel", (q) => q.eq("channelSlug", args.channelSlug))
+      .unique();
+    if (!lock) {
+      const lockId = await ctx.db.insert("partnerNonceLocks", {
+        channelSlug: args.channelSlug,
+        updatedAt: now,
+      });
+      lock = await ctx.db.get("partnerNonceLocks", lockId);
+    } else {
+      // OCC conflict point — concurrent nonce checks for the same channel serialize.
+      await ctx.db.patch("partnerNonceLocks", lock._id, { updatedAt: now });
+    }
+
     const existing = await ctx.db
       .query("partnerRequestNonces")
       .withIndex("by_channel_nonce", (q) =>
@@ -201,16 +245,38 @@ export const consumeRequestNonce = internalMutation({
 
 export const activateSession = internalMutation({
   args: {
-    sessionTokenHash: v.string(),
+    sessionTokenHash: v.optional(v.string()),
+    sessionId: v.optional(v.string()),
     userId: v.optional(v.string()),
     rotatedSessionTokenHash: v.optional(v.string()),
   },
   returns: v.union(partnerSessionValidator, v.null()),
   handler: async (ctx, args) => {
-    const row = await ctx.db
-      .query("partnerSessions")
-      .withIndex("by_token_hash", (q) => q.eq("sessionTokenHash", args.sessionTokenHash))
-      .unique();
+    type MatchKind = "bank" | "client" | "id";
+    let matched: MatchKind = "id";
+    let row =
+      (args.sessionTokenHash
+        ? await ctx.db
+            .query("partnerSessions")
+            .withIndex("by_token_hash", (q) => q.eq("sessionTokenHash", args.sessionTokenHash!))
+            .unique()
+        : null) ?? null;
+
+    if (args.sessionTokenHash && row) {
+      matched = "bank";
+    } else if (args.sessionTokenHash) {
+      row = await ctx.db
+        .query("partnerSessions")
+        .withIndex("by_client_token_hash", (q) =>
+          q.eq("clientSessionTokenHash", args.sessionTokenHash!)
+        )
+        .unique();
+      if (row) matched = "client";
+    } else if (args.sessionId) {
+      row = await ctx.db.get("partnerSessions", args.sessionId as Id<"partnerSessions">);
+      matched = "id";
+    }
+
     if (!row) return null;
 
     const now = Date.now();
@@ -243,6 +309,7 @@ export const activateSession = internalMutation({
       updatedAt: number;
       userId?: Id<"users">;
       sessionTokenHash?: string;
+      clientSessionTokenHash?: string;
     } = {
       status: "active",
       updatedAt: now,
@@ -251,7 +318,12 @@ export const activateSession = internalMutation({
     if (args.userId && !row.userId) {
       patch.userId = args.userId as Id<"users">;
       if (args.rotatedSessionTokenHash) {
-        patch.sessionTokenHash = args.rotatedSessionTokenHash;
+        // Rotate the bearer that was presented — never overwrite the other side's token.
+        if (matched === "client") {
+          patch.clientSessionTokenHash = args.rotatedSessionTokenHash;
+        } else if (matched === "bank") {
+          patch.sessionTokenHash = args.rotatedSessionTokenHash;
+        }
       }
     }
 

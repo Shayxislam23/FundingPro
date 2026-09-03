@@ -660,7 +660,10 @@ export default defineSchema({
   partnerSessions: defineTable({
     channelSlug: v.string(),
     externalUserId: v.string(),
+    /** Bank server bearer from auth/init (never overwritten by WebView exchange). */
     sessionTokenHash: v.string(),
+    /** WebView bearer after launch-code exchange. */
+    clientSessionTokenHash: v.optional(v.string()),
     /** One-time WebView launch code (hashed); cleared after exchange. */
     launchCodeHash: v.optional(v.string()),
     launchCodeExpiresAt: v.optional(v.number()),
@@ -672,6 +675,7 @@ export default defineSchema({
     ...timestamps,
   })
     .index("by_token_hash", ["sessionTokenHash"])
+    .index("by_client_token_hash", ["clientSessionTokenHash"])
     .index("by_launch_code_hash", ["launchCodeHash"])
     .index("by_channel_external", ["channelSlug", "externalUserId"]),
 
@@ -682,6 +686,12 @@ export default defineSchema({
     expiresAt: v.number(),
     createdAt: v.number(),
   }).index("by_channel_nonce", ["channelSlug", "nonceHash"]),
+
+  /** Serializes nonce consumption per channel (OCC conflict point). */
+  partnerNonceLocks: defineTable({
+    channelSlug: v.string(),
+    updatedAt: v.number(),
+  }).index("by_channel", ["channelSlug"]),
 
   /** Monthly completed partner-channel transactions for revenue-share tiers. */
   partnerMonthlyStats: defineTable({

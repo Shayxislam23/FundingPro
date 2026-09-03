@@ -86,7 +86,7 @@ export async function exchangePartnerLaunchCode(input: {
   const sessionToken = createPartnerSessionToken();
   const exchanged = await convexInternalMutation(internal.partnersInternal.exchangeLaunchCode, {
     launchCodeHash: hashPartnerToken(launchCode),
-    newSessionTokenHash: hashPartnerToken(sessionToken),
+    clientSessionTokenHash: hashPartnerToken(sessionToken),
   });
 
   if (!exchanged) {
@@ -103,13 +103,20 @@ export async function exchangePartnerLaunchCode(input: {
 
 export async function completePartnerAuthCallback(input: {
   channel: string;
-  sessionToken: string;
+  /** Bank init bearer or WebView client bearer after launch exchange. */
+  sessionToken?: string;
+  /** When init reused a session (no sessionToken returned), bank callback may send sessionId. */
+  sessionId?: string;
   externalUserId?: string;
   clerkUserId?: string;
   accessToken?: string;
 }): Promise<PartnerAuthCallbackResult> {
   const channelSlug = normalizePartnerSlug(input.channel);
-  const sessionTokenHash = hashPartnerToken(input.sessionToken);
+  const sessionToken = input.sessionToken?.trim() || "";
+  const sessionId = input.sessionId?.trim() || "";
+  if (!sessionToken && !sessionId) {
+    throw new Error("sessionToken or sessionId required");
+  }
 
   let linkedUserId: string | undefined;
   if (input.accessToken) {
@@ -120,16 +127,22 @@ export async function completePartnerAuthCallback(input: {
     linkedUserId = user.id;
   }
 
+  const sessionTokenHash = sessionToken ? hashPartnerToken(sessionToken) : undefined;
+
   // Only mint + return a rotated token when we will actually persist it (first bind).
-  const existing = await convexInternalQuery(internal.partnersInternal.getSessionByTokenHash, {
-    sessionTokenHash,
-  });
-  const shouldRotate = Boolean(linkedUserId && existing && !existing.userId);
+  let shouldRotate = false;
+  if (sessionTokenHash && linkedUserId) {
+    const existing = await convexInternalQuery(internal.partnersInternal.getSessionByTokenHash, {
+      sessionTokenHash,
+    });
+    shouldRotate = Boolean(existing && !existing.userId);
+  }
   const rotatedToken = shouldRotate ? createPartnerSessionToken() : undefined;
   const rotatedTokenHash = rotatedToken ? hashPartnerToken(rotatedToken) : undefined;
 
   const session = await convexInternalMutation(internal.partnersInternal.activateSession, {
     sessionTokenHash,
+    sessionId: sessionTokenHash ? undefined : sessionId || undefined,
     userId: linkedUserId,
     rotatedSessionTokenHash: rotatedTokenHash,
   });
@@ -251,8 +264,10 @@ export async function verifyPartnerSignedRequest(input: {
 
   if (!input.signature) return { ok: false, reason: "Missing signature" };
 
-  const timestampSec = parsePartnerTimestamp(input.timestampHeader);
-  if (timestampSec === null || !isPartnerTimestampFresh(timestampSec)) {
+  // Canonical HMAC uses the exact timestamp header string the partner signed.
+  const rawTimestamp = input.timestampHeader?.trim() ?? "";
+  const timestampSec = parsePartnerTimestamp(rawTimestamp);
+  if (!rawTimestamp || timestampSec === null || !isPartnerTimestampFresh(timestampSec)) {
     return { ok: false, reason: "Missing or stale timestamp" };
   }
 
@@ -261,7 +276,7 @@ export async function verifyPartnerSignedRequest(input: {
     return { ok: false, reason: "Missing or invalid nonce" };
   }
 
-  const signed = partnerSignedPayload(String(timestampSec), nonce, input.rawBody);
+  const signed = partnerSignedPayload(rawTimestamp, nonce, input.rawBody);
   if (!verifyPartnerWebhookSignature(signed, input.signature, secret)) {
     return { ok: false, reason: "Invalid signature" };
   }

@@ -42,14 +42,16 @@ export const POST = withPublic(async (req) => {
   }
 
   const sessionToken = String(body.sessionToken ?? "").trim();
-  if (!sessionToken) {
-    return apiError("sessionToken required", 400, "MISSING_FIELDS");
+  const sessionId = String(body.sessionId ?? "").trim();
+  if (!sessionToken && !sessionId) {
+    return apiError("sessionToken or sessionId required", 400, "MISSING_FIELDS");
   }
 
   try {
     const result = await completePartnerAuthCallback({
       channel,
-      sessionToken,
+      sessionToken: sessionToken || undefined,
+      sessionId: sessionId || undefined,
       externalUserId:
         typeof body.externalUserId === "string" ? body.externalUserId : undefined,
     });

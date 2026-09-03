@@ -25,6 +25,9 @@ const NAV_UZ: { href: string; label: string }[] = [
 
 const SESSION_STORAGE_KEY = "fp_zoomrad_session_token";
 
+/** Deduplicate one-time launch exchanges across React Strict Mode remounts. */
+const launchCodeExchanges = new Map<string, Promise<string>>();
+
 type ZoomradShellProps = {
   children: ReactNode;
   title?: string;
@@ -52,12 +55,13 @@ export function ZoomradShell({ children, title, subtitle }: ZoomradShellProps) {
     const code = searchParams.get("code");
     if (!code || typeof window === "undefined") return;
 
-    let cancelled = false;
+    let alive = true;
     setExchanging(true);
     setExchangeError(null);
 
-    void (async () => {
-      try {
+    let promise = launchCodeExchanges.get(code);
+    if (!promise) {
+      promise = (async () => {
         const res = await fetch("/api/v1/zoomrad/auth/exchange", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -70,25 +74,33 @@ export function ZoomradShell({ children, title, subtitle }: ZoomradShellProps) {
         if (!res.ok || !json.data?.sessionToken) {
           throw new Error(json.error?.message ?? "Не удалось активировать сессию");
         }
-        if (cancelled) return;
+        // Persist before any URL strip / remount so Strict Mode cleanup cannot drop the token.
         sessionStorage.setItem(SESSION_STORAGE_KEY, json.data.sessionToken);
+        return json.data.sessionToken;
+      })();
+      launchCodeExchanges.set(code, promise);
+    }
 
+    void promise
+      .then(() => {
         const next = new URLSearchParams(searchParams.toString());
         next.delete("code");
         next.delete("session");
         const qs = next.toString();
         router.replace(qs ? `${pathname}?${qs}` : pathname);
-      } catch (err) {
-        if (!cancelled) {
+      })
+      .catch((err) => {
+        launchCodeExchanges.delete(code);
+        if (alive) {
           setExchangeError(err instanceof Error ? err.message : "Ошибка обмена кода");
         }
-      } finally {
-        if (!cancelled) setExchanging(false);
-      }
-    })();
+      })
+      .finally(() => {
+        if (alive) setExchanging(false);
+      });
 
     return () => {
-      cancelled = true;
+      alive = false;
     };
   }, [searchParams, channelSlug, pathname, router]);
 

@@ -14,6 +14,12 @@ describe("partner-crypto signing", () => {
     assert.equal(partnerSignedPayload("1710000000", "nonce-1", "{\"a\":1}"), "1710000000.nonce-1.{\"a\":1}");
   });
 
+  it("preserves raw millisecond timestamp strings in the signed payload", () => {
+    const ms = "1710000000123";
+    assert.equal(partnerSignedPayload(ms, "nonce-1", "{}"), `${ms}.nonce-1.{}`);
+    assert.equal(parsePartnerTimestamp(ms), 1710000000);
+  });
+
   it("verifies hmac and rejects tampering", () => {
     const secret = "test-secret";
     const payload = partnerSignedPayload("1710000000", "abc12345", "{}");

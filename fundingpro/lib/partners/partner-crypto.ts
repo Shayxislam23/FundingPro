@@ -14,15 +14,16 @@ export function createPartnerLaunchCode(): string {
 }
 
 /**
- * Canonical string for partner HMAC: `${timestampSec}.${nonce}.${rawBody}`
- * Timestamp is unix seconds; nonce is a unique request id from the partner.
+ * Canonical string for partner HMAC: `${timestamp}.${nonce}.${rawBody}`
+ * `timestamp` must be the exact `X-Partner-Timestamp` header value (prefer unix seconds).
+ * Freshness may accept ms, but the signed string is never rewritten.
  */
 export function partnerSignedPayload(
-  timestampSec: string,
+  timestampHeader: string,
   nonce: string,
   rawBody: string
 ): string {
-  return `${timestampSec}.${nonce}.${rawBody}`;
+  return `${timestampHeader}.${nonce}.${rawBody}`;
 }
 
 export function verifyPartnerWebhookSignature(

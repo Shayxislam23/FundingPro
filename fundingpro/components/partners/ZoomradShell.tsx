@@ -83,6 +83,10 @@ export function ZoomradShell({ children, title, subtitle }: ZoomradShellProps) {
 
     void promise
       .then(() => {
+        // Token is already in sessionStorage. Only strip ?code= while this mount is live —
+        // navigating away mid-exchange must not yank the WebView back to the launch path.
+        // Strict Mode remount attaches its own then via launchCodeExchanges.
+        if (!alive) return;
         const next = new URLSearchParams(searchParams.toString());
         next.delete("code");
         next.delete("session");

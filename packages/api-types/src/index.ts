@@ -467,3 +467,5 @@ export const paginatedUsersSchema = z.object({
   page: z.number(),
   limit: z.number(),
 }).passthrough();
+
+export * from "./partners";

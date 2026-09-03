@@ -48,3 +48,7 @@ private/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Convex CLI auto-installed agent skills (local only)
+.agents/
+.claude/

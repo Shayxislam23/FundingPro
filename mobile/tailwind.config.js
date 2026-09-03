@@ -11,7 +11,7 @@ module.exports = {
           inset: "#DCE8DE",
         },
         funding: {
-          green: "#008A2E",
+          green: "#428238",
           accent: "#12B94F",
           black: "#050505",
           dark: "#020703",
@@ -20,7 +20,7 @@ module.exports = {
           "light-green": "#D9F7DD",
           "light-bg": "#F7FAF7",
           light: "#F9FAFB",
-          border: "#008A2E",
+          border: "#428238",
           "card-light": "#D8F5DC",
           "text-muted-light": "#4A5A4D",
         },

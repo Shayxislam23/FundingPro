@@ -23,7 +23,7 @@ export function FundingProLogo({
           variant === "dark" ? "text-white" : "text-funding-black"
         )}
       >
-        Funding<span className="text-funding-accent">Pro</span>
+        Funding<span className="text-funding-green">Pro</span>
       </span>
     </div>
   );

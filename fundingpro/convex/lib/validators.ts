@@ -44,6 +44,10 @@ export const paymentMetadataValidator = v.optional(
     labCohortId: v.optional(v.string()),
     labCohortSlug: v.optional(v.string()),
     serviceName: v.optional(v.string()),
+    partnerChannel: v.optional(v.string()),
+    partnerSharePercent: v.optional(v.number()),
+    fundingProSharePercent: v.optional(v.number()),
+    partnerExternalUserId: v.optional(v.string()),
   })
 );
 

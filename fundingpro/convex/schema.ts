@@ -656,4 +656,49 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_status", ["status"]),
 
+  /** Bank / super-app partner SSO sessions (ZOOMRAD first). */
+  partnerSessions: defineTable({
+    channelSlug: v.string(),
+    externalUserId: v.string(),
+    /** Bank server bearer from auth/init (never overwritten by WebView exchange). */
+    sessionTokenHash: v.string(),
+    /** WebView bearer after launch-code exchange. */
+    clientSessionTokenHash: v.optional(v.string()),
+    /** One-time WebView launch code (hashed); cleared after exchange. */
+    launchCodeHash: v.optional(v.string()),
+    launchCodeExpiresAt: v.optional(v.number()),
+    status: v.union(v.literal("pending"), v.literal("active"), v.literal("expired")),
+    userId: v.optional(v.id("users")),
+    locale: v.optional(v.union(v.literal("ru"), v.literal("uz"))),
+    displayName: v.optional(v.string()),
+    expiresAt: v.number(),
+    ...timestamps,
+  })
+    .index("by_token_hash", ["sessionTokenHash"])
+    .index("by_client_token_hash", ["clientSessionTokenHash"])
+    .index("by_launch_code_hash", ["launchCodeHash"])
+    .index("by_channel_external", ["channelSlug", "externalUserId"]),
+
+  /** Replay protection for signed partner requests (auth init / webhooks). */
+  partnerRequestNonces: defineTable({
+    channelSlug: v.string(),
+    nonceHash: v.string(),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  }).index("by_channel_nonce", ["channelSlug", "nonceHash"]),
+
+  /** Serializes nonce consumption per channel (OCC conflict point). */
+  partnerNonceLocks: defineTable({
+    channelSlug: v.string(),
+    updatedAt: v.number(),
+  }).index("by_channel", ["channelSlug"]),
+
+  /** Monthly completed partner-channel transactions for revenue-share tiers. */
+  partnerMonthlyStats: defineTable({
+    channelSlug: v.string(),
+    yearMonth: v.string(),
+    completedTransactions: v.number(),
+    ...timestamps,
+  }).index("by_channel_month", ["channelSlug", "yearMonth"]),
+
 });

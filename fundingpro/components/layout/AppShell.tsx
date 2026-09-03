@@ -70,7 +70,7 @@ export function ShellLogoutButton({
 
   async function handleLogout() {
     await signOut();
-    router.push("/auth");
+    router.push("/sign-in");
   }
 
   return (

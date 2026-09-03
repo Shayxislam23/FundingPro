@@ -1,0 +1,63 @@
+/** Bank / super-app distribution channel (ZOOMRAD first; more partners later). */
+export type PartnerChannelSlug = "zoomrad" | (string & {});
+
+export type PartnerAuthMode = "partner_sso" | "clerk" | "public";
+
+export interface PartnerChannelConfig {
+  slug: PartnerChannelSlug;
+  displayNameRu: string;
+  displayNameUz: string;
+  webViewPath: string;
+  authMode: PartnerAuthMode;
+  primaryColor: string;
+  badgeLabelRu: string;
+  badgeLabelUz: string;
+  isActive: boolean;
+}
+
+export interface RevenueShareTier {
+  minTransactions: number;
+  maxTransactions: number | null;
+  partnerPercent: number;
+  fundingProPercent: number;
+}
+
+export interface RevenueShareSplit {
+  partnerPercent: number;
+  fundingProPercent: number;
+  tierLabel: string;
+  monthlyCompletedTransactions: number;
+}
+
+export type PartnerSessionStatus = "pending" | "active" | "expired";
+
+export interface PartnerAuthInitResult {
+  sessionId: string;
+  /** Present only on first session create — omitted when reusing an open session. */
+  sessionToken?: string;
+  expiresAt: string;
+  launchUrl: string;
+  channel: PartnerChannelSlug;
+  launchCodeExpiresAt: string;
+}
+
+export interface PartnerAuthCallbackResult {
+  sessionId: string;
+  status: PartnerSessionStatus;
+  channel: PartnerChannelSlug;
+  externalUserId: string | null;
+  /** Present when the session token was rotated after binding a user. */
+  sessionToken?: string;
+}
+
+export type ZoomradPaymentStatus = "pending" | "success" | "failed";
+
+export interface ZoomradPaymentCreateResult {
+  paymentId: string;
+  status: ZoomradPaymentStatus;
+  idempotencyKey: string;
+  partnerSharePercent: number;
+  fundingProSharePercent: number;
+  amountTiyin: number;
+  serviceType: string;
+}

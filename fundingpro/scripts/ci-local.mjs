@@ -30,4 +30,10 @@ run("Convex tests", "npm", ["run", "test:convex"], path.join(root, "fundingpro")
 run("Mobile typecheck", "npm", ["run", "typecheck"], path.join(root, "mobile"));
 run("npm audit (high/critical)", "npm", ["audit", "--audit-level=high"], root);
 
+if (process.env.CI_LOCAL_SMOKE === "1") {
+  run("Smoke (running Next)", "npm", ["run", "test:smoke"], path.join(root, "fundingpro"));
+} else {
+  console.log("\n==> Smoke skipped (set CI_LOCAL_SMOKE=1 when Next is on :3000)");
+}
+
 console.log("\nAll local CI checks passed.");

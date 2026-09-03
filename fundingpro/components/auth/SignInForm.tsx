@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import { isClerkPublishableConfigured } from "@/lib/auth/clerk-config";
 import { clerkErrorMessage } from "@/lib/auth/clerk-errors";
-import { SIGN_UP_PATH } from "@/lib/auth/paths";
+import { authSwitchUrl, safePostAuthPath } from "@/lib/auth/paths";
 import { AuthCardLayout } from "./AuthCardLayout";
 
 const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_LOGIN_EMAIL ?? "demo@fundingpro.local";
@@ -19,7 +19,8 @@ function SignInFormReady() {
   const searchParams = useSearchParams();
   const { signIn, fetchStatus } = useSignIn();
 
-  const redirectTo = searchParams.get("next") ?? searchParams.get("redirect") ?? "/dashboard";
+  const redirectTo =
+    safePostAuthPath(searchParams.get("next") ?? searchParams.get("redirect")) ?? "/dashboard";
 
   const [email, setEmail] = useState(SHOW_DEMO_HINT ? DEMO_EMAIL : "");
   const [password, setPassword] = useState(SHOW_DEMO_HINT ? DEMO_PASSWORD : "");
@@ -54,8 +55,7 @@ function SignInFormReady() {
       if (signIn.status === "complete") {
         const { error: finalizeError } = await signIn.finalize({
           navigate: ({ decorateUrl }) => {
-            const path = redirectTo.startsWith("/") ? redirectTo : "/dashboard";
-            router.replace(decorateUrl(path));
+            router.replace(decorateUrl(redirectTo));
           },
         });
         if (finalizeError) {
@@ -85,7 +85,10 @@ function SignInFormReady() {
       footer={
         <>
           <span className="text-neutral-600">Нет аккаунта? </span>
-          <Link href={SIGN_UP_PATH} className="font-medium text-funding-green hover:underline">
+          <Link
+            href={authSwitchUrl("sign-up", redirectTo)}
+            className="font-medium text-funding-green hover:underline"
+          >
             Зарегистрироваться
           </Link>
         </>
@@ -139,7 +142,7 @@ function SignInFormSetupRequired() {
       footer={
         <>
           <span className="text-neutral-600">Нет аккаунта? </span>
-          <Link href={SIGN_UP_PATH} className="font-medium text-funding-green hover:underline">
+          <Link href={authSwitchUrl("sign-up")} className="font-medium text-funding-green hover:underline">
             Зарегистрироваться
           </Link>
         </>

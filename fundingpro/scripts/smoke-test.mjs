@@ -71,6 +71,38 @@ const payStatus = await request("/api/v1/payments/status");
 assert("GET /payments/status returns 200", payStatus.status === 200);
 assert("payments status has paymentsEnabled", typeof payStatus.json?.data?.paymentsEnabled === "boolean");
 
+async function requestHtml(path) {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { Accept: "text/html" },
+  });
+  const text = await res.text().catch(() => "");
+  return { status: res.status, text };
+}
+
+const zoomradWelcome = await requestHtml("/zoomrad/welcome?channel=zoomrad");
+assert("GET /zoomrad/welcome returns 200", zoomradWelcome.status === 200);
+assert(
+  "zoomrad welcome renders partner shell",
+  /ZOOMRAD|FundingPro|Mini App|Mini ilova/i.test(zoomradWelcome.text)
+);
+
+const signInPage = await requestHtml("/sign-in");
+assert("GET /sign-in returns 200", signInPage.status === 200);
+assert("sign-in page mentions FundingPro", /FundingPro/i.test(signInPage.text));
+
+const authLegacy = await fetch(`${BASE}/auth?redirect=${encodeURIComponent("/zoomrad/welcome")}`, {
+  redirect: "manual",
+});
+assert(
+  "GET /auth?redirect=… redirects to /sign-in",
+  [307, 308, 302, 301].includes(authLegacy.status)
+);
+const authLocation = authLegacy.headers.get("location") ?? "";
+assert(
+  "auth redirect preserves next=/zoomrad/welcome",
+  authLocation.includes("/sign-in") && authLocation.includes("next=")
+);
+
 if (RUN_AUTH) {
   console.log("\nAuthenticated routes (SMOKE_BEARER_TOKEN):");
   const authHeaders = {

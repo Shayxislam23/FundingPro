@@ -3,12 +3,17 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ZoomradShell } from "@/components/partners/ZoomradShell";
+import { signInUrl } from "@/lib/auth/paths";
 
 export default function ZoomradPaymentPage() {
   const searchParams = useSearchParams();
   const locale = searchParams.get("lang") === "uz" ? "uz" : "ru";
   const planId = searchParams.get("planId");
-  const suffix = searchParams.toString() ? `?${searchParams.toString()}` : "";
+
+  const pricingParams = new URLSearchParams(searchParams.toString());
+  pricingParams.delete("planId");
+  const pricingQuery = pricingParams.toString();
+  const pricingHref = pricingQuery ? `/zoomrad/pricing?${pricingQuery}` : "/zoomrad/pricing";
 
   return (
     <ZoomradShell
@@ -36,15 +41,12 @@ export default function ZoomradPaymentPage() {
             : "Активация только через подписанный server webhook."}
         </p>
         <Link
-          href={`/auth?redirect=${encodeURIComponent(`/dashboard/subscription${planId ? `?plan=${planId}` : ""}`)}`}
-          className="block rounded-xl bg-funding-green px-4 py-3 text-center font-semibold text-white"
+          href={signInUrl(`/dashboard/subscription${planId ? `?plan=${planId}` : ""}`)}
+          className="block rounded-xl bg-zoomrad-green px-4 py-3 text-center font-semibold text-white"
         >
           {locale === "uz" ? "Davom etish" : "Продолжить"}
         </Link>
-        <Link
-          href={`/zoomrad/pricing${suffix.replace(`planId=${planId}`, "").replace(/^\?&/, "?")}`}
-          className="block text-center text-sm text-emerald-700"
-        >
+        <Link href={pricingHref} className="block text-center text-sm text-emerald-700">
           {locale === "uz" ? "Tariflarga qaytish" : "Назад к тарифам"}
         </Link>
       </div>

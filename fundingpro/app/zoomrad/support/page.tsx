@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ZoomradShell } from "@/components/partners/ZoomradShell";
+import { signInUrl } from "@/lib/auth/paths";
 
 export default function ZoomradSupportPage() {
   const searchParams = useSearchParams();
@@ -20,8 +21,8 @@ export default function ZoomradSupportPage() {
             : "Для технической поддержки и вопросов по грантам используйте тикет-систему."}
         </p>
         <Link
-          href={`/auth?redirect=${encodeURIComponent("/dashboard/support")}`}
-          className="block rounded-xl bg-funding-green px-4 py-3 text-center font-semibold text-white"
+          href={signInUrl("/dashboard/support")}
+          className="block rounded-xl bg-zoomrad-green px-4 py-3 text-center font-semibold text-white"
         >
           {locale === "uz" ? "Murojaat yaratish" : "Создать обращение"}
         </Link>

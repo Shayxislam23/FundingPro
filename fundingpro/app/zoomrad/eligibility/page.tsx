@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ZoomradShell } from "@/components/partners/ZoomradShell";
+import { signInUrl } from "@/lib/auth/paths";
 
 export default function ZoomradEligibilityPage() {
   const searchParams = useSearchParams();
@@ -31,8 +32,8 @@ export default function ZoomradEligibilityPage() {
           {locale === "uz" ? "Grantlarga o‘tish" : "Перейти к грантам"}
         </Link>
         <Link
-          href={`/auth?redirect=${encodeURIComponent(`/zoomrad/eligibility${suffix}`)}`}
-          className="block rounded-xl bg-funding-green px-4 py-3 text-center font-semibold text-white"
+          href={signInUrl(`/zoomrad/eligibility${suffix}`)}
+          className="block rounded-xl bg-zoomrad-green px-4 py-3 text-center font-semibold text-white"
         >
           {locale === "uz" ? "Kirish / ro‘yxatdan o‘tish" : "Войти / зарегистрироваться"}
         </Link>

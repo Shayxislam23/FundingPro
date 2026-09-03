@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ZoomradShell } from "@/components/partners/ZoomradShell";
+import { signInUrl } from "@/lib/auth/paths";
 
 export default function ZoomradOnboardingPage() {
   const searchParams = useSearchParams();
@@ -15,18 +17,18 @@ export default function ZoomradOnboardingPage() {
         locale === "uz" ? "Profil va mos grant tanlash" : "Профиль и подбор подходящих грантов"
       }
     >
-      <a
-        href={`/auth?redirect=${encodeURIComponent(`/dashboard/onboarding`)}`}
-        className="block rounded-xl bg-funding-green px-4 py-3 text-center text-sm font-semibold text-white"
+      <Link
+        href={signInUrl("/dashboard/onboarding")}
+        className="block rounded-xl bg-zoomrad-green px-4 py-3 text-center text-sm font-semibold text-white"
       >
         {locale === "uz" ? "Profilni to‘ldirish" : "Заполнить профиль"}
-      </a>
-      <a
+      </Link>
+      <Link
         href={`/zoomrad/grants${suffix}`}
         className="mt-3 block text-center text-sm text-emerald-700"
       >
         {locale === "uz" ? "Grantlarni ko‘rish" : "Смотреть гранты"}
-      </a>
+      </Link>
     </ZoomradShell>
   );
 }

@@ -2,6 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { applyApiRateLimit } from "@/lib/api-rate-limit";
 import { isClerkConfigured } from "@/lib/auth/clerk-config";
+import { safePostAuthPath } from "@/lib/auth/paths";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -103,10 +104,11 @@ const configuredMiddleware = clerkMiddleware(async (auth, request) => {
   }
 
   if (isAuthRoute(request) && userId) {
-    const dashboardUrl = request.nextUrl.clone();
-    dashboardUrl.pathname = "/dashboard";
-    dashboardUrl.search = "";
-    return NextResponse.redirect(dashboardUrl);
+    const requested =
+      request.nextUrl.searchParams.get("next") ??
+      request.nextUrl.searchParams.get("redirect");
+    const dest = safePostAuthPath(requested) ?? "/dashboard";
+    return NextResponse.redirect(new URL(dest, request.nextUrl.origin));
   }
 
   return NextResponse.next();

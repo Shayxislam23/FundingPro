@@ -64,7 +64,7 @@ curl -s "https://www.fundingpro.uz/api/v1/grants?limit=1" | head -c 300
 
 Полная инструкция: [`fundingpro/docs/PROD-SEED.md`](fundingpro/docs/PROD-SEED.md).
 
-**Статус 2026-07-13:** ключ в локальных env **отсутствует** — агент seed не смог выполнить.
+**Статус:** ключ в локальных env **отсутствует** — агент seed не смог выполнить. Проверьте Convex Dashboard → production → Deploy Key.
 
 ---
 

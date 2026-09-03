@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "../lib/auth/context";
 import { useAuthDeepLink } from "../lib/auth/deep-link";
 import { AppQueryProvider } from "../lib/query-client";
 import { setupPushNotificationRouting } from "../lib/notifications";
+import { CLAY_COLORS } from "../lib/clay-styles";
 import {
   GuestCarousel,
   hasSeenGuestCarousel,
@@ -49,7 +50,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   if (isLoading || !carouselChecked) {
     return (
       <View className="flex-1 items-center justify-center bg-clay-canvas">
-        <ActivityIndicator color="#008A2E" size="large" />
+        <ActivityIndicator color={CLAY_COLORS.green} size="large" />
       </View>
     );
   }

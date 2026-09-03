@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { applyApiRateLimit } from "@/lib/api-rate-limit";
+import { isClerkConfigured } from "@/lib/auth/clerk-config";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -23,7 +24,52 @@ const isRateLimitedApiRoute = createRouteMatcher([
   "/api/v1/payments/webhook",
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
+function isProtectedPath(pathname: string): boolean {
+  return pathname === "/dashboard" || pathname.startsWith("/dashboard/") ||
+    pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
+function isRateLimitedPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/api/v1/ai/") ||
+    pathname.startsWith("/api/v1/auth/") ||
+    pathname === "/api/v1/lead-magnet" ||
+    pathname.startsWith("/api/v1/lab/") ||
+    pathname === "/api/v1/onboarding/lab-profile" ||
+    pathname === "/api/v1/onboarding/tasks" ||
+    pathname === "/api/v1/payments/payme" ||
+    pathname.startsWith("/api/v1/payments/click/") ||
+    pathname.startsWith("/api/v1/payments/uzum/") ||
+    pathname === "/api/v1/payments/status" ||
+    pathname === "/api/v1/payments/webhook"
+  );
+}
+
+/** Dev-friendly path when Clerk keys are still placeholders — avoids middleware 500. */
+async function unconfiguredMiddleware(request: Request) {
+  const url = new URL(request.url);
+  const { pathname } = url;
+
+  if (isRateLimitedPath(pathname)) {
+    const limited = await applyApiRateLimit(request as Parameters<typeof applyApiRateLimit>[0]);
+    if (limited) return limited;
+    return NextResponse.next();
+  }
+
+  if (pathname.startsWith("/api/") || pathname.startsWith("/_next/")) {
+    return NextResponse.next();
+  }
+
+  if (isProtectedPath(pathname)) {
+    const loginUrl = new URL("/sign-in", url.origin);
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
+}
+
+const configuredMiddleware = clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
 
   if (isRateLimitedApiRoute(request)) {
@@ -65,6 +111,8 @@ export default clerkMiddleware(async (auth, request) => {
 
   return NextResponse.next();
 });
+
+export default isClerkConfigured() ? configuredMiddleware : unconfiguredMiddleware;
 
 export const config = {
   matcher: [

@@ -13,8 +13,23 @@ const email = process.env.NEXT_PUBLIC_DEMO_LOGIN_EMAIL ?? env.NEXT_PUBLIC_DEMO_L
 const password =
   process.env.NEXT_PUBLIC_DEMO_LOGIN_PASSWORD ?? env.NEXT_PUBLIC_DEMO_LOGIN_PASSWORD ?? "test12345";
 
-if (!secretKey || secretKey.includes("...")) {
-  console.error("Set CLERK_SECRET_KEY in fundingpro/.env.local (real key from Clerk Dashboard).");
+if (
+  !secretKey ||
+  secretKey.includes("...") ||
+  secretKey.includes("your-") ||
+  secretKey.includes("Y2xlcmsuZGV2")
+) {
+  console.error(`
+Clerk is not configured with a real secret key.
+
+1. Open https://dashboard.clerk.com → API Keys
+2. Copy Publishable key + Secret key into fundingpro/.env.local:
+     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_…
+     CLERK_SECRET_KEY=sk_test_…
+     CLERK_JWT_ISSUER_DOMAIN=https://….clerk.accounts.dev
+3. Set the same CLERK_JWT_ISSUER_DOMAIN in Convex dashboard env
+4. Re-run: npm run clerk:seed-demo
+`);
   process.exit(1);
 }
 

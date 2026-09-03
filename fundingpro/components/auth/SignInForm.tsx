@@ -4,6 +4,7 @@ import { useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
+import { isClerkPublishableConfigured } from "@/lib/auth/clerk-config";
 import { clerkErrorMessage } from "@/lib/auth/clerk-errors";
 import { SIGN_UP_PATH } from "@/lib/auth/paths";
 import { AuthCardLayout } from "./AuthCardLayout";
@@ -11,8 +12,9 @@ import { AuthCardLayout } from "./AuthCardLayout";
 const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_LOGIN_EMAIL ?? "info@info.uz";
 const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_LOGIN_PASSWORD ?? "test12345";
 const SHOW_DEMO_HINT = process.env.NODE_ENV !== "production";
+const CLERK_READY = isClerkPublishableConfigured();
 
-export function SignInForm() {
+function SignInFormReady() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, fetchStatus } = useSignIn();
@@ -128,4 +130,50 @@ export function SignInForm() {
       </form>
     </AuthCardLayout>
   );
+}
+
+function SignInFormSetupRequired() {
+  return (
+    <AuthCardLayout
+      title="Войдите в FundingPro."
+      footer={
+        <>
+          <span className="text-neutral-600">Нет аккаунта? </span>
+          <Link href={SIGN_UP_PATH} className="font-medium text-funding-green hover:underline">
+            Зарегистрироваться
+          </Link>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <p className="rounded-xl bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
+          Clerk не настроен: вставьте реальные NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY и CLERK_SECRET_KEY
+          в fundingpro/.env.local, затем npm run clerk:seed-demo
+        </p>
+        <input
+          type="email"
+          disabled
+          defaultValue={DEMO_EMAIL}
+          className="w-full rounded-xl border-0 bg-neutral-100 px-4 py-3 text-sm text-neutral-500"
+        />
+        <input
+          type="password"
+          disabled
+          defaultValue={DEMO_PASSWORD}
+          className="w-full rounded-xl border-0 bg-neutral-100 px-4 py-3 text-sm text-neutral-500"
+        />
+        <button
+          type="button"
+          disabled
+          className="w-full rounded-full bg-funding-green py-3 text-sm font-semibold text-white opacity-60"
+        >
+          Войти
+        </button>
+      </div>
+    </AuthCardLayout>
+  );
+}
+
+export function SignInForm() {
+  return CLERK_READY ? <SignInFormReady /> : <SignInFormSetupRequired />;
 }

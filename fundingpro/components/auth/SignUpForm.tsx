@@ -4,11 +4,14 @@ import { useSignUp } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { isClerkPublishableConfigured } from "@/lib/auth/clerk-config";
 import { clerkErrorMessage } from "@/lib/auth/clerk-errors";
 import { SIGN_IN_PATH } from "@/lib/auth/paths";
 import { AuthCardLayout } from "./AuthCardLayout";
 
-export function SignUpForm() {
+const CLERK_READY = isClerkPublishableConfigured();
+
+function SignUpFormReady() {
   const router = useRouter();
   const { signUp, fetchStatus } = useSignUp();
 
@@ -112,4 +115,28 @@ export function SignUpForm() {
       </form>
     </AuthCardLayout>
   );
+}
+
+function SignUpFormSetupRequired() {
+  return (
+    <AuthCardLayout
+      title="Регистрация в FundingPro."
+      footer={
+        <>
+          <span className="text-neutral-600">Уже есть аккаунт? </span>
+          <Link href={SIGN_IN_PATH} className="font-medium text-funding-green hover:underline">
+            Войти
+          </Link>
+        </>
+      }
+    >
+      <p className="rounded-xl bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
+        Clerk не настроен: вставьте реальные ключи в fundingpro/.env.local, затем npm run clerk:seed-demo
+      </p>
+    </AuthCardLayout>
+  );
+}
+
+export function SignUpForm() {
+  return CLERK_READY ? <SignUpFormReady /> : <SignUpFormSetupRequired />;
 }

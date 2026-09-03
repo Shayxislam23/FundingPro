@@ -283,12 +283,14 @@ export const closeExpiredGrants = internalMutation({
   returns: v.object({ closed: v.number() }),
   handler: async (ctx) => {
     const now = Date.now();
-    // Filter before take so already-closed grants never crowd the batch out.
-    const dueForClosure = await ctx.db
+    // Index on deadline, then keep only still-active rows in memory (no query .filter()).
+    const expiredByDeadline = await ctx.db
       .query("grants")
       .withIndex("by_deadline", (q) => q.gt("deadline", 0).lt("deadline", now))
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .take(CLOSE_EXPIRED_BATCH);
+      .take(CLOSE_EXPIRED_BATCH * 4);
+    const dueForClosure = expiredByDeadline
+      .filter((grant) => grant.isActive)
+      .slice(0, CLOSE_EXPIRED_BATCH);
 
     let closed = 0;
     for (const grant of dueForClosure) {

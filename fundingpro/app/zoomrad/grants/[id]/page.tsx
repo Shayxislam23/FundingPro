@@ -6,7 +6,7 @@ import { formatGrantAmount, formatDeadlineDate } from "@fundingpro/shared";
 
 type PageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ channel?: string; lang?: string; session?: string }>;
+  searchParams: Promise<{ channel?: string; lang?: string }>;
 };
 
 export default async function ZoomradGrantDetailPage({ params, searchParams }: PageProps) {
@@ -19,7 +19,6 @@ export default async function ZoomradGrantDetailPage({ params, searchParams }: P
   const q = new URLSearchParams();
   if (sp.channel) q.set("channel", sp.channel);
   if (sp.lang) q.set("lang", sp.lang);
-  if (sp.session) q.set("session", sp.session);
   const suffix = q.toString() ? `?${q.toString()}` : "";
 
   return (

@@ -421,6 +421,16 @@ export const createPartnerPayment = internalMutation({
       .withIndex("by_idempotency", (q) => q.eq("idempotencyKey", args.idempotencyKey))
       .unique();
     if (existing) {
+      if (String(existing.userId) !== args.userId) {
+        throw new Error("Idempotency key already used by another user");
+      }
+      const meta = existing.metadata as { partnerChannel?: string } | undefined;
+      if (meta?.partnerChannel && meta.partnerChannel !== args.channelSlug) {
+        throw new Error("Idempotency key already used on another channel");
+      }
+      if (existing.provider && existing.provider !== "zoomrad") {
+        throw new Error("Idempotency key already used by another provider");
+      }
       return {
         paymentId: existing._id,
         subscriptionId: existing.subscriptionId ? String(existing.subscriptionId) : null,

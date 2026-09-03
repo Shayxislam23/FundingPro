@@ -38,3 +38,28 @@ export function normalizePartnerSlug(value: string | null | undefined): PartnerC
   const slug = (value ?? "zoomrad").trim().toLowerCase();
   return (getPartnerChannel(slug)?.slug ?? "zoomrad") as PartnerChannelSlug;
 }
+
+/** Query keys safe to put on links / auth redirects (never code/session secrets). */
+const PARTNER_SAFE_QUERY_KEYS = ["channel", "lang", "planId", "plan"] as const;
+
+/**
+ * Build `?channel=…&lang=…` (etc.) for Zoomrad CTAs — strips one-time `code` / session bearers.
+ */
+export function partnerSafeQueryString(
+  searchParams: Pick<URLSearchParams, "get">,
+  extra?: Record<string, string | null | undefined>
+): string {
+  const out = new URLSearchParams();
+  for (const key of PARTNER_SAFE_QUERY_KEYS) {
+    const v = searchParams.get(key);
+    if (v) out.set(key, v);
+  }
+  if (extra) {
+    for (const [key, value] of Object.entries(extra)) {
+      if (value) out.set(key, value);
+      else out.delete(key);
+    }
+  }
+  const s = out.toString();
+  return s ? `?${s}` : "";
+}

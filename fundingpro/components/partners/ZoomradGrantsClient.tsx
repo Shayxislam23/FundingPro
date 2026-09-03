@@ -11,7 +11,7 @@ import { translateSector } from "@fundingpro/shared";
 
 type ZoomradGrantsClientProps = {
   initialGrants: GrantListItem[];
-  searchParams: { channel?: string; lang?: string; session?: string };
+  searchParams: { channel?: string; lang?: string };
 };
 
 export function ZoomradGrantsClient({ initialGrants, searchParams }: ZoomradGrantsClientProps) {
@@ -20,7 +20,6 @@ export function ZoomradGrantsClient({ initialGrants, searchParams }: ZoomradGran
     const q = new URLSearchParams();
     if (searchParams.channel) q.set("channel", searchParams.channel);
     if (searchParams.lang) q.set("lang", searchParams.lang);
-    if (searchParams.session) q.set("session", searchParams.session);
     return q.toString();
   }, [searchParams]);
   const suffix = query ? `?${query}` : "";

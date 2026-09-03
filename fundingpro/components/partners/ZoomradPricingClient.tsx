@@ -17,7 +17,7 @@ type PlanView = {
 
 type ZoomradPricingClientProps = {
   plans: PlanView[];
-  searchParams: { channel?: string; lang?: string; session?: string };
+  searchParams: { channel?: string; lang?: string };
 };
 
 export function ZoomradPricingClient({ plans, searchParams }: ZoomradPricingClientProps) {
@@ -26,7 +26,6 @@ export function ZoomradPricingClient({ plans, searchParams }: ZoomradPricingClie
     const q = new URLSearchParams();
     if (searchParams.channel) q.set("channel", searchParams.channel);
     if (searchParams.lang) q.set("lang", searchParams.lang);
-    if (searchParams.session) q.set("session", searchParams.session);
     const s = q.toString();
     return s ? `?${s}` : "";
   }, [searchParams]);

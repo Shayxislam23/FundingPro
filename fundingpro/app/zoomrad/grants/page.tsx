@@ -2,7 +2,7 @@ import { ZoomradGrantsClient } from "@/components/partners/ZoomradGrantsClient";
 import { listPublicGrants } from "@/lib/public-grants";
 
 type PageProps = {
-  searchParams: Promise<{ channel?: string; lang?: string; session?: string }>;
+  searchParams: Promise<{ channel?: string; lang?: string }>;
 };
 
 export default async function ZoomradGrantsPage({ searchParams }: PageProps) {

@@ -4,16 +4,13 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ZoomradShell } from "@/components/partners/ZoomradShell";
 import { signInUrl } from "@/lib/auth/paths";
+import { partnerSafeQueryString } from "@/lib/partners/channels";
 
 export default function ZoomradPaymentPage() {
   const searchParams = useSearchParams();
   const locale = searchParams.get("lang") === "uz" ? "uz" : "ru";
   const planId = searchParams.get("planId");
-
-  const pricingParams = new URLSearchParams(searchParams.toString());
-  pricingParams.delete("planId");
-  const pricingQuery = pricingParams.toString();
-  const pricingHref = pricingQuery ? `/zoomrad/pricing?${pricingQuery}` : "/zoomrad/pricing";
+  const pricingHref = `/zoomrad/pricing${partnerSafeQueryString(searchParams, { planId: null })}`;
 
   return (
     <ZoomradShell

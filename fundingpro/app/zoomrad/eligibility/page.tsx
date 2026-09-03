@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ZoomradShell } from "@/components/partners/ZoomradShell";
 import { signInUrl } from "@/lib/auth/paths";
+import { partnerSafeQueryString } from "@/lib/partners/channels";
 
 export default function ZoomradEligibilityPage() {
   const searchParams = useSearchParams();
   const locale = searchParams.get("lang") === "uz" ? "uz" : "ru";
-  const suffix = searchParams.toString() ? `?${searchParams.toString()}` : "";
+  const suffix = partnerSafeQueryString(searchParams);
 
   return (
     <ZoomradShell

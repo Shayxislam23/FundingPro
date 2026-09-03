@@ -3,7 +3,7 @@ import { listPlans } from "@/lib/db/plans";
 import { formatPlanPriceDisplay } from "@/lib/format-plan";
 
 type PageProps = {
-  searchParams: Promise<{ channel?: string; lang?: string; session?: string }>;
+  searchParams: Promise<{ channel?: string; lang?: string }>;
 };
 
 export default async function ZoomradPricingPage({ searchParams }: PageProps) {

@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ZoomradShell } from "@/components/partners/ZoomradShell";
+import { partnerSafeQueryString } from "@/lib/partners/channels";
 
 export default function ZoomradWelcomePage() {
   const searchParams = useSearchParams();
   const locale = searchParams.get("lang") === "uz" ? "uz" : "ru";
-  const q = searchParams.toString();
-  const suffix = q ? `?${q}` : "";
+  const suffix = partnerSafeQueryString(searchParams);
 
   const copy =
     locale === "uz"

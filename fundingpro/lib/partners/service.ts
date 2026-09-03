@@ -81,7 +81,12 @@ export async function completePartnerAuthCallback(input: {
     linkedUserId = user.id;
   }
 
-  const rotatedToken = linkedUserId ? createPartnerSessionToken() : undefined;
+  // Only mint + return a rotated token when we will actually persist it (first bind).
+  const existing = await convexInternalQuery(internal.partnersInternal.getSessionByTokenHash, {
+    sessionTokenHash,
+  });
+  const shouldRotate = Boolean(linkedUserId && existing && !existing.userId);
+  const rotatedToken = shouldRotate ? createPartnerSessionToken() : undefined;
   const rotatedTokenHash = rotatedToken ? hashPartnerToken(rotatedToken) : undefined;
 
   const session = await convexInternalMutation(internal.partnersInternal.activateSession, {

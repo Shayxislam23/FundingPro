@@ -7,6 +7,7 @@ import {
   createPartnerSessionToken,
   hashPartnerToken,
   partnerAuthSecretForChannel,
+  partnerWebhookSecretForChannel,
   verifyPartnerWebhookSignature,
 } from "./partner-crypto";
 import { getPartnerChannel, partnerLaunchUrl, normalizePartnerSlug } from "./channels";
@@ -80,13 +81,17 @@ export async function completePartnerAuthCallback(input: {
     linkedUserId = user.id;
   }
 
+  const rotatedToken = linkedUserId ? createPartnerSessionToken() : undefined;
+  const rotatedTokenHash = rotatedToken ? hashPartnerToken(rotatedToken) : undefined;
+
   const session = await convexInternalMutation(internal.partnersInternal.activateSession, {
     sessionTokenHash,
     userId: linkedUserId,
+    rotatedSessionTokenHash: rotatedTokenHash,
   });
 
   if (!session) {
-    throw new Error("Partner session not found");
+    throw new Error("Partner session not found or already bound to another user");
   }
 
   if (input.externalUserId && input.externalUserId !== session.externalUserId) {
@@ -98,15 +103,19 @@ export async function completePartnerAuthCallback(input: {
     status: session.status,
     channel: session.channelSlug,
     externalUserId: session.externalUserId,
+    sessionToken: rotatedToken,
   };
 }
 
 export async function resolvePartnerRevenueShare(channelSlug: string) {
+  const { getSettingValue } = await import("@/lib/db/settings");
+  const tiersRaw = await getSettingValue("partner_revenue_share_tiers");
+  const tiers = parseRevenueShareTiersJson(tiersRaw);
   const count = await convexInternalQuery(internal.partnersInternal.getMonthlyCompletedCount, {
     channelSlug,
     yearMonth: currentYearMonth(),
   });
-  return resolveRevenueShare(count);
+  return resolveRevenueShare(count, tiers);
 }
 
 export async function createZoomradPayment(input: {
@@ -116,7 +125,6 @@ export async function createZoomradPayment(input: {
   planId: string;
   serviceType: string;
   idempotencyKey: string;
-  amountTiyin?: number;
   sessionToken?: string;
 }): Promise<ZoomradPaymentCreateResult> {
   const channelSlug = normalizePartnerSlug(input.channel);
@@ -142,9 +150,10 @@ export async function createZoomradPayment(input: {
     throw new Error("Plan not found");
   }
 
+  // Always price from the plan — never trust client-supplied amountTiyin.
   const usdUzs = getUsdUzsRate();
   const amountUzs = Math.round(plan.priceUsd * usdUzs);
-  const amountTiyin = input.amountTiyin ?? amountUzs * 100;
+  const amountTiyin = amountUzs * 100;
   const share = await resolvePartnerRevenueShare(channelSlug);
 
   const result = await convexInternalMutation(internal.partnersInternal.createPartnerPayment, {
@@ -187,7 +196,9 @@ export function verifyPartnerServerSignature(
 }
 
 export function verifyZoomradWebhook(payload: string, signature: string | null): boolean {
-  const secret = partnerAuthSecretForChannel("zoomrad");
+  // Prefer dedicated webhook secret; fall back to auth secret only when webhook unset.
+  const secret =
+    partnerWebhookSecretForChannel("zoomrad") ?? partnerAuthSecretForChannel("zoomrad");
   if (!secret) {
     return process.env.PARTNER_AUTH_ALLOW_UNSIGNED === "true";
   }

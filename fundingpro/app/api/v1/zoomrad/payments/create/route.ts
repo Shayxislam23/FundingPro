@@ -22,10 +22,6 @@ export const POST = withActiveUser(async (req, authUser) => {
 
     const channel = normalizePartnerSlug(typeof body.channel === "string" ? body.channel : "zoomrad");
     const serviceType = typeof body.serviceType === "string" ? body.serviceType : "subscription";
-    const amountTiyin =
-      typeof body.amountTiyin === "number" && Number.isFinite(body.amountTiyin)
-        ? Math.round(body.amountTiyin)
-        : undefined;
     const sessionToken =
       typeof body.sessionToken === "string" ? body.sessionToken : undefined;
 
@@ -36,7 +32,6 @@ export const POST = withActiveUser(async (req, authUser) => {
       planId,
       serviceType,
       idempotencyKey,
-      amountTiyin,
       sessionToken,
     });
 

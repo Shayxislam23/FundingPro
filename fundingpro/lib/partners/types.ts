@@ -44,6 +44,8 @@ export interface PartnerAuthCallbackResult {
   status: PartnerSessionStatus;
   channel: PartnerChannelSlug;
   externalUserId: string | null;
+  /** Present when the session token was rotated after binding a user. */
+  sessionToken?: string;
 }
 
 export type ZoomradPaymentStatus = "pending" | "success" | "failed";

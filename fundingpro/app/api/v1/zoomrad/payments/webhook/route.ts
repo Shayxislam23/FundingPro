@@ -53,6 +53,17 @@ export const POST = withPaymentWebhook(async (req) => {
       idempotencyKey,
     });
 
+    if (
+      result.status === "AMOUNT_MISMATCH" ||
+      result.status === "CHANNEL_MISMATCH" ||
+      result.status === "PROVIDER_MISMATCH"
+    ) {
+      return apiError(`Webhook rejected: ${result.status}`, 409, result.status);
+    }
+    if (result.status === "NOT_FOUND") {
+      return apiError("Payment not found", 404, "NOT_FOUND");
+    }
+
     await writeAuditLog({
       userId: "system",
       action: "zoomrad_payment_webhook",

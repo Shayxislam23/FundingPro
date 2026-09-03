@@ -24,6 +24,7 @@ export function verifyPartnerWebhookSignature(
 
 export function partnerAuthSecretForChannel(channelSlug: string): string | null {
   if (channelSlug === "zoomrad") {
+    // Auth secret only — do not prefer webhook secret for SSO/init signatures.
     return process.env.ZOOMRAD_AUTH_SECRET ?? process.env.ZOOMRAD_WEBHOOK_SECRET ?? null;
   }
   const envKey = `${channelSlug.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_AUTH_SECRET`;

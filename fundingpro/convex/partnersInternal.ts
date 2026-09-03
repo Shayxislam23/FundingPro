@@ -92,6 +92,7 @@ export const activateSession = internalMutation({
   args: {
     sessionTokenHash: v.string(),
     userId: v.optional(v.string()),
+    rotatedSessionTokenHash: v.optional(v.string()),
   },
   returns: v.union(partnerSessionValidator, v.null()),
   handler: async (ctx, args) => {
@@ -117,26 +118,43 @@ export const activateSession = internalMutation({
       };
     }
 
+    // Do not rebind a session that already belongs to another user.
+    if (
+      args.userId &&
+      row.userId &&
+      String(row.userId) !== args.userId
+    ) {
+      return null;
+    }
+
     const patch: {
       status: "active";
       updatedAt: number;
       userId?: Id<"users">;
+      sessionTokenHash?: string;
     } = {
       status: "active",
       updatedAt: now,
     };
-    if (args.userId) {
+
+    if (args.userId && !row.userId) {
       patch.userId = args.userId as Id<"users">;
+      if (args.rotatedSessionTokenHash) {
+        patch.sessionTokenHash = args.rotatedSessionTokenHash;
+      }
     }
 
     await ctx.db.patch("partnerSessions", row._id, patch);
+
+    const effectiveUserId =
+      row.userId ? String(row.userId) : args.userId ? args.userId : null;
 
     return {
       sessionId: row._id,
       channelSlug: row.channelSlug,
       externalUserId: row.externalUserId,
       status: "active" as const,
-      userId: args.userId ?? (row.userId ? String(row.userId) : null),
+      userId: effectiveUserId,
       expiresAt: row.expiresAt,
     };
   },
@@ -293,6 +311,26 @@ export const processPartnerWebhook = internalMutation({
       return { paymentId: args.paymentId, status: "NOT_FOUND", duplicate: false };
     }
 
+    if (payment.provider !== "zoomrad") {
+      return { paymentId: payment._id, status: "PROVIDER_MISMATCH", duplicate: false };
+    }
+
+    const meta = (payment.metadata ?? {}) as {
+      amountTiyin?: number;
+      partnerChannel?: string;
+    };
+    if (meta.partnerChannel && meta.partnerChannel !== args.channelSlug) {
+      return { paymentId: payment._id, status: "CHANNEL_MISMATCH", duplicate: false };
+    }
+
+    const expectedAmount =
+      typeof meta.amountTiyin === "number" && Number.isFinite(meta.amountTiyin)
+        ? meta.amountTiyin
+        : null;
+    if (expectedAmount !== null && expectedAmount !== args.amountTiyin) {
+      return { paymentId: payment._id, status: "AMOUNT_MISMATCH", duplicate: false };
+    }
+
     const duplicateEvents = await ctx.db
       .query("paymentEvents")
       .withIndex("by_payment_event", (q) =>
@@ -301,8 +339,13 @@ export const processPartnerWebhook = internalMutation({
       .take(20);
 
     const isDuplicate = duplicateEvents.some((event) => {
-      const payload = event.payload as { externalTransactionId?: string; idempotencyKey?: string };
+      const payload = event.payload as {
+        transId?: string;
+        externalTransactionId?: string;
+        idempotencyKey?: string;
+      };
       return (
+        payload.transId === args.externalTransactionId ||
         payload.externalTransactionId === args.externalTransactionId ||
         payload.idempotencyKey === args.idempotencyKey
       );

@@ -20,6 +20,16 @@ describe("safePostAuthPath", () => {
     assert.equal(safePostAuthPath(undefined), null);
   });
 
+  it("rejects protocol-relative smuggling via CR/LF/TAB after /", () => {
+    assert.equal(safePostAuthPath("/%0a//evil.example"), null);
+    assert.equal(safePostAuthPath("/%0d//evil.example"), null);
+    assert.equal(safePostAuthPath("/%09//evil.example"), null);
+    assert.equal(safePostAuthPath("/\n//evil.example"), null);
+    assert.equal(safePostAuthPath("/\r//evil.example"), null);
+    assert.equal(safePostAuthPath("/\t//evil.example"), null);
+    assert.equal(safePostAuthPath("/\\evil.example"), null);
+  });
+
   it("signInUrl / signUpUrl encode next", () => {
     assert.equal(signInUrl("/zoomrad/welcome"), "/sign-in?next=%2Fzoomrad%2Fwelcome");
     assert.equal(signUpUrl("/dashboard"), "/sign-up?next=%2Fdashboard");

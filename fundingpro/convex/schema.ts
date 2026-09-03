@@ -661,6 +661,9 @@ export default defineSchema({
     channelSlug: v.string(),
     externalUserId: v.string(),
     sessionTokenHash: v.string(),
+    /** One-time WebView launch code (hashed); cleared after exchange. */
+    launchCodeHash: v.optional(v.string()),
+    launchCodeExpiresAt: v.optional(v.number()),
     status: v.union(v.literal("pending"), v.literal("active"), v.literal("expired")),
     userId: v.optional(v.id("users")),
     locale: v.optional(v.union(v.literal("ru"), v.literal("uz"))),
@@ -669,7 +672,16 @@ export default defineSchema({
     ...timestamps,
   })
     .index("by_token_hash", ["sessionTokenHash"])
+    .index("by_launch_code_hash", ["launchCodeHash"])
     .index("by_channel_external", ["channelSlug", "externalUserId"]),
+
+  /** Replay protection for signed partner requests (auth init / webhooks). */
+  partnerRequestNonces: defineTable({
+    channelSlug: v.string(),
+    nonceHash: v.string(),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  }).index("by_channel_nonce", ["channelSlug", "nonceHash"]),
 
   /** Monthly completed partner-channel transactions for revenue-share tiers. */
   partnerMonthlyStats: defineTable({

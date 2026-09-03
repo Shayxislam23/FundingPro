@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import type { ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
 import { FundingProLogo } from "@/components/design/FundingProLogo";
 import { getPartnerChannel, normalizePartnerSlug } from "@/lib/partners/channels";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,8 @@ const NAV_UZ: { href: string; label: string }[] = [
   { href: "/zoomrad/support", label: "Yordam" },
 ];
 
+const SESSION_STORAGE_KEY = "fp_zoomrad_session_token";
+
 type ZoomradShellProps = {
   children: ReactNode;
   title?: string;
@@ -31,17 +33,64 @@ type ZoomradShellProps = {
 
 export function ZoomradShell({ children, title, subtitle }: ZoomradShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const channelSlug = normalizePartnerSlug(searchParams.get("channel"));
   const channel = getPartnerChannel(channelSlug);
   const locale = searchParams.get("lang") === "uz" ? "uz" : "ru";
   const nav = locale === "uz" ? NAV_UZ : NAV_RU;
-  const session = searchParams.get("session");
+  const [exchangeError, setExchangeError] = useState<string | null>(null);
+  const [exchanging, setExchanging] = useState(false);
+
+  // Never propagate session/code on nav links — only channel + lang.
   const query = new URLSearchParams();
   query.set("channel", channelSlug);
   if (locale === "uz") query.set("lang", "uz");
-  if (session) query.set("session", session);
   const q = query.toString();
+
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (!code || typeof window === "undefined") return;
+
+    let cancelled = false;
+    setExchanging(true);
+    setExchangeError(null);
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/v1/zoomrad/auth/exchange", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, channel: channelSlug }),
+        });
+        const json = (await res.json().catch(() => ({}))) as {
+          data?: { sessionToken?: string };
+          error?: { message?: string };
+        };
+        if (!res.ok || !json.data?.sessionToken) {
+          throw new Error(json.error?.message ?? "Не удалось активировать сессию");
+        }
+        if (cancelled) return;
+        sessionStorage.setItem(SESSION_STORAGE_KEY, json.data.sessionToken);
+
+        const next = new URLSearchParams(searchParams.toString());
+        next.delete("code");
+        next.delete("session");
+        const qs = next.toString();
+        router.replace(qs ? `${pathname}?${qs}` : pathname);
+      } catch (err) {
+        if (!cancelled) {
+          setExchangeError(err instanceof Error ? err.message : "Ошибка обмена кода");
+        }
+      } finally {
+        if (!cancelled) setExchanging(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, channelSlug, pathname, router]);
 
   return (
     <div className="min-h-screen bg-[#F4FAF6] text-neutral-900">
@@ -70,7 +119,19 @@ export function ZoomradShell({ children, title, subtitle }: ZoomradShellProps) {
         ) : null}
       </header>
 
-      <main className="mx-auto max-w-md px-4 py-4">{children}</main>
+      <main className="mx-auto max-w-md px-4 py-4">
+        {exchanging ? (
+          <p className="mb-3 text-center text-sm text-neutral-600">
+            {locale === "uz" ? "Sessiya ochilmoqda…" : "Открываем сессию…"}
+          </p>
+        ) : null}
+        {exchangeError ? (
+          <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-center text-sm text-amber-900">
+            {exchangeError}
+          </p>
+        ) : null}
+        {children}
+      </main>
 
       <nav className="sticky bottom-0 border-t border-emerald-100 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1 px-2 py-2">
@@ -94,4 +155,10 @@ export function ZoomradShell({ children, title, subtitle }: ZoomradShellProps) {
       </nav>
     </div>
   );
+}
+
+/** Read session token from sessionStorage after launch-code exchange. */
+export function getZoomradSessionToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(SESSION_STORAGE_KEY);
 }

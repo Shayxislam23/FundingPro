@@ -4,9 +4,14 @@ import { ensureInternalUser } from "@/lib/db/users";
 import { listPlans } from "@/lib/db/plans";
 import { getUsdUzsRate } from "@/lib/legal/documents";
 import {
+  createPartnerLaunchCode,
   createPartnerSessionToken,
   hashPartnerToken,
+  isPartnerTimestampFresh,
+  parsePartnerTimestamp,
   partnerAuthSecretForChannel,
+  partnerSignedPayload,
+  partnerUnsignedAllowed,
   partnerWebhookSecretForChannel,
   verifyPartnerWebhookSignature,
 } from "./partner-crypto";
@@ -41,24 +46,58 @@ export async function initPartnerAuth(input: {
 
   const sessionToken = createPartnerSessionToken();
   const sessionTokenHash = hashPartnerToken(sessionToken);
+  const launchCode = createPartnerLaunchCode();
+  const launchCodeHash = hashPartnerToken(launchCode);
 
-  const { sessionId, expiresAt } = await convexInternalMutation(internal.partnersInternal.createSession, {
+  const created = await convexInternalMutation(internal.partnersInternal.createSession, {
     channelSlug,
     externalUserId: input.externalUserId,
     sessionTokenHash,
+    launchCodeHash,
     locale: input.locale,
     displayName: input.displayName,
   });
 
   const path = input.returnPath?.startsWith("/") ? input.returnPath : "/welcome";
-  const launchUrl = `${partnerLaunchUrl(channel, siteOrigin(), path)}&session=${encodeURIComponent(sessionToken)}`;
+  // One-time launch code in URL — never put the long-lived session bearer in query strings.
+  const launchUrl = `${partnerLaunchUrl(channel, siteOrigin(), path)}&code=${encodeURIComponent(launchCode)}`;
 
   return {
-    sessionId,
-    sessionToken,
-    expiresAt: new Date(expiresAt).toISOString(),
+    sessionId: created.sessionId,
+    sessionToken: created.reused ? undefined : sessionToken,
+    expiresAt: new Date(created.expiresAt).toISOString(),
+    launchCodeExpiresAt: new Date(created.launchCodeExpiresAt).toISOString(),
     launchUrl,
     channel: channelSlug,
+  };
+}
+
+/** WebView exchanges ?code= for a session token stored in sessionStorage (not URL). */
+export async function exchangePartnerLaunchCode(input: {
+  channel: string;
+  launchCode: string;
+}): Promise<{ sessionToken: string; sessionId: string; expiresAt: string; channel: string }> {
+  const channelSlug = normalizePartnerSlug(input.channel);
+  const launchCode = input.launchCode.trim();
+  if (!launchCode) {
+    throw new Error("Launch code required");
+  }
+
+  const sessionToken = createPartnerSessionToken();
+  const exchanged = await convexInternalMutation(internal.partnersInternal.exchangeLaunchCode, {
+    launchCodeHash: hashPartnerToken(launchCode),
+    newSessionTokenHash: hashPartnerToken(sessionToken),
+  });
+
+  if (!exchanged) {
+    throw new Error("Launch code invalid or expired");
+  }
+
+  return {
+    sessionToken,
+    sessionId: exchanged.sessionId,
+    expiresAt: new Date(exchanged.expiresAt).toISOString(),
+    channel: exchanged.channelSlug || channelSlug,
   };
 }
 
@@ -186,27 +225,74 @@ export async function createZoomradPayment(input: {
   };
 }
 
+export async function verifyPartnerSignedRequest(input: {
+  channelSlug: string;
+  purpose: "auth" | "webhook";
+  rawBody: string;
+  signature: string | null;
+  timestampHeader: string | null;
+  nonceHeader: string | null;
+}): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const secret =
+    input.purpose === "webhook"
+      ? partnerWebhookSecretForChannel(input.channelSlug)
+      : partnerAuthSecretForChannel(input.channelSlug);
+
+  if (!secret) {
+    if (partnerUnsignedAllowed()) return { ok: true };
+    return {
+      ok: false,
+      reason:
+        input.purpose === "webhook"
+          ? "ZOOMRAD_WEBHOOK_SECRET not configured"
+          : "ZOOMRAD_AUTH_SECRET not configured",
+    };
+  }
+
+  if (!input.signature) return { ok: false, reason: "Missing signature" };
+
+  const timestampSec = parsePartnerTimestamp(input.timestampHeader);
+  if (timestampSec === null || !isPartnerTimestampFresh(timestampSec)) {
+    return { ok: false, reason: "Missing or stale timestamp" };
+  }
+
+  const nonce = input.nonceHeader?.trim() ?? "";
+  if (!nonce || nonce.length < 8 || nonce.length > 128) {
+    return { ok: false, reason: "Missing or invalid nonce" };
+  }
+
+  const signed = partnerSignedPayload(String(timestampSec), nonce, input.rawBody);
+  if (!verifyPartnerWebhookSignature(signed, input.signature, secret)) {
+    return { ok: false, reason: "Invalid signature" };
+  }
+
+  const consumed = await convexInternalMutation(internal.partnersInternal.consumeRequestNonce, {
+    channelSlug: input.channelSlug,
+    nonceHash: hashPartnerToken(`${input.purpose}:${nonce}`),
+  });
+  if (!consumed) {
+    return { ok: false, reason: "Nonce already used" };
+  }
+
+  return { ok: true };
+}
+
+/** @deprecated Prefer verifyPartnerSignedRequest — kept for call-site migration. */
 export function verifyPartnerServerSignature(
   channelSlug: string,
   payload: string,
   signature: string | null
 ): boolean {
   const secret = partnerAuthSecretForChannel(channelSlug);
-  if (!secret) {
-    // Dev / staging without secrets — allow unsigned only when explicitly enabled.
-    return process.env.PARTNER_AUTH_ALLOW_UNSIGNED === "true";
-  }
+  if (!secret) return partnerUnsignedAllowed();
   if (!signature) return false;
   return verifyPartnerWebhookSignature(payload, signature, secret);
 }
 
+/** @deprecated Prefer verifyPartnerSignedRequest */
 export function verifyZoomradWebhook(payload: string, signature: string | null): boolean {
-  // Prefer dedicated webhook secret; fall back to auth secret only when webhook unset.
-  const secret =
-    partnerWebhookSecretForChannel("zoomrad") ?? partnerAuthSecretForChannel("zoomrad");
-  if (!secret) {
-    return process.env.PARTNER_AUTH_ALLOW_UNSIGNED === "true";
-  }
+  const secret = partnerWebhookSecretForChannel("zoomrad");
+  if (!secret) return partnerUnsignedAllowed();
   if (!signature) return false;
   return verifyPartnerWebhookSignature(payload, signature, secret);
 }

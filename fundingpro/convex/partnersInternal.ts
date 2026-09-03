@@ -4,6 +4,8 @@ import type { Id } from "./_generated/dataModel";
 import { resolvePlanId } from "./lib/paymentHelpers";
 
 const SESSION_TTL_MS = 30 * 60 * 1000;
+const LAUNCH_CODE_TTL_MS = 2 * 60 * 1000;
+const NONCE_TTL_MS = 10 * 60 * 1000;
 
 const partnerSessionValidator = v.object({
   sessionId: v.string(),
@@ -36,21 +38,29 @@ export const getSessionByTokenHash = internalQuery({
   },
 });
 
+/**
+ * Create a new partner session. Refuses to rotate tokens on an already-open
+ * session for the same bank user (blocks signed-init replay from stealing a fresh token).
+ */
 export const createSession = internalMutation({
   args: {
     channelSlug: v.string(),
     externalUserId: v.string(),
     sessionTokenHash: v.string(),
+    launchCodeHash: v.string(),
     locale: v.optional(v.union(v.literal("ru"), v.literal("uz"))),
     displayName: v.optional(v.string()),
   },
   returns: v.object({
     sessionId: v.string(),
     expiresAt: v.number(),
+    launchCodeExpiresAt: v.number(),
+    reused: v.boolean(),
   }),
   handler: async (ctx, args) => {
     const now = Date.now();
     const expiresAt = now + SESSION_TTL_MS;
+    const launchCodeExpiresAt = now + LAUNCH_CODE_TTL_MS;
 
     const existing = await ctx.db
       .query("partnerSessions")
@@ -61,21 +71,29 @@ export const createSession = internalMutation({
       .first();
 
     if (existing && existing.status !== "expired" && existing.expiresAt > now) {
+      // Do not overwrite sessionTokenHash — that would hand a replayer a new bearer.
+      // Refresh launch code so the bank can open WebView again with a fresh one-time code.
       await ctx.db.patch("partnerSessions", existing._id, {
-        sessionTokenHash: args.sessionTokenHash,
-        status: "pending",
-        locale: args.locale,
-        displayName: args.displayName,
-        expiresAt,
+        launchCodeHash: args.launchCodeHash,
+        launchCodeExpiresAt,
+        locale: args.locale ?? existing.locale,
+        displayName: args.displayName ?? existing.displayName,
         updatedAt: now,
       });
-      return { sessionId: existing._id, expiresAt };
+      return {
+        sessionId: existing._id,
+        expiresAt: existing.expiresAt,
+        launchCodeExpiresAt,
+        reused: true,
+      };
     }
 
     const sessionId = await ctx.db.insert("partnerSessions", {
       channelSlug: args.channelSlug,
       externalUserId: args.externalUserId,
       sessionTokenHash: args.sessionTokenHash,
+      launchCodeHash: args.launchCodeHash,
+      launchCodeExpiresAt,
       status: "pending",
       locale: args.locale,
       displayName: args.displayName,
@@ -84,7 +102,100 @@ export const createSession = internalMutation({
       updatedAt: now,
     });
 
-    return { sessionId, expiresAt };
+    return { sessionId, expiresAt, launchCodeExpiresAt, reused: false };
+  },
+});
+
+/** Exchange one-time launch code → rotate session token (plaintext minted by Next.js). */
+export const exchangeLaunchCode = internalMutation({
+  args: {
+    launchCodeHash: v.string(),
+    newSessionTokenHash: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      sessionId: v.string(),
+      channelSlug: v.string(),
+      status: v.union(v.literal("pending"), v.literal("active"), v.literal("expired")),
+      expiresAt: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("partnerSessions")
+      .withIndex("by_launch_code_hash", (q) => q.eq("launchCodeHash", args.launchCodeHash))
+      .unique();
+    if (!row) return null;
+
+    const now = Date.now();
+    if (row.expiresAt <= now) {
+      await ctx.db.patch("partnerSessions", row._id, {
+        status: "expired",
+        launchCodeHash: undefined,
+        launchCodeExpiresAt: undefined,
+        updatedAt: now,
+      });
+      return null;
+    }
+    if (!row.launchCodeExpiresAt || row.launchCodeExpiresAt <= now) {
+      await ctx.db.patch("partnerSessions", row._id, {
+        launchCodeHash: undefined,
+        launchCodeExpiresAt: undefined,
+        updatedAt: now,
+      });
+      return null;
+    }
+
+    await ctx.db.patch("partnerSessions", row._id, {
+      sessionTokenHash: args.newSessionTokenHash,
+      launchCodeHash: undefined,
+      launchCodeExpiresAt: undefined,
+      status: "active",
+      updatedAt: now,
+    });
+
+    return {
+      sessionId: row._id,
+      channelSlug: row.channelSlug,
+      status: "active" as const,
+      expiresAt: row.expiresAt,
+    };
+  },
+});
+
+/** Persist a partner request nonce; returns false if already used. */
+export const consumeRequestNonce = internalMutation({
+  args: {
+    channelSlug: v.string(),
+    nonceHash: v.string(),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("partnerRequestNonces")
+      .withIndex("by_channel_nonce", (q) =>
+        q.eq("channelSlug", args.channelSlug).eq("nonceHash", args.nonceHash)
+      )
+      .unique();
+    if (existing && existing.expiresAt > now) {
+      return false;
+    }
+    if (existing) {
+      await ctx.db.patch("partnerRequestNonces", existing._id, {
+        expiresAt: now + NONCE_TTL_MS,
+        createdAt: now,
+      });
+      return true;
+    }
+    await ctx.db.insert("partnerRequestNonces", {
+      channelSlug: args.channelSlug,
+      nonceHash: args.nonceHash,
+      expiresAt: now + NONCE_TTL_MS,
+      createdAt: now,
+    });
+    return true;
   },
 });
 

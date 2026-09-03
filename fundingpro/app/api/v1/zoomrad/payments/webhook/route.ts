@@ -5,13 +5,12 @@ import { withPaymentWebhook } from "@/lib/api-route";
 import { writeAuditLog } from "@/lib/auth-helpers";
 import {
   handleZoomradPaymentWebhook,
-  verifyZoomradWebhook,
+  verifyPartnerSignedRequest,
 } from "@/lib/partners/service";
 import { normalizePartnerSlug } from "@/lib/partners/channels";
 
 export const POST = withPaymentWebhook(async (req) => {
   const rawBody = await req.text();
-  const signature = req.headers.get("x-zoomrad-signature");
 
   let body: Record<string, unknown>;
   try {
@@ -21,8 +20,17 @@ export const POST = withPaymentWebhook(async (req) => {
   }
 
   const channel = normalizePartnerSlug(typeof body.channel === "string" ? body.channel : "zoomrad");
-  if (!verifyZoomradWebhook(rawBody, signature)) {
-    return apiError("Invalid webhook signature", 401, "WEBHOOK_AUTH_FAILED");
+  const verified = await verifyPartnerSignedRequest({
+    channelSlug: channel,
+    purpose: "webhook",
+    rawBody,
+    signature: req.headers.get("x-zoomrad-signature"),
+    timestampHeader:
+      req.headers.get("x-zoomrad-timestamp") ?? req.headers.get("x-partner-timestamp"),
+    nonceHeader: req.headers.get("x-zoomrad-nonce") ?? req.headers.get("x-partner-nonce"),
+  });
+  if (!verified.ok) {
+    return apiError(verified.reason, 401, "WEBHOOK_AUTH_FAILED");
   }
 
   const paymentId = String(body.paymentId ?? "").trim();

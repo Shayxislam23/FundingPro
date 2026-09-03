@@ -1,7 +1,10 @@
 export const dynamic = "force-dynamic";
 import { apiError, apiSuccess } from "@/lib/api";
 import { withPublic, withActiveUser } from "@/lib/api-route";
-import { completePartnerAuthCallback } from "@/lib/partners/service";
+import {
+  completePartnerAuthCallback,
+  verifyPartnerSignedRequest,
+} from "@/lib/partners/service";
 import { normalizePartnerSlug } from "@/lib/partners/channels";
 
 async function parseBody(req: Request) {
@@ -12,10 +15,31 @@ async function parseBody(req: Request) {
   }
 }
 
-/** Public callback for bank server or WebView bootstrap. */
+/**
+ * Bank-server callback — requires partner HMAC (same as auth/init).
+ * Does not accept a bare session token from the public internet.
+ */
 export const POST = withPublic(async (req) => {
-  const body = await parseBody(req);
-  if (!body) return apiError("Invalid JSON body", 400, "INVALID_JSON");
+  const rawBody = await req.text();
+  let body: Record<string, unknown>;
+  try {
+    body = JSON.parse(rawBody) as Record<string, unknown>;
+  } catch {
+    return apiError("Invalid JSON body", 400, "INVALID_JSON");
+  }
+
+  const channel = normalizePartnerSlug(typeof body.channel === "string" ? body.channel : "zoomrad");
+  const verified = await verifyPartnerSignedRequest({
+    channelSlug: channel,
+    purpose: "auth",
+    rawBody,
+    signature: req.headers.get("x-partner-signature"),
+    timestampHeader: req.headers.get("x-partner-timestamp"),
+    nonceHeader: req.headers.get("x-partner-nonce"),
+  });
+  if (!verified.ok) {
+    return apiError(verified.reason, 401, "PARTNER_AUTH_FAILED");
+  }
 
   const sessionToken = String(body.sessionToken ?? "").trim();
   if (!sessionToken) {
@@ -24,7 +48,7 @@ export const POST = withPublic(async (req) => {
 
   try {
     const result = await completePartnerAuthCallback({
-      channel: normalizePartnerSlug(typeof body.channel === "string" ? body.channel : "zoomrad"),
+      channel,
       sessionToken,
       externalUserId:
         typeof body.externalUserId === "string" ? body.externalUserId : undefined,

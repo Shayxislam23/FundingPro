@@ -33,10 +33,12 @@ export type PartnerSessionStatus = "pending" | "active" | "expired";
 
 export interface PartnerAuthInitResult {
   sessionId: string;
-  sessionToken: string;
+  /** Present only on first session create — omitted when reusing an open session. */
+  sessionToken?: string;
   expiresAt: string;
   launchUrl: string;
   channel: PartnerChannelSlug;
+  launchCodeExpiresAt: string;
 }
 
 export interface PartnerAuthCallbackResult {

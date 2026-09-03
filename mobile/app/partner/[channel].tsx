@@ -17,10 +17,10 @@ import { CLAY_COLORS } from "../../lib/clay-styles";
 
 export default function PartnerWebViewScreen() {
   const router = useRouter();
-  const { channel: channelParam, lang, session } = useLocalSearchParams<{
+  const { channel: channelParam, lang, code } = useLocalSearchParams<{
     channel?: string;
     lang?: string;
-    session?: string;
+    code?: string;
   }>();
   const [reloadKey, setReloadKey] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export default function PartnerWebViewScreen() {
 
   const uri = buildPartnerWebViewUrl(getApiBaseUrl(), channel, {
     lang: lang === "uz" ? "uz" : "ru",
-    session: typeof session === "string" ? session : undefined,
+    code: typeof code === "string" ? code : undefined,
   });
 
   return (
@@ -83,7 +83,6 @@ export default function PartnerWebViewScreen() {
       {loadError ? (
         <View className="flex-1 items-center justify-center gap-3 px-6">
           <Text className="text-center text-base text-neutral-800">{loadError}</Text>
-          <Text className="text-center text-xs text-neutral-500">{uri}</Text>
           <Pressable
             onPress={onRetry}
             className="rounded-xl px-4 py-3"

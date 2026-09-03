@@ -4,7 +4,7 @@ import { apiError, apiSuccess } from "@/lib/api";
 import { withPublic } from "@/lib/api-route";
 import {
   initPartnerAuth,
-  verifyPartnerServerSignature,
+  verifyPartnerSignedRequest,
 } from "@/lib/partners/service";
 import { normalizePartnerSlug } from "@/lib/partners/channels";
 
@@ -18,9 +18,16 @@ export const POST = withPublic(async (req: NextRequest) => {
   }
 
   const channel = normalizePartnerSlug(typeof body.channel === "string" ? body.channel : "zoomrad");
-  const signature = req.headers.get("x-partner-signature");
-  if (!verifyPartnerServerSignature(channel, rawBody, signature)) {
-    return apiError("Invalid partner signature", 401, "PARTNER_AUTH_FAILED");
+  const verified = await verifyPartnerSignedRequest({
+    channelSlug: channel,
+    purpose: "auth",
+    rawBody,
+    signature: req.headers.get("x-partner-signature"),
+    timestampHeader: req.headers.get("x-partner-timestamp"),
+    nonceHeader: req.headers.get("x-partner-nonce"),
+  });
+  if (!verified.ok) {
+    return apiError(verified.reason, 401, "PARTNER_AUTH_FAILED");
   }
 
   const externalUserId = String(body.externalUserId ?? "").trim();

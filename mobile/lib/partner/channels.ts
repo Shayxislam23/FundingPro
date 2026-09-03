@@ -26,12 +26,13 @@ export function getMobilePartnerChannel(slug: string): MobilePartnerChannel | nu
 export function buildPartnerWebViewUrl(
   apiBaseWithoutVersion: string,
   channel: MobilePartnerChannel,
-  params?: { lang?: "ru" | "uz"; session?: string }
+  params?: { lang?: "ru" | "uz"; code?: string }
 ): string {
   const site = apiBaseWithoutVersion.replace(/\/api\/v1\/?$/, "").replace(/\/$/, "");
   const url = new URL(`${site}${channel.webPath}`);
   url.searchParams.set("channel", channel.slug);
   if (params?.lang) url.searchParams.set("lang", params.lang);
-  if (params?.session) url.searchParams.set("session", params.session);
+  // Prefer one-time launch code — never put long-lived session bearers in the URL.
+  if (params?.code) url.searchParams.set("code", params.code);
   return url.toString();
 }

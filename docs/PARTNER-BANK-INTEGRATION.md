@@ -6,8 +6,8 @@ FundingPro distributes through **WebView Mini Apps** inside partner super-apps (
 
 ```
 Partner bank app (ZOOMRAD)
-    └── WebView → https://www.fundingpro.uz/zoomrad/*
-            └── Next.js mini app (mobile-first UI)
+    └── WebView → https://www.fundingpro.uz/zoomrad/*?code=…
+            └── Next.js exchanges one-time code → sessionStorage token
             └── /api/v1/zoomrad/* (auth + payments)
                     └── Convex (sessions, payments, revenue-share stats)
 
@@ -16,11 +16,31 @@ FundingPro native app
     └── Standalone tabs (grants, eligibility, …) via REST /api/v1
 ```
 
+## Secrets (isolate SSO vs payments)
+
+| Env | Purpose |
+|-----|---------|
+| `ZOOMRAD_AUTH_SECRET` | HMAC for `auth/init` and signed `auth/callback` |
+| `ZOOMRAD_WEBHOOK_SECRET` | HMAC for payment webhooks only |
+
+Do **not** reuse one key for both. `PARTNER_AUTH_ALLOW_UNSIGNED=true` works only when `NODE_ENV !== "production"`.
+
+### Signed request format
+
+Headers:
+
+- Auth: `X-Partner-Signature`, `X-Partner-Timestamp` (unix seconds), `X-Partner-Nonce` (≥8 chars, unique)
+- Webhook: `X-Zoomrad-Signature`, `X-Zoomrad-Timestamp`, `X-Zoomrad-Nonce`
+
+HMAC-SHA256 hex over: `{timestamp}.{nonce}.{rawBody}`
+
+Skew window: ±300s. Nonces are stored and rejected on replay.
+
 ## Adding a new bank channel
 
 1. Register the channel in `fundingpro/lib/partners/channels.ts` and `mobile/lib/partner/channels.ts`.
-2. Set env secrets: `{SLUG}_AUTH_SECRET`, `{SLUG}_WEBHOOK_SECRET`.
-3. Implement server auth init (signed `POST /api/v1/zoomrad/auth/init` pattern — clone route group per partner or generalise to `/api/v1/partners/{slug}/…`).
+2. Set env secrets: `{SLUG}_AUTH_SECRET`, `{SLUG}_WEBHOOK_SECRET` (separate values).
+3. Implement server auth init (signed `POST /api/v1/zoomrad/auth/init` pattern).
 4. Add WebView path under `/zoomrad`-style route group or reuse `/zoomrad?channel=kapital`.
 5. Configure revenue-share tiers in Convex settings key `partner_revenue_share_tiers` (JSON array).
 
@@ -28,11 +48,19 @@ FundingPro native app
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| POST | `/api/v1/zoomrad/auth/init` | Bank server starts SSO (`X-Partner-Signature` HMAC) |
-| POST | `/api/v1/zoomrad/auth/callback` | Activate session (public) |
-| PATCH | `/api/v1/zoomrad/auth/callback` | Link session to Clerk user |
-| POST | `/api/v1/zoomrad/payments/create` | Create pending payment (Clerk auth) |
-| POST | `/api/v1/zoomrad/payments/webhook` | Signed activation (`X-Zoomrad-Signature`) |
+| POST | `/api/v1/zoomrad/auth/init` | Bank server starts SSO (HMAC + timestamp + nonce) → `launchUrl` with one-time `code` |
+| POST | `/api/v1/zoomrad/auth/exchange` | WebView exchanges `code` → `sessionToken` (store in sessionStorage; strip from URL) |
+| POST | `/api/v1/zoomrad/auth/callback` | Bank-signed session activate |
+| PATCH | `/api/v1/zoomrad/auth/callback` | Link session to Clerk user (uses sessionStorage token) |
+| POST | `/api/v1/zoomrad/payments/create` | Create pending payment (Clerk auth; amount from plan) |
+| POST | `/api/v1/zoomrad/payments/webhook` | Signed activation (`X-Zoomrad-Signature` + timestamp + nonce) |
+
+## Session security notes
+
+- Long-lived session bearers are **never** placed on `launchUrl` or mini-app nav links.
+- Launch `code` TTL is ~2 minutes and single-use.
+- Replayed `auth/init` for an open bank user refreshes the launch code only — it does **not** rotate `sessionTokenHash`.
+- Prefer injecting the launch code via the native WebView bridge when the bank shell supports it.
 
 ## Revenue share
 

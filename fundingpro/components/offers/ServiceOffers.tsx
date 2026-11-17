@@ -1,60 +1,27 @@
 import Link from "next/link";
 import { ArrowRight, Briefcase, GraduationCap, Search } from "lucide-react";
-import { LAB_PRICE_UZS, SUCCESS_FEE_RANGE, formatUzs } from "@/lib/offers";
+import { withLang, type Locale } from "@/lib/i18n/locale";
+import { getPublicDict } from "@/lib/i18n/public-dict";
 
 type Props = {
-  /** "dark" for the landing hero area, "light" for white sections. */
+  locale?: Locale;
+  /** "dark" for dark sections, "light" for white sections. */
   tone?: "light" | "dark";
 };
 
-const OFFERS = [
-  {
-    icon: Search,
-    title: "Каталог грантов",
-    price: "Бесплатно",
-    who: "Для всех",
-    points: ["Проверенные гранты с дедлайнами", "Фильтр «для кого»: бизнес, стартап, молодёжь, НКО", "2 проверки соответствия в месяц"],
-    cta: "Смотреть гранты",
-    href: "/grants",
-    highlighted: false,
-  },
-  {
-    icon: GraduationCap,
-    title: "«Мой путь»",
-    price: formatUzs(LAB_PRICE_UZS),
-    who: "Молодёжь и частные лица",
-    points: [
-      "30 дней с наставником до поданной заявки",
-      "CV, мотивационное письмо, подбор 10 возможностей",
-      "Сертификат после подтверждённой подачи",
-    ],
-    cta: "Записаться",
-    href: "/dashboard/lab/start",
-    highlighted: true,
-  },
-  {
-    icon: Briefcase,
-    title: "Заявка под ключ",
-    price: "После бесплатной оценки",
-    who: "Бизнес, стартапы, НКО",
-    points: [
-      "Подбираем грант под ваш проект",
-      "Готовим заявку и пакет документов",
-      `Гонорар за успех ${SUCCESS_FEE_RANGE} — только при выигрыше`,
-    ],
-    cta: "Оставить заявку",
-    href: "/business",
-    highlighted: false,
-  },
-] as const;
-
-export function ServiceOffers({ tone = "light" }: Props) {
+export function ServiceOffers({ locale = "ru", tone = "light" }: Props) {
+  const items = getPublicDict(locale).offers.items;
   const dark = tone === "dark";
+  const offers = [
+    { key: "catalog", icon: Search, href: withLang("/grants", locale), highlighted: false, ...items.catalog },
+    { key: "lab", icon: GraduationCap, href: "/dashboard/lab/start", highlighted: true, ...items.lab },
+    { key: "business", icon: Briefcase, href: withLang("/business", locale), highlighted: false, ...items.business },
+  ];
   return (
     <div className="grid gap-5 md:grid-cols-3">
-      {OFFERS.map(({ icon: Icon, title, price, who, points, cta, href, highlighted }) => (
+      {offers.map(({ key, icon: Icon, title, price, who, points, cta, href, highlighted }) => (
         <div
-          key={title}
+          key={key}
           className={`rounded-2xl border p-6 flex flex-col ${
             highlighted
               ? "bg-funding-green border-funding-green text-white"

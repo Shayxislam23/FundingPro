@@ -5,6 +5,7 @@ import { withPublic } from "@/lib/api-route";
 import { convexInternalMutation, internal } from "@/lib/convex-server";
 import { resend } from "@/lib/resend";
 import { maskEmail, maskName, maskPhone } from "@/convex/lib/partnerApi";
+import { notifySalesTelegram } from "@/lib/telegram/notify";
 import { SERVICE_APPLICANT_TYPES, SERVICE_CONSENT_VERSION, serviceRequestSchema } from "@/lib/service-requests";
 
 /** POST /api/v1/service-requests — "Заявка под ключ" from the public /business form. Rate-limited in middleware. */
@@ -59,6 +60,13 @@ export const POST = withPublic(async (req: NextRequest) => {
 <p><a href="${appUrl}/admin/service-requests">Открыть в админке</a> — позвоните в течение рабочего дня.</p>`,
       })
       .catch((err) => console.error("[service-requests] notify failed", String(err).slice(0, 200)));
+  }
+
+  if (!result.duplicate) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://fundingpro.uz";
+    await notifySalesTelegram(
+      `🆕 Заявка под ключ с сайта\nТип: ${SERVICE_APPLICANT_TYPES[body.applicant_type]}${body.region ? `\nРегион: ${body.region}` : ""}\nКонтакт: ${[maskPhone(body.phone), maskEmail(body.email)].filter(Boolean).join(", ")}\nОткрыть: ${appUrl}/admin/service-requests`
+    );
   }
 
   return apiSuccess({ received: true, duplicate: result.duplicate }, 201);

@@ -55,6 +55,7 @@ import type * as serviceRequests from "../serviceRequests.js";
 import type * as settings from "../settings.js";
 import type * as subscriptionRequests from "../subscriptionRequests.js";
 import type * as support from "../support.js";
+import type * as telegram from "../telegram.js";
 import type * as users from "../users.js";
 
 import type {
@@ -111,6 +112,7 @@ declare const fullApi: ApiFromModules<{
   settings: typeof settings;
   subscriptionRequests: typeof subscriptionRequests;
   support: typeof support;
+  telegram: typeof telegram;
   users: typeof users;
 }>;
 

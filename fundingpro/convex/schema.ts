@@ -725,6 +725,15 @@ export default defineSchema({
     .index("by_status_and_createdAt", ["status", "createdAt"])
     .index("by_createdAt", ["createdAt"]),
 
+  /** Telegram bot chats: remembered language and the in-progress "заявка под ключ" step. */
+  telegramChats: defineTable({
+    chatId: v.string(),
+    locale: v.union(v.literal("ru"), v.literal("uz")),
+    pendingApplicantType: v.optional(v.string()),
+    lastRequestAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index("by_chatId", ["chatId"]),
+
   apiPartners: defineTable({
     partnerCode: v.string(),
     name: v.string(),

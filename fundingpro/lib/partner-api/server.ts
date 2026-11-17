@@ -3,6 +3,7 @@ import { convexInternalMutation, convexInternalQuery, internal } from "@/lib/con
 import { resend } from "@/lib/resend";
 import { maskEmail, maskName, maskPhone } from "@/convex/lib/partnerApi";
 import type { Id } from "@/convex/_generated/dataModel";
+import { notifySalesTelegram } from "@/lib/telegram/notify";
 import { createWithPartner, type BeginRequestResult, type PartnerEnvironment } from "./with-partner";
 
 export function partnerApiEnvironment(): PartnerEnvironment {
@@ -45,10 +46,13 @@ export async function notifyNewPartnerLead(args: {
   phone?: string;
   email?: string;
 }): Promise<void> {
-  const to = process.env.PARTNER_LEADS_NOTIFY_EMAIL?.trim();
-  if (!to || !process.env.RESEND_API_KEY) return;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://fundingpro.uz";
   const contact = [maskPhone(args.phone), maskEmail(args.email)].filter(Boolean).join(", ");
+  await notifySalesTelegram(
+    `🤝 Лид от партнёра ${escapeHtml(args.partnerCode)}\nГрант: ${escapeHtml(args.grantTitle)}\nКонтакт: ${escapeHtml(contact)}\nОткрыть: ${appUrl}/admin/partners`
+  );
+  const to = process.env.PARTNER_LEADS_NOTIFY_EMAIL?.trim();
+  if (!to || !process.env.RESEND_API_KEY) return;
   await resend.emails.send({
     from: "FundingPro <info@fundingpro.uz>",
     to,

@@ -2,6 +2,17 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { applyApiRateLimit } from "@/lib/api-rate-limit";
 
+/** Hosts that serve the Partner API: https://api.fundingpro.uz/v1/* → /api/partner/v1/* */
+const PARTNER_API_HOSTS = (process.env.PARTNER_API_HOSTS ?? "api.fundingpro.uz,sandbox-api.fundingpro.uz")
+  .split(",")
+  .map((h) => h.trim().toLowerCase())
+  .filter(Boolean);
+
+function isPartnerApiHost(host: string | null): boolean {
+  if (!host) return false;
+  return PARTNER_API_HOSTS.includes(host.split(":")[0].toLowerCase());
+}
+
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/admin(.*)",
@@ -21,10 +32,26 @@ const isRateLimitedApiRoute = createRouteMatcher([
   "/api/v1/payments/uzum/(.*)",
   "/api/v1/payments/status",
   "/api/v1/payments/webhook",
+  "/api/v1/grants",
+  "/api/v1/grants/(.*)",
+  "/api/v1/donors",
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
+
+  if (isPartnerApiHost(request.headers.get("host"))) {
+    if (pathname === "/v1" || pathname.startsWith("/v1/")) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/api/partner${pathname}`;
+      return NextResponse.rewrite(url);
+    }
+    if (pathname.startsWith("/api/partner/v1/")) return NextResponse.next();
+    return NextResponse.json(
+      { error: { code: "INVALID_REQUEST", message: "Not found. Partner API lives under /v1" } },
+      { status: 404 }
+    );
+  }
 
   if (isRateLimitedApiRoute(request)) {
     const limited = await applyApiRateLimit(request);
@@ -87,5 +114,10 @@ export const config = {
     "/api/v1/onboarding/tasks",
     "/api/v1/payments/status",
     "/api/v1/payments/webhook",
+    "/api/v1/grants",
+    "/api/v1/grants/:path*",
+    "/api/v1/donors",
+    "/v1/:path*",
+    "/v1",
   ],
 };

@@ -4,6 +4,7 @@ import { apiSuccess, apiError } from "@/lib/api";
 import { withPublic } from "@/lib/api-route";
 import { resend } from "@/lib/resend";
 import { checkRateLimitAsync } from "@/lib/ai-rate-limit";
+import { maskEmail } from "@/convex/lib/partnerApi";
 
 // POST /api/v1/lead-magnet — email capture for grant digest PDF
 export const POST = withPublic(async (req: NextRequest) => {
@@ -35,7 +36,8 @@ export const POST = withPublic(async (req: NextRequest) => {
       `,
   });
 
-  console.info("[lead-magnet]", { email, source });
+  // Never log personal data in plain text.
+  console.info("[lead-magnet]", { email: maskEmail(email), source });
 
   return apiSuccess({ ok: true });
 });

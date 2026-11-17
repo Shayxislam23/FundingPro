@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { adminMutation, adminQuery } from "./lib/customFunctions";
 import { internalMutation } from "./_generated/server";
 import { paginateAll } from "./lib/pagination";
+import { refreshGrantSearchText } from "./partnerApi";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
@@ -110,7 +111,7 @@ export const create = adminMutation({
   returns: v.string(),
   handler: async (ctx, args) => {
     const now = Date.now();
-    return await ctx.db.insert("grants", {
+    const grantId = await ctx.db.insert("grants", {
       title: args.title,
       titleRu: args.titleRu,
       donorId: args.donorId as Id<"donors">,
@@ -131,6 +132,8 @@ export const create = adminMutation({
       createdAt: now,
       updatedAt: now,
     });
+    await refreshGrantSearchText(ctx, grantId);
+    return grantId;
   },
 });
 
@@ -321,6 +324,7 @@ export const update = adminMutation({
       lastUpdatedAt: Date.now(),
       updatedAt: Date.now(),
     });
+    await refreshGrantSearchText(ctx, id as Id<"grants">);
     return null;
   },
 });

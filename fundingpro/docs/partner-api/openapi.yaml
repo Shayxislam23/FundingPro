@@ -1,0 +1,496 @@
+openapi: 3.1.0
+info:
+  title: FundingPro Partner API
+  version: 1.0.0
+  summary: Read-only grant opportunities and lead hand-over for approved partner platforms.
+  description: |
+    The FundingPro Partner API lets an approved partner platform show current, verified grant
+    opportunities to its users and hand over users who want help with an application.
+
+    * **Auth:** `X-API-Key` header on every request except `/health`. Never put the key in a URL,
+      browser code or a mobile app bundle. Call the API from your server.
+    * **Branding:** every screen showing this data must display "Grant data powered by FundingPro"
+      (or "Grant opportunities provided by FundingPro"), the official source link, the last
+      verification date and a "verify with the official announcement" note. See `branding.md`.
+    * **Caching:** lists ≤ 15 minutes, grant details ≤ 1 hour. Permanent local copies of the
+      catalogue are not allowed. See `caching.md`.
+    * **Limits (pilot):** 60 requests/minute, 5 000 requests/month, max 50 items per page,
+      max 20 pages per query.
+  contact:
+    name: FundingPro partnerships
+    url: https://fundingpro.uz
+  license:
+    name: Limited, non-exclusive, non-transferable licence under the partner agreement
+servers:
+  - url: https://api.fundingpro.uz/v1
+    description: Production (fp_live_ keys)
+  - url: https://sandbox-api.fundingpro.uz/v1
+    description: Sandbox (fp_test_ keys, test data only)
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: System
+  - name: Grants
+  - name: Leads
+  - name: Events
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Service health
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, version, timestamp]
+                properties:
+                  status: { type: string, example: ok }
+                  version: { type: string, example: 1.0.0 }
+                  environment: { type: string, enum: [production, sandbox] }
+                  timestamp: { type: string, format: date-time }
+  /grants:
+    get:
+      tags: [Grants]
+      summary: List current grant opportunities
+      description: Returns only grants FundingPro has verified and published for partners, with open/upcoming status and a future (or no) deadline.
+      parameters:
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - name: search
+          in: query
+          description: Optional full-text query (same as /grants/search).
+          schema: { type: string, maxLength: 200 }
+        - $ref: "#/components/parameters/sector"
+        - $ref: "#/components/parameters/applicant_type"
+        - $ref: "#/components/parameters/country"
+        - $ref: "#/components/parameters/region"
+        - $ref: "#/components/parameters/funding_type"
+        - $ref: "#/components/parameters/deadline_from"
+        - $ref: "#/components/parameters/deadline_to"
+        - $ref: "#/components/parameters/status"
+        - $ref: "#/components/parameters/language"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [deadline_asc, deadline_desc, published_desc, amount_desc]
+            default: deadline_asc
+      responses:
+        "200":
+          description: A page of grants
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheList" }
+            X-Request-Id: { $ref: "#/components/headers/RequestId" }
+            X-RateLimit-Limit: { $ref: "#/components/headers/RateLimitLimit" }
+            X-RateLimit-Remaining: { $ref: "#/components/headers/RateLimitRemaining" }
+            X-RateLimit-Reset: { $ref: "#/components/headers/RateLimitReset" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GrantList" }
+        "400": { $ref: "#/components/responses/InvalidRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /grants/search:
+    get:
+      tags: [Grants]
+      summary: Full-text search
+      description: Searches title, summary, donor, sectors, tags, country and applicant type (EN/RU/UZ).
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2, maxLength: 200 }
+          example: climate uzbekistan
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/sector"
+        - $ref: "#/components/parameters/applicant_type"
+        - $ref: "#/components/parameters/country"
+        - $ref: "#/components/parameters/region"
+        - $ref: "#/components/parameters/status"
+      responses:
+        "200":
+          description: Matching grants
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GrantList" }
+        "400": { $ref: "#/components/responses/InvalidRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /grants/{grant_id}:
+    get:
+      tags: [Grants]
+      summary: One grant
+      parameters:
+        - name: grant_id
+          in: path
+          required: true
+          description: "`grant_…` id or slug"
+          schema: { type: string, maxLength: 100 }
+      responses:
+        "200":
+          description: Grant detail
+          headers:
+            Cache-Control: { $ref: "#/components/headers/CacheDetail" }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, attribution]
+                properties:
+                  data: { $ref: "#/components/schemas/GrantDetail" }
+                  attribution: { type: string, example: Grant data powered by FundingPro }
+        "404":
+          description: Not found, closed, unpublished or marked invalid — remove it from your cache.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /leads:
+    post:
+      tags: [Leads]
+      summary: Hand over a user who wants application support
+      description: |
+        Requires the user's explicit consent (`consent_to_contact: true`) and the version of the
+        consent text they saw. Repeat submissions for the same partner + grant + phone/email
+        within 30 days return the existing `lead_id` with `duplicate: true` (HTTP 200).
+        Send an `Idempotency-Key` (UUID) so network retries never create two leads.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LeadRequest" }
+      responses:
+        "201":
+          description: Lead created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadResponse" }
+        "200":
+          description: Existing lead (repeat within 30 days, or idempotent replay)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LeadResponse" }
+        "400": { $ref: "#/components/responses/InvalidRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404":
+          description: GRANT_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: IDEMPOTENCY_CONFLICT — key reused with a different body
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422":
+          description: CONSENT_REQUIRED — nothing was stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /events:
+    post:
+      tags: [Events]
+      summary: Record user interactions (one event or a batch of up to 50)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/Event"
+                - type: object
+                  required: [events]
+                  additionalProperties: false
+                  properties:
+                    events:
+                      type: array
+                      minItems: 1
+                      maxItems: 50
+                      items: { $ref: "#/components/schemas/Event" }
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  accepted: { type: integer }
+                  rejected: { type: integer, description: Events referencing unknown or unpublished grants }
+        "400": { $ref: "#/components/responses/InvalidRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /meta:
+    get:
+      tags: [System]
+      summary: Vocabularies for filters and events
+      responses:
+        "200":
+          description: OK
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  parameters:
+    page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 20, default: 1 }
+    limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 50, default: 20 }
+    sector:
+      name: sector
+      in: query
+      schema: { type: string, maxLength: 80 }
+      example: agriculture
+    applicant_type:
+      name: applicant_type
+      in: query
+      schema: { type: string, enum: [business, ngo, startup, individual, government, academic] }
+    country:
+      name: country
+      in: query
+      schema: { type: string, maxLength: 80 }
+      example: Uzbekistan
+    region:
+      name: region
+      in: query
+      description: Grants for "All Uzbekistan" also match any region.
+      schema: { type: string, maxLength: 80 }
+      example: Jizzakh
+    funding_type:
+      name: funding_type
+      in: query
+      schema: { type: string, maxLength: 40 }
+      example: grant
+    deadline_from:
+      name: deadline_from
+      in: query
+      schema: { type: string, format: date-time }
+    deadline_to:
+      name: deadline_to
+      in: query
+      schema: { type: string, format: date-time }
+    status:
+      name: status
+      in: query
+      schema: { type: string, enum: [open, upcoming] }
+    language:
+      name: language
+      in: query
+      description: Application language accepted by the donor (e.g. English).
+      schema: { type: string, maxLength: 40 }
+  headers:
+    RequestId:
+      schema: { type: string, example: req_8f2a1c0b9d3e4f5a6b }
+    RateLimitLimit:
+      schema: { type: integer }
+    RateLimitRemaining:
+      schema: { type: integer }
+    RateLimitReset:
+      description: Unix seconds
+      schema: { type: integer }
+    CacheList:
+      schema: { type: string, example: "private, max-age=900" }
+    CacheDetail:
+      schema: { type: string, example: "private, max-age=3600" }
+  responses:
+    InvalidRequest:
+      description: INVALID_REQUEST
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: INVALID_API_KEY or EXPIRED_API_KEY
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Forbidden:
+      description: PARTNER_SUSPENDED or FORBIDDEN_ORIGIN
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    RateLimited:
+      description: RATE_LIMIT_EXCEEDED (see Retry-After)
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    InternalError:
+      description: INTERNAL_ERROR (503 = temporary, retry with backoff)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, request_id]
+          properties:
+            code:
+              type: string
+              enum:
+                - INVALID_API_KEY
+                - EXPIRED_API_KEY
+                - PARTNER_SUSPENDED
+                - FORBIDDEN_ORIGIN
+                - RATE_LIMIT_EXCEEDED
+                - INVALID_REQUEST
+                - CONSENT_REQUIRED
+                - GRANT_NOT_FOUND
+                - DUPLICATE_LEAD
+                - IDEMPOTENCY_CONFLICT
+                - INTERNAL_ERROR
+            message: { type: string }
+            request_id: { type: string }
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        total_pages: { type: integer }
+        has_more: { type: boolean }
+    GrantList:
+      type: object
+      required: [data, pagination, attribution]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Grant" }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+        attribution: { type: string, example: Grant data powered by FundingPro }
+    Grant:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: string, example: grant_k57abc0123456789 }
+        slug: { type: string, example: green-innovation-grant-2027 }
+        title: { type: string }
+        title_uz: { type: [string, "null"] }
+        title_ru: { type: [string, "null"] }
+        summary: { type: [string, "null"] }
+        summary_uz: { type: [string, "null"] }
+        summary_ru: { type: [string, "null"] }
+        donor:
+          type: object
+          properties:
+            name: { type: string }
+            type: { type: [string, "null"], example: foundation }
+            country: { type: [string, "null"] }
+        applicant_types:
+          type: array
+          items: { type: string, enum: [business, ngo, startup, individual, government, academic] }
+        sectors: { type: array, items: { type: string } }
+        eligible_countries: { type: array, items: { type: string } }
+        eligible_regions: { type: array, items: { type: string } }
+        funding:
+          type: object
+          properties:
+            minimum: { type: [number, "null"] }
+            maximum: { type: [number, "null"] }
+            currency: { type: string }
+            cofinancing_required: { type: boolean }
+            cofinancing_percentage: { type: [number, "null"] }
+        funding_type: { type: [string, "null"] }
+        deadline_at: { type: [string, "null"], format: date-time }
+        timezone: { type: string, const: UTC }
+        status: { type: string, enum: [open, upcoming, closed] }
+        official_url: { type: [string, "null"], format: uri }
+        application_language: { type: array, items: { type: string } }
+        tags: { type: array, items: { type: string } }
+        published_at: { type: [string, "null"], format: date-time }
+        last_verified_at: { type: [string, "null"], format: date-time }
+        fundingpro_consultation_available: { type: boolean }
+        referral_url: { type: string, format: uri }
+        flags:
+          type: object
+          description: Neutral public indicators (no internal scoring).
+          properties:
+            for_business: { type: boolean }
+            for_ngo: { type: boolean }
+            for_startup: { type: boolean }
+            available_in_uzbekistan: { type: boolean }
+            cofinancing_required: { type: boolean }
+            deadline_soon: { type: boolean, description: Deadline within 14 days }
+    GrantDetail:
+      allOf:
+        - $ref: "#/components/schemas/Grant"
+        - type: object
+          properties:
+            description: { type: [string, "null"] }
+            description_ru: { type: [string, "null"] }
+            description_uz: { type: [string, "null"] }
+            disclaimer: { type: string }
+    LeadRequest:
+      type: object
+      additionalProperties: false
+      required: [partner_id, grant_id, full_name, consent_to_contact, consent_text_version]
+      description: "`phone` or `email` is required."
+      properties:
+        partner_id: { type: string, example: jizzakh_business_platform }
+        grant_id: { type: string, example: grant_k57abc0123456789 }
+        full_name: { type: string, minLength: 2, maxLength: 120 }
+        phone: { type: string, maxLength: 32, example: "+998901234567" }
+        email: { type: string, format: email, maxLength: 254 }
+        organization_name: { type: string, maxLength: 200 }
+        applicant_type: { type: string, maxLength: 40, example: business }
+        region: { type: string, maxLength: 80, example: Jizzakh }
+        message: { type: string, maxLength: 2000 }
+        preferred_language: { type: string, enum: [uz, ru, en, kaa] }
+        consent_to_contact: { type: boolean, const: true }
+        consent_text_version: { type: string, maxLength: 20, example: v1.0 }
+        utm_source: { type: string, maxLength: 100 }
+        utm_medium: { type: string, maxLength: 100 }
+        utm_campaign: { type: string, maxLength: 100 }
+        external_user_id: { type: string, maxLength: 128, description: Your opaque user id (no personal data) }
+    LeadResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        lead_id: { type: string, example: lead_j97abc0123456789 }
+        referral_id: { type: string, example: ref_3f9a0c1b2d4e5f6a7b8c }
+        status: { type: string, example: received }
+        duplicate: { type: boolean }
+        is_test: { type: boolean }
+        assigned_to: { type: string, example: FundingPro }
+        created_at: { type: string, format: date-time }
+    Event:
+      type: object
+      additionalProperties: false
+      required: [event_type]
+      properties:
+        event_type:
+          type: string
+          enum: [grant_view, grant_click, consultation_click, lead_started, lead_submitted, official_source_click]
+        grant_id: { type: string }
+        external_user_id: { type: string, maxLength: 128 }
+        session_id: { type: string, maxLength: 128 }
+        utm_source: { type: string, maxLength: 100 }
+        utm_medium: { type: string, maxLength: 100 }
+        utm_campaign: { type: string, maxLength: 100 }

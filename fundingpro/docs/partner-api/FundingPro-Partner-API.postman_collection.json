@@ -1,0 +1,248 @@
+{
+  "info": {
+    "name": "FundingPro Partner API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "See README.md. Set api_key to your fp_test_ key."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://sandbox-api.fundingpro.uz/v1"
+    },
+    {
+      "key": "api_key",
+      "value": "fp_test_REPLACE_ME"
+    },
+    {
+      "key": "partner_id",
+      "value": "jizzakh_business_platform"
+    },
+    {
+      "key": "grant_id",
+      "value": "grant_REPLACE_ME"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "List grants (business, Jizzakh)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/grants?applicant_type=business&region=Jizzakh&status=open&page=1&limit=20",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "grants"
+          ],
+          "query": [
+            {
+              "key": "applicant_type",
+              "value": "business"
+            },
+            {
+              "key": "region",
+              "value": "Jizzakh"
+            },
+            {
+              "key": "status",
+              "value": "open"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Search grants",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/grants/search?q=climate uzbekistan",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "grants",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "q",
+              "value": "climate uzbekistan"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get grant",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/grants/{{grant_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "grants",
+            "{{grant_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create lead",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{$guid}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/leads",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "leads"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"partner_id\": \"{{partner_id}}\",\n  \"grant_id\": \"{{grant_id}}\",\n  \"full_name\": \"Ali Valiyev\",\n  \"phone\": \"+998901234567\",\n  \"email\": \"ali@example.com\",\n  \"organization_name\": \"Jizzakh Agro Tech LLC\",\n  \"applicant_type\": \"business\",\n  \"region\": \"Jizzakh\",\n  \"message\": \"We would like support with the application\",\n  \"preferred_language\": \"uz\",\n  \"consent_to_contact\": true,\n  \"consent_text_version\": \"v1.0\",\n  \"utm_source\": \"jizzakh_platform\",\n  \"utm_medium\": \"mobile_app\",\n  \"utm_campaign\": \"grant_12345\",\n  \"external_user_id\": \"partner_user_98765\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Create lead without consent (expect 422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/leads",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "leads"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"partner_id\": \"{{partner_id}}\",\n  \"grant_id\": \"{{grant_id}}\",\n  \"full_name\": \"Ali Valiyev\",\n  \"phone\": \"+998901234567\",\n  \"email\": \"ali@example.com\",\n  \"organization_name\": \"Jizzakh Agro Tech LLC\",\n  \"applicant_type\": \"business\",\n  \"region\": \"Jizzakh\",\n  \"message\": \"We would like support with the application\",\n  \"preferred_language\": \"uz\",\n  \"consent_to_contact\": false,\n  \"consent_text_version\": \"v1.0\",\n  \"utm_source\": \"jizzakh_platform\",\n  \"utm_medium\": \"mobile_app\",\n  \"utm_campaign\": \"grant_12345\",\n  \"external_user_id\": \"partner_user_98765\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Track events",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/events",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "events"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"events\": [\n    {\n      \"event_type\": \"grant_view\",\n      \"grant_id\": \"{{grant_id}}\",\n      \"session_id\": \"s-1\"\n    },\n    {\n      \"event_type\": \"consultation_click\",\n      \"grant_id\": \"{{grant_id}}\",\n      \"session_id\": \"s-1\"\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "Meta",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/meta",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "meta"
+          ]
+        }
+      }
+    }
+  ]
+}

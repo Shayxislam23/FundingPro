@@ -715,3 +715,21 @@ describe("sandbox seed", () => {
     expect(list.data[0].flags.deadline_soon).toBe(true);
   });
 });
+
+describe("public catalog hardening", () => {
+  test("direct Convex catalog access can be switched off; server queries keep working", async () => {
+    const { t, publicGrantId } = await setup();
+    const rawId = publicGrantId.slice("grant_".length);
+
+    const open = await t.query(api.grants.list, { page: 1, limit: 500 });
+    expect(open.limit).toBe(50);
+
+    vi.stubEnv("PUBLIC_CATALOG_QUERIES_DISABLED", "true");
+    await expect(t.query(api.grants.list, { page: 1, limit: 10 })).rejects.toThrow(/disabled/);
+    await expect(t.query(api.grants.getById, { id: rawId })).rejects.toThrow(/disabled/);
+
+    const server = await t.query(internal.grants.listForServer, { page: 1, limit: 10 });
+    expect(server.total).toBeGreaterThan(0);
+    expect(await t.query(internal.grants.getByIdForServer, { id: rawId })).not.toBeNull();
+  });
+});

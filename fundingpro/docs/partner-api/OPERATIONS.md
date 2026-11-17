@@ -32,6 +32,12 @@ npx convex run --prod partnerApi:backfillGrantPartnerFields '{}'   # slug + по
 3. `npx convex run partnerAdmin:seedSandbox '{}'`: команда выведет тестовый ключ `fp_test_…` один раз.
 4. Создать второй Vercel-проект из того же репозитория с доменом `sandbox-api.fundingpro.uz`, переменной `PARTNER_API_ENV=sandbox` и ключами sandbox-Convex.
 
+### 3b. Закрыть прямой доступ к базе грантов
+1. Убедиться, что в Vercel (production) задан `CONVEX_DEPLOY_KEY`: без него не работают ни партнёрский API, ни платёжные webhooks.
+2. Проверить, что каталог на сайте открывается.
+3. `npx convex env set --prod PUBLIC_CATALOG_QUERIES_DISABLED true`. После этого базу грантов нельзя выгрузить напрямую через Convex, сайт продолжает работать через закрытые запросы.
+Откат: `npx convex env remove --prod PUBLIC_CATALOG_QUERIES_DISABLED`.
+
 ### 4. Наполнить каталог для партнёра
 В `/admin/partners` откройте вкладку «Публикация грантов». Для каждого гранта, актуального для бизнеса Джизака: сверить источник → «Источник проверен → опубликовать». Без этого партнёр получит пустой список.
 

@@ -1,4 +1,20 @@
-import { api, convexPublicQuery } from "@/lib/convex-server";
+import { api, convexInternalQuery, convexPublicQuery, internal } from "@/lib/convex-server";
+
+/**
+ * With CONVEX_DEPLOY_KEY on the server, the catalog is read through internal queries,
+ * so direct public Convex access can be disabled (PUBLIC_CATALOG_QUERIES_DISABLED=true).
+ */
+function hasServerCatalogAccess(): boolean {
+  return Boolean(process.env.CONVEX_DEPLOY_KEY?.trim());
+}
+
+type ListArgs = Parameters<typeof convexPublicQuery<typeof api.grants.list>>[1];
+
+function queryList(args: ListArgs) {
+  return hasServerCatalogAccess()
+    ? convexInternalQuery(internal.grants.listForServer, args)
+    : convexPublicQuery(api.grants.list, args);
+}
 import type {
   GrantDetail,
   GrantListItem,
@@ -13,7 +29,7 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
   try {
     if (params.cursor) {
       const limit = params.limit ?? 20;
-      const result = await convexPublicQuery(api.grants.list, {
+      const result = await queryList({
         search: params.search,
         sector: params.sector,
         country: params.country,
@@ -28,7 +44,7 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
       return result;
     }
 
-    return await convexPublicQuery(api.grants.list, {
+    return await queryList({
       search: params.search,
       sector: params.sector,
       country: params.country,
@@ -50,7 +66,9 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
 
 export async function getGrantById(id: string): Promise<GrantDetail | null> {
   try {
-    return await convexPublicQuery(api.grants.getById, { id });
+    return hasServerCatalogAccess()
+      ? await convexInternalQuery(internal.grants.getByIdForServer, { id })
+      : await convexPublicQuery(api.grants.getById, { id });
   } catch (err) {
     const { isSeedFallbackEnabled, seedFallbackGrantDetail } = await import("./catalog-fallback");
     if (isSeedFallbackEnabled()) return seedFallbackGrantDetail(id);

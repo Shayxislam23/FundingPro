@@ -9,7 +9,7 @@
  */
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { internalQuery, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { paginateAll } from "./lib/pagination";
@@ -178,8 +178,20 @@ async function listFilteredGrants(
   return matched;
 }
 
-export const list = query({
-  args: {
+/**
+ * Direct (browser / third-party) access to the catalog through the public Convex URL
+ * can be switched off with the Convex env var PUBLIC_CATALOG_QUERIES_DISABLED=true once
+ * the web server has CONVEX_DEPLOY_KEY and uses the *ForServer internal queries.
+ */
+function assertPublicCatalogEnabled() {
+  if (process.env.PUBLIC_CATALOG_QUERIES_DISABLED === "true") {
+    throw new Error("Direct catalog access is disabled. Use the FundingPro API.");
+  }
+}
+
+const MAX_PUBLIC_PAGE_SIZE = 50;
+
+const listArgs = {
     search: v.optional(v.string()),
     sector: v.optional(v.string()),
     country: v.optional(v.string()),
@@ -192,93 +204,129 @@ export const list = query({
     page: v.optional(v.number()),
     limit: v.optional(v.number()),
     paginationOpts: v.optional(paginationOptsValidator),
-  },
-  returns: listResultValidator,
-  handler: async (ctx, args) => {
-    const donorCache = new Map<string, Doc<"donors"> | null>();
-    const filterArgs: ListFilterArgs = {
-      search: args.search,
-      sector: args.sector,
-      country: args.country,
-      donorId: args.donorId,
-      deadlineBefore: args.deadlineBefore,
-      deadlineAfter: args.deadlineAfter,
-      activeOnly: args.activeOnly,
-      featured: args.featured,
-      today: args.today,
-    };
+};
 
-    if (args.paginationOpts) {
-      const pageItems: Array<{ grant: Doc<"grants">; donor: Doc<"donors"> | null }> = [];
-      let cursor = args.paginationOpts.cursor;
-      let isDone = false;
-      const target = args.paginationOpts.numItems;
+type ListArgs = {
+  search?: string;
+  sector?: string;
+  country?: string;
+  donorId?: string;
+  deadlineBefore?: string;
+  deadlineAfter?: string;
+  activeOnly?: boolean;
+  featured?: boolean;
+  today?: number;
+  page?: number;
+  limit?: number;
+  paginationOpts?: { numItems: number; cursor: string | null };
+};
 
-      while (pageItems.length < target && !isDone) {
-        const batch = await grantsIndexQuery(ctx, filterArgs)
-          .order("asc")
-          .paginate({ numItems: BATCH_SIZE, cursor });
+async function listHandler(ctx: QueryCtx, rawArgs: ListArgs) {
+  // Page size is capped to prevent bulk export of the grant base.
+  const args: ListArgs = {
+    ...rawArgs,
+    limit: rawArgs.limit !== undefined ? Math.min(Math.max(1, rawArgs.limit), MAX_PUBLIC_PAGE_SIZE) : undefined,
+    paginationOpts: rawArgs.paginationOpts
+      ? { ...rawArgs.paginationOpts, numItems: Math.min(Math.max(1, rawArgs.paginationOpts.numItems), MAX_PUBLIC_PAGE_SIZE) }
+      : undefined,
+  };
+  const donorCache = new Map<string, Doc<"donors"> | null>();
+  const filterArgs: ListFilterArgs = {
+    search: args.search,
+    sector: args.sector,
+    country: args.country,
+    donorId: args.donorId,
+    deadlineBefore: args.deadlineBefore,
+    deadlineAfter: args.deadlineAfter,
+    activeOnly: args.activeOnly,
+    featured: args.featured,
+    today: args.today,
+  };
 
-        for (const grant of batch.page) {
-          const donor = donorCache.has(grant.donorId)
-            ? (donorCache.get(grant.donorId) ?? null)
-            : await (async () => {
-                const d = await ctx.db.get("donors", grant.donorId);
-                donorCache.set(grant.donorId, d);
-                return d;
-              })();
+  if (args.paginationOpts) {
+    const pageItems: Array<{ grant: Doc<"grants">; donor: Doc<"donors"> | null }> = [];
+    let cursor = args.paginationOpts.cursor;
+    let isDone = false;
+    const target = args.paginationOpts.numItems;
 
-          if (passesFilters(grant, donor, filterArgs)) {
-            pageItems.push({ grant, donor });
-            if (pageItems.length >= target) break;
-          }
+    while (pageItems.length < target && !isDone) {
+      const batch = await grantsIndexQuery(ctx, filterArgs)
+        .order("asc")
+        .paginate({ numItems: BATCH_SIZE, cursor });
+
+      for (const grant of batch.page) {
+        const donor = donorCache.has(grant.donorId)
+          ? (donorCache.get(grant.donorId) ?? null)
+          : await (async () => {
+              const d = await ctx.db.get("donors", grant.donorId);
+              donorCache.set(grant.donorId, d);
+              return d;
+            })();
+
+        if (passesFilters(grant, donor, filterArgs)) {
+          pageItems.push({ grant, donor });
+          if (pageItems.length >= target) break;
         }
-
-        isDone = batch.isDone;
-        cursor = batch.continueCursor;
       }
 
-      pageItems.sort((a, b) => {
-        const da = a.grant.deadline ?? Number.MAX_SAFE_INTEGER;
-        const db = b.grant.deadline ?? Number.MAX_SAFE_INTEGER;
-        return da - db;
-      });
-
-      const limit = target;
-      return {
-        grants: pageItems.map(({ grant, donor }) => mapGrantListItem(grant, donor)),
-        total: pageItems.length,
-        page: 1,
-        limit,
-        pages: isDone ? 1 : 2,
-        continueCursor: isDone ? null : cursor,
-        isDone: isDone && pageItems.length < target,
-      };
+      isDone = batch.isDone;
+      cursor = batch.continueCursor;
     }
 
-    const page = args.page ?? 1;
-    const limit = args.limit ?? 20;
-    const matched = await listFilteredGrants(ctx, filterArgs, donorCache);
-    const total = matched.length;
-    const offset = (page - 1) * limit;
-    const pageItems = matched.slice(offset, offset + limit);
-    const hasMore = offset + limit < total;
+    pageItems.sort((a, b) => {
+      const da = a.grant.deadline ?? Number.MAX_SAFE_INTEGER;
+      const db = b.grant.deadline ?? Number.MAX_SAFE_INTEGER;
+      return da - db;
+    });
 
+    const limit = target;
     return {
       grants: pageItems.map(({ grant, donor }) => mapGrantListItem(grant, donor)),
-      total,
-      page,
+      total: pageItems.length,
+      page: 1,
       limit,
-      pages: Math.ceil(total / limit) || 1,
-      continueCursor: hasMore ? String(page + 1) : null,
-      isDone: !hasMore,
+      pages: isDone ? 1 : 2,
+      continueCursor: isDone ? null : cursor,
+      isDone: isDone && pageItems.length < target,
     };
+  }
+
+  const page = args.page ?? 1;
+  const limit = args.limit ?? 20;
+  const matched = await listFilteredGrants(ctx, filterArgs, donorCache);
+  const total = matched.length;
+  const offset = (page - 1) * limit;
+  const pageItems = matched.slice(offset, offset + limit);
+  const hasMore = offset + limit < total;
+
+  return {
+    grants: pageItems.map(({ grant, donor }) => mapGrantListItem(grant, donor)),
+    total,
+    page,
+    limit,
+    pages: Math.ceil(total / limit) || 1,
+    continueCursor: hasMore ? String(page + 1) : null,
+    isDone: !hasMore,
+  };
+}
+
+export const list = query({
+  args: listArgs,
+  returns: listResultValidator,
+  handler: async (ctx, args) => {
+    assertPublicCatalogEnabled();
+    return listHandler(ctx, args);
   },
 });
 
-export const getById = query({
-  args: { id: v.string() },
-  returns: v.union(
+/** Server-only twin of `list` (called by Next.js with the deploy key). */
+export const listForServer = internalQuery({
+  args: listArgs,
+  returns: listResultValidator,
+  handler: async (ctx, args) => listHandler(ctx, args),
+});
+
+const grantDetailValidator = v.union(
     v.object({
       id: v.string(),
       title: v.string(),
@@ -306,41 +354,57 @@ export const getById = query({
       ),
     }),
     v.null()
-  ),
+  );
+
+async function getByIdHandler(ctx: QueryCtx, args: { id: string }) {
+  let grant: Doc<"grants"> | null = null;
+  try {
+    grant = await ctx.db.get("grants", args.id as Id<"grants">);
+  } catch {
+    return null;
+  }
+  if (!grant) return null;
+
+  const donor = await ctx.db.get("donors", grant.donorId);
+  const requirements = await paginateAll(
+    ctx.db
+      .query("grantRequirements")
+      .withIndex("by_grant", (q) => q.eq("grantId", grant!._id))
+  );
+
+  const base = mapGrantListItem(grant, donor);
+  return {
+    ...base,
+    description_ru: grant.descriptionRu ?? null,
+    donor: {
+      id: donor?._id ?? "",
+      name: donor?.name ?? "",
+      name_ru: donor?.nameRu ?? null,
+      website: donor?.website ?? null,
+    },
+    grant_requirements: requirements.map((r) => ({
+      id: r._id,
+      requirement_type: r.requirementType,
+      text: r.text,
+      required: r.required,
+    })),
+  };
+}
+
+export const getById = query({
+  args: { id: v.string() },
+  returns: grantDetailValidator,
   handler: async (ctx, args) => {
-    let grant: Doc<"grants"> | null = null;
-    try {
-      grant = await ctx.db.get("grants", args.id as Id<"grants">);
-    } catch {
-      return null;
-    }
-    if (!grant) return null;
-
-    const donor = await ctx.db.get("donors", grant.donorId);
-    const requirements = await paginateAll(
-      ctx.db
-        .query("grantRequirements")
-        .withIndex("by_grant", (q) => q.eq("grantId", grant!._id))
-    );
-
-    const base = mapGrantListItem(grant, donor);
-    return {
-      ...base,
-      description_ru: grant.descriptionRu ?? null,
-      donor: {
-        id: donor?._id ?? "",
-        name: donor?.name ?? "",
-        name_ru: donor?.nameRu ?? null,
-        website: donor?.website ?? null,
-      },
-      grant_requirements: requirements.map((r) => ({
-        id: r._id,
-        requirement_type: r.requirementType,
-        text: r.text,
-        required: r.required,
-      })),
-    };
+    assertPublicCatalogEnabled();
+    return getByIdHandler(ctx, args);
   },
+});
+
+/** Server-only twin of `getById`. */
+export const getByIdForServer = internalQuery({
+  args: { id: v.string() },
+  returns: grantDetailValidator,
+  handler: async (ctx, args) => getByIdHandler(ctx, args),
 });
 
 export const healthCheck = query({

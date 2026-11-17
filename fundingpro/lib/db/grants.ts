@@ -10,10 +10,25 @@ function hasServerCatalogAccess(): boolean {
 
 type ListArgs = Parameters<typeof convexPublicQuery<typeof api.grants.list>>[1];
 
+/**
+ * Prefer the server-only query; fall back to the public one if the Convex deployment
+ * is older than this web build (e.g. web deployed before `npx convex deploy`).
+ */
+async function withServerFallback<T>(serverCall: () => Promise<T>, publicCall: () => Promise<T>): Promise<T> {
+  if (!hasServerCatalogAccess()) return publicCall();
+  try {
+    return await serverCall();
+  } catch (err) {
+    console.warn("[catalog] server query failed, falling back to public query", String(err).slice(0, 200));
+    return publicCall();
+  }
+}
+
 function queryList(args: ListArgs) {
-  return hasServerCatalogAccess()
-    ? convexInternalQuery(internal.grants.listForServer, args)
-    : convexPublicQuery(api.grants.list, args);
+  return withServerFallback(
+    () => convexInternalQuery(internal.grants.listForServer, args),
+    () => convexPublicQuery(api.grants.list, args)
+  );
 }
 import type {
   GrantDetail,
@@ -66,9 +81,10 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
 
 export async function getGrantById(id: string): Promise<GrantDetail | null> {
   try {
-    return hasServerCatalogAccess()
-      ? await convexInternalQuery(internal.grants.getByIdForServer, { id })
-      : await convexPublicQuery(api.grants.getById, { id });
+    return await withServerFallback(
+      () => convexInternalQuery(internal.grants.getByIdForServer, { id }),
+      () => convexPublicQuery(api.grants.getById, { id })
+    );
   } catch (err) {
     const { isSeedFallbackEnabled, seedFallbackGrantDetail } = await import("./catalog-fallback");
     if (isSeedFallbackEnabled()) return seedFallbackGrantDetail(id);

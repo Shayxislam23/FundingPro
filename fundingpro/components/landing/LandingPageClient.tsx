@@ -5,8 +5,6 @@ import { captureUtmParams } from "@/lib/analytics";
 import { LandingHeroSection } from "./LandingHeroSection";
 import { LandingHowItWorksSection } from "./LandingHowItWorksSection";
 import { LandingTrustStripSection } from "./LandingTrustStripSection";
-import { LandingAboutSection } from "./LandingAboutSection";
-import { LandingFeaturesSection } from "./LandingFeaturesSection";
 import { LandingPricingSection } from "./LandingPricingSection";
 import { LandingCtaSection } from "./LandingCtaSection";
 import {
@@ -63,8 +61,6 @@ export function LandingPageClient() {
       <LandingHeroSection grantCountLabel={grantCountLabel} />
       <LandingHowItWorksSection />
       <LandingTrustStripSection grantCountLabel={grantCountLabel} />
-      <LandingAboutSection grantCountLabel={grantCountLabel} />
-      <LandingFeaturesSection />
       <LandingPricingSection plans={plans} plansLoading={plansLoading} usdUzsRate={usdUzsRate} />
       <LandingCtaSection />
     </div>

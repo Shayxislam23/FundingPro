@@ -33,9 +33,27 @@ export const metadata: Metadata = {
 
 const DEFAULT_COUNTRY = "Uzbekistan";
 
+const AUDIENCES = [
+  { label: "Все", value: "" },
+  { label: "Бизнес", value: "business" },
+  { label: "Стартапы", value: "startup" },
+  { label: "Молодёжь и частные лица", value: "individual" },
+  { label: "НКО", value: "ngo" },
+] as const;
+
 type PageProps = {
-  searchParams: Promise<{ country?: string; page?: string; q?: string }>;
+  searchParams: Promise<{ country?: string; page?: string; q?: string; for?: string }>;
 };
+
+function catalogHref(params: { country?: string; for?: string; page?: number; q?: string }): string {
+  const sp = new URLSearchParams();
+  if (params.country !== undefined) sp.set("country", params.country);
+  if (params.for) sp.set("for", params.for);
+  if (params.q) sp.set("q", params.q);
+  if (params.page && params.page > 1) sp.set("page", String(params.page));
+  const qs = sp.toString();
+  return qs ? `/grants?${qs}` : "/grants";
+}
 
 export default async function PublicGrantsPage({ searchParams }: PageProps) {
   const sp = await searchParams;
@@ -43,6 +61,7 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
   const countryFilter = countryParam === undefined ? DEFAULT_COUNTRY : countryParam;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
   const search = sp.q?.trim() ?? "";
+  const audience = AUDIENCES.some((a) => a.value === sp.for) ? (sp.for ?? "") : "";
 
   let grants: GrantListItem[] = [];
   let total = 0;
@@ -51,6 +70,8 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
   try {
     const result = await listPublicGrants({
       ...(countryFilter ? { country: countryFilter } : {}),
+      ...(audience ? { applicantType: audience } : {}),
+      activeOnly: true,
       page,
       limit: 24,
       search: search || undefined,
@@ -102,15 +123,38 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
         </h1>
         <p className="text-sm text-gray-500 mb-8 max-w-2xl">
           {total > 0
-            ? `${total} активных возможностей финансирования. Войдите в дашборд для AI-подбора и подготовки заявки.`
-            : "Каталог грантов. Войдите в дашборд для полного доступа и AI-подбора."}
+            ? `${total} актуальных возможностей финансирования. Выберите, для кого ищете грант.`
+            : "Каталог грантов. Выберите, для кого ищете грант."}
         </p>
+
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-gray-500 mb-2">Для кого</p>
+          <div className="flex flex-wrap gap-2">
+            {AUDIENCES.map(({ label, value }) => {
+              const active = audience === value;
+              return (
+                <Link
+                  key={label}
+                  href={catalogHref({ country: countryParam, for: value, q: search })}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    active
+                      ? "bg-funding-green text-white border-funding-green"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-funding-green/40"
+                  }`}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+        <p className="text-xs font-semibold text-gray-500 mb-2">Страна</p>
 
         <div className="flex flex-wrap gap-2 mb-8">
           {[
-            { label: "Узбекистан", value: DEFAULT_COUNTRY, href: "/grants" },
-            { label: "Казахстан", value: "Kazakhstan", href: "/grants?country=Kazakhstan" },
-            { label: "Все страны", value: "", href: "/grants?country=" },
+            { label: "Узбекистан", value: DEFAULT_COUNTRY, href: catalogHref({ for: audience }) },
+            { label: "Казахстан", value: "Kazakhstan", href: catalogHref({ country: "Kazakhstan", for: audience }) },
+            { label: "Все страны", value: "", href: catalogHref({ country: "", for: audience }) },
           ].map(({ label, value, href }) => {
             const active = countryFilter === value;
             return (
@@ -131,9 +175,9 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
 
         {grants.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-            <p className="text-gray-500 mb-4">Гранты не найдены для выбранного фильтра.</p>
-            <Link href="/auth" className="text-sm font-semibold text-funding-green hover:underline">
-              Войти и открыть полную базу →
+            <p className="text-gray-500 mb-4">Сейчас нет открытых грантов для выбранного фильтра.</p>
+            <Link href="/business" className="text-sm font-semibold text-funding-green hover:underline">
+              Оставьте заявку — подберём грант под ваш проект →
             </Link>
           </div>
         ) : (
@@ -165,7 +209,7 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
           <nav className="flex justify-center gap-3 mt-10">
             {page > 1 && (
               <Link
-                href={`/grants?${countryParam !== undefined ? `country=${encodeURIComponent(countryFilter)}&` : ""}page=${page - 1}${search ? `&q=${encodeURIComponent(search)}` : ""}`}
+                href={catalogHref({ country: countryParam, for: audience, q: search, page: page - 1 })}
                 className="px-4 py-2 rounded-xl border border-gray-200 text-sm hover:border-funding-green/40"
               >
                 ← Назад
@@ -176,7 +220,7 @@ export default async function PublicGrantsPage({ searchParams }: PageProps) {
             </span>
             {page < pages && (
               <Link
-                href={`/grants?${countryParam !== undefined ? `country=${encodeURIComponent(countryFilter)}&` : ""}page=${page + 1}${search ? `&q=${encodeURIComponent(search)}` : ""}`}
+                href={catalogHref({ country: countryParam, for: audience, q: search, page: page + 1 })}
                 className="px-4 py-2 rounded-xl border border-gray-200 text-sm hover:border-funding-green/40"
               >
                 Далее →

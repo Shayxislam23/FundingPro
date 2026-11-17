@@ -108,6 +108,20 @@ async function applyApiRateLimitInner(req: NextRequest): Promise<NextResponse | 
     return null;
   }
 
+  if (pathname === "/api/v1/service-requests") {
+    const max = Number(process.env.SERVICE_REQUEST_RATE_LIMIT_MAX ?? 5);
+    const bucketKey = `service-request:${ip}`;
+    const allowed = await checkRateLimitAsync(bucketKey, max);
+    const headers = await rateLimitHeaders(bucketKey, max);
+    if (!allowed) {
+      return withRateLimitHeaders(
+        apiError("Слишком много заявок. Попробуйте через минуту.", 429, "RATE_LIMITED"),
+        headers
+      );
+    }
+    return null;
+  }
+
   if (pathname === "/api/v1/lead-magnet") {
     const bucketKey = `lead-magnet:${ip}`;
     const allowed = await checkRateLimitAsync(bucketKey, LEAD_MAGNET_MAX_REQUESTS);

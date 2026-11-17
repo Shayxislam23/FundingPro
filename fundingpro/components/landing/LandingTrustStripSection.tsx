@@ -17,7 +17,7 @@ export function LandingTrustStripSection({ grantCountLabel }: LandingTrustStripS
           <span>·</span>
           <span>{grantCountLabel} грантов</span>
           <span>·</span>
-          <span>Оплата в UZS через Uzum</span>
+          <span>Оплата в сумах</span>
         </div>
       </div>
     </section>

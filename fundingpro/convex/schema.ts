@@ -692,6 +692,39 @@ export default defineSchema({
   // Commercial terms live here, never in code. See docs/partner-api-implementation-plan.md
   // -------------------------------------------------------------------------
 
+  /** "Заявка под ключ" requests from the public /business form (sales pipeline). */
+  serviceRequests: defineTable({
+    fullName: v.string(),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    organizationName: v.optional(v.string()),
+    applicantType: v.string(),
+    region: v.optional(v.string()),
+    grantInterest: v.optional(v.string()),
+    message: v.optional(v.string()),
+    preferredLanguage: v.optional(v.string()),
+    consentTextVersion: v.string(),
+    consentAt: v.number(),
+    utmSource: v.optional(v.string()),
+    utmMedium: v.optional(v.string()),
+    utmCampaign: v.optional(v.string()),
+    status: v.union(
+      v.literal("new"),
+      v.literal("contacted"),
+      v.literal("qualified"),
+      v.literal("won"),
+      v.literal("lost")
+    ),
+    notes: v.optional(v.string()),
+    contactCount: v.number(),
+    anonymizedAt: v.optional(v.number()),
+    ...timestamps,
+  })
+    .index("by_phone", ["phone"])
+    .index("by_email", ["email"])
+    .index("by_status_and_createdAt", ["status", "createdAt"])
+    .index("by_createdAt", ["createdAt"]),
+
   apiPartners: defineTable({
     partnerCode: v.string(),
     name: v.string(),

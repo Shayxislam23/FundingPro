@@ -38,4 +38,11 @@ crons.interval(
   {}
 );
 
+crons.interval(
+  "anonymize stale service requests",
+  { hours: 24 },
+  internal.serviceRequests.purgeExpired,
+  {}
+);
+
 export default crons;

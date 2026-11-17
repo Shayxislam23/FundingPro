@@ -13,6 +13,7 @@ import { internalQuery, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { paginateAll } from "./lib/pagination";
+import { normalizeApplicantType, publicApplicantTypes } from "./lib/partnerApi";
 
 const grantListValidator = v.object({
   id: v.string(),
@@ -84,6 +85,8 @@ function matchesSearch(
 }
 
 type ListFilterArgs = {
+  /** Public applicant type: business | ngo | startup | individual | government | academic */
+  applicantType?: string;
   search?: string;
   sector?: string;
   country?: string;
@@ -102,6 +105,10 @@ function passesFilters(
 ): boolean {
   if (!grant.isActive) return false;
   if (args.featured && !grant.isFeatured) return false;
+  if (args.applicantType) {
+    const wanted = normalizeApplicantType(args.applicantType);
+    if (!wanted || !publicApplicantTypes(grant.applicantTypes ?? []).includes(wanted)) return false;
+  }
   if (args.search && !matchesSearch(grant, donor, args.search)) return false;
   if (args.sector && !grant.sectors.includes(args.sector)) return false;
   if (args.country && !grant.countryScope.includes(args.country)) return false;
@@ -192,6 +199,7 @@ function assertPublicCatalogEnabled() {
 const MAX_PUBLIC_PAGE_SIZE = 50;
 
 const listArgs = {
+    applicantType: v.optional(v.string()),
     search: v.optional(v.string()),
     sector: v.optional(v.string()),
     country: v.optional(v.string()),
@@ -207,6 +215,7 @@ const listArgs = {
 };
 
 type ListArgs = {
+  applicantType?: string;
   search?: string;
   sector?: string;
   country?: string;
@@ -232,6 +241,7 @@ async function listHandler(ctx: QueryCtx, rawArgs: ListArgs) {
   };
   const donorCache = new Map<string, Doc<"donors"> | null>();
   const filterArgs: ListFilterArgs = {
+    applicantType: args.applicantType,
     search: args.search,
     sector: args.sector,
     country: args.country,

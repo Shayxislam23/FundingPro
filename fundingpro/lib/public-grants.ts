@@ -9,6 +9,8 @@ import {
 export type { GrantListItem, GrantDetail, ListGrantsResult };
 
 export type PublicGrantsListParams = {
+  applicantType?: string;
+  activeOnly?: boolean;
   search?: string;
   sector?: string;
   country?: string;
@@ -24,9 +26,12 @@ export async function listPublicGrants(
   params: PublicGrantsListParams = {}
 ): Promise<PublicGrantsListResult> {
   const page = Math.max(1, params.page ?? 1);
-  const limit = Math.min(params.limit ?? 20, 100);
+  const limit = Math.min(params.limit ?? 20, 50);
 
   return listGrants({
+    applicantType: params.applicantType,
+    activeOnly: params.activeOnly,
+    today: params.activeOnly ? new Date().setUTCHours(0, 0, 0, 0) : undefined,
     search: params.search,
     sector: params.sector,
     country: params.country,

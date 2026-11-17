@@ -10,6 +10,7 @@ import { formatPlanPriceDisplay } from "@/lib/format-plan";
 import { getUsdUzsRate } from "@/lib/legal/documents";
 import { absoluteUrl, hreflangAlternates, openGraphPage, siteConfig } from "@/lib/seo/site";
 import { ArrowRight } from "lucide-react";
+import { ServiceOffers } from "@/components/offers/ServiceOffers";
 
 const pageTitle = "Тарифы и подписки";
 const pageDescription =
@@ -75,23 +76,20 @@ export default async function PricingPage() {
 
       <main className="max-w-6xl mx-auto w-full px-6 py-10 flex-1">
         <SectionLabel className="text-funding-green">Тарифы</SectionLabel>
-        <h1 className="text-3xl md:text-4xl font-black text-funding-black mb-3">
-          Выберите план FundingPro
+        <h1 className="text-3xl md:text-4xl font-black text-funding-black mb-3 break-words">
+          Цены FundingPro
         </h1>
         <p className="text-sm text-gray-500 mb-10 max-w-2xl">
-          Для бизнеса, молодёжи и частных лиц в Узбекистане. Бесплатный старт: 2 проверки
-          соответствия и 1 AI-черновик в месяц.
+          Для бизнеса, молодёжи и частных лиц в Узбекистане. Каталог и 2 проверки соответствия в месяц —
+          бесплатно.
         </p>
 
+        <ServiceOffers />
+
+        {plans.length > 0 && (
+          <h2 className="text-xl font-black text-funding-black mt-14 mb-6">Подписка для самостоятельной работы</h2>
+        )}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {plans.length === 0 && (
-            <p className="col-span-full text-center text-sm text-gray-500">
-              Тарифы временно недоступны.{" "}
-              <Link href="/auth" className="text-funding-green hover:underline">
-                Войти в дашборд
-              </Link>
-            </p>
-          )}
           {plans.map((plan) => {
             const display = formatPlanPriceDisplay(plan.priceUzs, plan.priceUsd);
             return (

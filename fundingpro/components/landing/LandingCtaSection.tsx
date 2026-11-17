@@ -12,7 +12,7 @@ export function LandingCtaSection() {
       style={{ background: "#020703", borderColor: "rgba(255,255,255,0.05)" }}
     >
       <div className="max-w-3xl mx-auto text-center">
-        <h2 className="text-4xl md:text-5xl font-black text-white mb-4">Готовы начать?</h2>
+        <h2 className="text-3xl md:text-5xl font-black text-white mb-4">Готовы начать?</h2>
         <p className="mb-6 max-w-xl mx-auto" style={{ color: "#A7B8AA" }}>
           Получите подборку грантов, стипендий и конкурсов для бизнеса и молодёжи Узбекистана на email или начните
           бесплатно в дашборде.
@@ -20,12 +20,20 @@ export function LandingCtaSection() {
         <LeadMagnetForm />
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
           <Link
-            href="/auth"
+            href="/grants"
             onClick={() => trackEvent("landing_cta_click", { placement: "footer" })}
             className="inline-block px-6 py-3.5 rounded-xl font-semibold text-sm transition-colors"
             style={{ background: "#008A2E", color: "#fff" }}
           >
-            Начать бесплатно
+            Смотреть гранты
+          </Link>
+          <Link
+            href="/business"
+            onClick={() => trackEvent("landing_cta_click", { placement: "footer_business" })}
+            className="inline-block px-6 py-3.5 rounded-xl font-semibold text-sm border"
+            style={{ borderColor: "rgba(255,255,255,0.2)", color: "#fff" }}
+          >
+            Заявка под ключ
           </Link>
         </div>
         <LegalFooter className="mt-8" variant="dark" style={{ color: "rgba(167,184,170,0.4)" }} />

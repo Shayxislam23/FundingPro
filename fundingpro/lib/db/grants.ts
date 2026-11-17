@@ -45,6 +45,7 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
     if (params.cursor) {
       const limit = params.limit ?? 20;
       const result = await queryList({
+        applicantType: params.applicantType,
         search: params.search,
         sector: params.sector,
         country: params.country,
@@ -60,6 +61,7 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
     }
 
     return await queryList({
+      applicantType: params.applicantType,
       search: params.search,
       sector: params.sector,
       country: params.country,

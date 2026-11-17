@@ -51,6 +51,7 @@ import type * as rateLimits from "../rateLimits.js";
 import type * as savedGrants from "../savedGrants.js";
 import type * as seed from "../seed.js";
 import type * as seedData from "../seedData.js";
+import type * as serviceRequests from "../serviceRequests.js";
 import type * as settings from "../settings.js";
 import type * as subscriptionRequests from "../subscriptionRequests.js";
 import type * as support from "../support.js";
@@ -106,6 +107,7 @@ declare const fullApi: ApiFromModules<{
   savedGrants: typeof savedGrants;
   seed: typeof seed;
   seedData: typeof seedData;
+  serviceRequests: typeof serviceRequests;
   settings: typeof settings;
   subscriptionRequests: typeof subscriptionRequests;
   support: typeof support;

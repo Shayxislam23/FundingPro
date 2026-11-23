@@ -49,3 +49,8 @@ node_modules
 !.agents/skills/serp-analysis/**
 !.agents/skills/technical-seo-checker/
 !.agents/skills/technical-seo-checker/**
+
+# AI-assistant scratch files (prompts, pasted screenshots) — keep out of the repo
+user_prompt-*.md
+image-[0-9]*.png
+image-resized-[0-9]*.webp

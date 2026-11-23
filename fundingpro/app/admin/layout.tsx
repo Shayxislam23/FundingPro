@@ -21,6 +21,8 @@ import {
   TrendingUp,
   Shield,
   GraduationCap,
+  Handshake,
+  PhoneCall,
 } from "lucide-react";
 import {
   AppShellSidebar,
@@ -40,6 +42,8 @@ const adminNav: AppNavItem[] = [
   { label: "Доноры", href: "/admin/donors", icon: Landmark },
   { label: "Заказы консультантов", href: "/admin/consultant-orders", icon: Briefcase },
   { label: "Платежи", href: "/admin/payments", icon: CreditCard },
+  { label: "Заявки под ключ", href: "/admin/service-requests", icon: PhoneCall },
+  { label: "Партнёры (API)", href: "/admin/partners", icon: Handshake },
   { label: "AI-запросы", href: "/admin/ai-logs", icon: Bot },
   { label: "Поддержка", href: "/admin/support", icon: HelpCircle },
   { label: "Аудит", href: "/admin/audit", icon: ScrollText },

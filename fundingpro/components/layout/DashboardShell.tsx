@@ -25,7 +25,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useClerk } from "@clerk/nextjs";
+import { useSafeSignOut } from "@/lib/auth/use-safe-sign-out";
 import { getAuthHeaders } from "@/lib/client-auth";
 import { PlanUsageBadge } from "@/components/design/PlanUsageBadge";
 import { ShellNavLink, isNavItemActive } from "@/components/layout/AppShell";
@@ -74,7 +74,7 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children, className }: DashboardShellProps) {
   const pathname = usePathname();
-  const { signOut } = useClerk();
+  const signOut = useSafeSignOut();
   const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);

@@ -1,31 +1,44 @@
 import type { Metadata } from "next";
 import { LandingPageClient } from "@/components/landing/LandingPageClient";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { getPageLocale } from "@/lib/i18n/server";
 import { absoluteUrl, hreflangAlternates, openGraphPage, siteConfig } from "@/lib/seo/site";
 
-export const metadata: Metadata = {
-  title: `${siteConfig.name} — AI-платформа для грантов`,
-  description: siteConfig.description,
-  openGraph: openGraphPage(
-    `${siteConfig.name} — AI-платформа для грантов`,
-    siteConfig.ogDescription,
-    "/"
-  ),
-  twitter: {
-    card: "summary_large_image",
-    title: `${siteConfig.name} — AI-платформа для грантов`,
-    description: siteConfig.twitterDescription,
-  },
-  alternates: hreflangAlternates("/"),
-};
+type PageProps = { searchParams: Promise<{ lang?: string }> };
 
-export default function LandingPage() {
+const META = {
+  ru: {
+    title: `${siteConfig.name} — гранты для бизнеса и молодёжи Узбекистана`,
+    description:
+      "Бесплатный каталог проверенных грантов, программа «Мой путь» с наставником и заявка под ключ для бизнеса. Гонорар только за успех.",
+  },
+  uz: {
+    title: `${siteConfig.name} — O‘zbekiston biznesi va yoshlari uchun grantlar`,
+    description:
+      "Tekshirilgan grantlarning bepul katalogi, murabbiy bilan «Mening yo‘lim» dasturi va biznes uchun tayyor ariza. Haq faqat g‘alaba uchun.",
+  },
+} as const;
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const locale = await getPageLocale((await searchParams).lang);
+  const m = META[locale];
+  return {
+    title: { absolute: m.title },
+    description: m.description,
+    openGraph: { ...openGraphPage(m.title, m.description, locale === "uz" ? "/?lang=uz" : "/"), locale: locale === "uz" ? "uz_UZ" : "ru_RU" },
+    twitter: { card: "summary_large_image", title: m.title, description: m.description },
+    alternates: hreflangAlternates("/"),
+  };
+}
+
+export default async function LandingPage({ searchParams }: PageProps) {
+  const locale = await getPageLocale((await searchParams).lang);
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: siteConfig.name,
     url: siteConfig.url,
-    description: siteConfig.description,
+    description: META[locale].description,
     areaServed: {
       "@type": "Country",
       name: "Uzbekistan",
@@ -37,7 +50,7 @@ export default function LandingPage() {
     "@type": "WebSite",
     name: siteConfig.name,
     url: siteConfig.url,
-    inLanguage: "ru",
+    inLanguage: ["ru", "uz"],
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -51,7 +64,7 @@ export default function LandingPage() {
   return (
     <>
       <JsonLd data={[organizationJsonLd, websiteJsonLd]} />
-      <LandingPageClient />
+      <LandingPageClient locale={locale} />
     </>
   );
 }

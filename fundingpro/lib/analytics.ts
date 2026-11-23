@@ -35,7 +35,8 @@ type AnalyticsEvent =
   | "payment_intent"
   | "subscription_activated"
   | "grant_shared"
-  | "lead_magnet_submit";
+  | "lead_magnet_submit"
+  | "service_request_submitted";
 
 export type PmfSurveyAnswer = "very_disappointed" | "somewhat_disappointed" | "not_disappointed";
 

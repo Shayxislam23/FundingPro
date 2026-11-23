@@ -16,7 +16,9 @@ export const GET = withPublic(async (req) => {
   const activeOnly = searchParams.get("activeOnly") === "true";
   const deadlineAfter = searchParams.get("deadlineAfter") ?? "";
   const cursor = searchParams.get("cursor");
-  const { page, limit } = parsePagination(searchParams);
+  const { page, limit: requestedLimit } = parsePagination(searchParams);
+  // Public catalog page size is capped at 50 to prevent bulk export of the grant base.
+  const limit = Math.min(requestedLimit, 50);
 
   const safeSearch = search ? sanitizeLikePattern(search) : "";
   const today = activeOnly ? new Date().setHours(0, 0, 0, 0) : undefined;

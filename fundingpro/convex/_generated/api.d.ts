@@ -26,6 +26,8 @@ import type * as lab from "../lab.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_customFunctions from "../lib/customFunctions.js";
 import type * as lib_pagination from "../lib/pagination.js";
+import type * as lib_partnerApi from "../lib/partnerApi.js";
+import type * as lib_partnerKeys from "../lib/partnerKeys.js";
 import type * as lib_paymentHelpers from "../lib/paymentHelpers.js";
 import type * as lib_userMode from "../lib/userMode.js";
 import type * as lib_validators from "../lib/validators.js";
@@ -35,6 +37,8 @@ import type * as organizations from "../organizations.js";
 import type * as partnersInternal from "../partnersInternal.js";
 import type * as payments from "../payments.js";
 import type * as paymentsInternal from "../paymentsInternal.js";
+import type * as partnerAdmin from "../partnerAdmin.js";
+import type * as partnerApi from "../partnerApi.js";
 import type * as paymentsSystem from "../paymentsSystem.js";
 import type * as planUsage from "../planUsage.js";
 import type * as plans from "../plans.js";
@@ -46,10 +50,12 @@ import type * as rateLimits from "../rateLimits.js";
 import type * as savedGrants from "../savedGrants.js";
 import type * as seed from "../seed.js";
 import type * as seedData from "../seedData.js";
+import type * as serviceRequests from "../serviceRequests.js";
 import type * as settings from "../settings.js";
 import type * as subscriptionRequests from "../subscriptionRequests.js";
 import type * as successFee from "../successFee.js";
 import type * as support from "../support.js";
+import type * as telegram from "../telegram.js";
 import type * as users from "../users.js";
 
 import type {
@@ -77,6 +83,8 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/customFunctions": typeof lib_customFunctions;
   "lib/pagination": typeof lib_pagination;
+  "lib/partnerApi": typeof lib_partnerApi;
+  "lib/partnerKeys": typeof lib_partnerKeys;
   "lib/paymentHelpers": typeof lib_paymentHelpers;
   "lib/userMode": typeof lib_userMode;
   "lib/validators": typeof lib_validators;
@@ -86,6 +94,8 @@ declare const fullApi: ApiFromModules<{
   partnersInternal: typeof partnersInternal;
   payments: typeof payments;
   paymentsInternal: typeof paymentsInternal;
+  partnerAdmin: typeof partnerAdmin;
+  partnerApi: typeof partnerApi;
   paymentsSystem: typeof paymentsSystem;
   planUsage: typeof planUsage;
   plans: typeof plans;
@@ -97,10 +107,12 @@ declare const fullApi: ApiFromModules<{
   savedGrants: typeof savedGrants;
   seed: typeof seed;
   seedData: typeof seedData;
+  serviceRequests: typeof serviceRequests;
   settings: typeof settings;
   subscriptionRequests: typeof subscriptionRequests;
   successFee: typeof successFee;
   support: typeof support;
+  telegram: typeof telegram;
   users: typeof users;
 }>;
 

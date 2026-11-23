@@ -4,6 +4,17 @@ import { applyApiRateLimit } from "@/lib/api-rate-limit";
 import { isClerkConfigured } from "@/lib/auth/clerk-config";
 import { safePostAuthPath } from "@/lib/auth/paths";
 
+/** Hosts that serve the Partner API: https://api.fundingpro.uz/v1/* → /api/partner/v1/* */
+const PARTNER_API_HOSTS = (process.env.PARTNER_API_HOSTS ?? "api.fundingpro.uz,sandbox-api.fundingpro.uz")
+  .split(",")
+  .map((h) => h.trim().toLowerCase())
+  .filter(Boolean);
+
+function isPartnerApiHost(host: string | null): boolean {
+  if (!host) return false;
+  return PARTNER_API_HOSTS.includes(host.split(":")[0].toLowerCase());
+}
+
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/admin(.*)",
@@ -15,6 +26,7 @@ const isRateLimitedApiRoute = createRouteMatcher([
   "/api/v1/ai/(.*)",
   "/api/v1/auth/(.*)",
   "/api/v1/lead-magnet",
+  "/api/v1/service-requests",
   "/api/v1/lab/(.*)",
   "/api/v1/onboarding/lab-profile",
   "/api/v1/onboarding/tasks",
@@ -23,6 +35,9 @@ const isRateLimitedApiRoute = createRouteMatcher([
   "/api/v1/payments/uzum/(.*)",
   "/api/v1/payments/status",
   "/api/v1/payments/webhook",
+  "/api/v1/grants",
+  "/api/v1/grants/(.*)",
+  "/api/v1/donors",
 ]);
 
 function isProtectedPath(pathname: string): boolean {
@@ -72,6 +87,19 @@ async function unconfiguredMiddleware(request: Request) {
 
 const configuredMiddleware = clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
+
+  if (isPartnerApiHost(request.headers.get("host"))) {
+    if (pathname === "/v1" || pathname.startsWith("/v1/")) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/api/partner${pathname}`;
+      return NextResponse.rewrite(url);
+    }
+    if (pathname.startsWith("/api/partner/v1/")) return NextResponse.next();
+    return NextResponse.json(
+      { error: { code: "INVALID_REQUEST", message: "Not found. Partner API lives under /v1" } },
+      { status: 404 }
+    );
+  }
 
   if (isRateLimitedApiRoute(request)) {
     const limited = await applyApiRateLimit(request);
@@ -134,10 +162,16 @@ export const config = {
     "/api/v1/payments/click/:path*",
     "/api/v1/payments/uzum/:path*",
     "/api/v1/lead-magnet",
+    "/api/v1/service-requests",
     "/api/v1/lab/:path*",
     "/api/v1/onboarding/lab-profile",
     "/api/v1/onboarding/tasks",
     "/api/v1/payments/status",
     "/api/v1/payments/webhook",
+    "/api/v1/grants",
+    "/api/v1/grants/:path*",
+    "/api/v1/donors",
+    "/v1/:path*",
+    "/v1",
   ],
 };

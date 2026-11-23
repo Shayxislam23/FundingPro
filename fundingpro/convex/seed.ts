@@ -38,9 +38,12 @@ function matchDonorKey(
 }
 
 export const run = internalMutation({
-  args: {},
+  // Demo organizations and consultant profiles (invented names, ratings and reviews)
+  // are for local development only. Never put them in front of real customers.
+  args: { includeDemo: v.optional(v.boolean()) },
   returns: seedResultValidator,
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
+    const includeDemo = args.includeDemo === true;
     const now = Date.now();
     const donorIdByKey = new Map<string, Id<"donors">>();
 
@@ -115,7 +118,7 @@ export const run = internalMutation({
     const existingOrgs = await ctx.db.query("organizations").collect();
     const orgNames = new Set(existingOrgs.map((o) => o.name));
     let organizationsInserted = 0;
-    for (const org of SEED_ORGANIZATIONS) {
+    for (const org of includeDemo ? SEED_ORGANIZATIONS : []) {
       if (orgNames.has(org.name)) {
         continue;
       }
@@ -135,7 +138,7 @@ export const run = internalMutation({
 
     const existingConsultants = await ctx.db.query("consultantProfiles").collect();
     let consultantsInserted = 0;
-    if (existingConsultants.length === 0) {
+    if (includeDemo && existingConsultants.length === 0) {
       for (const consultant of SEED_CONSULTANTS) {
         const organizationId = await ctx.db.insert("organizations", {
           name: consultant.orgName,

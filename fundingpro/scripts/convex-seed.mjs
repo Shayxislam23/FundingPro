@@ -3,6 +3,9 @@
  * Seed Convex catalog from convex/seed.ts (idempotent).
  * Usage: npm run convex:seed
  * Requires: npx convex dev running (or deployed Convex backend).
+ *
+ * Demo consultants/organizations (invented names and reviews) are seeded only with
+ * `npm run convex:seed -- --demo`, and never by the production seed.
  */
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
@@ -12,7 +15,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 
 try {
-  const output = execSync("npx convex run seed:run", {
+  const includeDemo = process.argv.includes("--demo");
+  const output = execSync(`npx convex run seed:run '${JSON.stringify({ includeDemo })}'`, {
     cwd: root,
     encoding: "utf8",
     stdio: ["pipe", "pipe", "inherit"],

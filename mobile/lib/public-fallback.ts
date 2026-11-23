@@ -144,20 +144,38 @@ const FALLBACK_DONORS: PublicDonor[] = [
     country: "Switzerland",
     website: "https://www.eda.admin.ch",
   },
+  {
+    id: "fallback-donor-us-embassy",
+    name: "U.S. Embassy Tashkent",
+    name_ru: "Посольство США в Ташкенте",
+    description: "Грантовые программы Посольства США в Узбекистане",
+    country: "United States",
+    website: "https://uz.usembassy.gov",
+  },
+  {
+    id: "fallback-donor-itpark",
+    name: "IT Park Uzbekistan",
+    name_ru: "IT Park Узбекистан",
+    description: "Государственный оператор IT-экосистемы Узбекистана",
+    country: "Uzbekistan",
+    website: "https://it-park.uz",
+  },
 ];
 
-/** Three featured grants from seed — UNDP, GIZ, World Bank match pilot success stories. */
-const FALLBACK_GRANTS: GrantListItem[] = [
+/** Three real programmes from convex/seedData.ts (verified sources; deadlines are annual-cycle estimates). */
+const FALLBACK_GRANTS: (GrantListItem & { description_ru: string })[] = [
   {
-    id: "fallback-grant-climate",
-    title: "Climate Resilience for Central Asia",
-    title_ru: "Устойчивость к изменению климата в Центральной Азии",
-    description: "Поддержка проектов адаптации к изменению климата в регионе ЦА.",
-    sectors: ["climate", "environment"],
-    country_scope: ["Uzbekistan", "Kazakhstan", "Kyrgyzstan"],
-    amount_min: 50000,
-    amount_max: 250000,
-    deadline: "2026-09-30T23:59:59.000Z",
+    id: "fallback-grant-gef-sgp",
+    title: "GEF Small Grants Programme (Uzbekistan)",
+    title_ru: "Программа малых грантов ГЭФ (Узбекистан)",
+    description: "Ежегодные малые гранты ПРООН/ГЭФ на экологические проекты.",
+    description_ru:
+      "Ежегодные малые гранты ПРООН/ГЭФ на экологические проекты: биоразнообразие, управление землёй и водой, адаптация к климату, устойчивое сельское хозяйство. Обычно до 50 000 USD с софинансированием.",
+    sectors: ["environment", "climate", "biodiversity", "agriculture"],
+    country_scope: ["Uzbekistan"],
+    amount_min: 5000,
+    amount_max: 50000,
+    deadline: "2027-01-31T23:59:59.000Z",
     donor: {
       id: "fallback-donor-undp",
       name: "UNDP",
@@ -165,35 +183,39 @@ const FALLBACK_GRANTS: GrantListItem[] = [
     },
   },
   {
-    id: "fallback-grant-green-economy",
-    title: "GIZ Green Economy Initiative",
-    title_ru: "Инициатива GIZ по зелёной экономике",
-    description: "Устойчивое сельское хозяйство и развитие зелёного бизнеса.",
-    sectors: ["agriculture", "economy"],
-    country_scope: ["Uzbekistan", "Tajikistan"],
-    amount_min: 40000,
-    amount_max: 200000,
-    deadline: "2026-10-01T23:59:59.000Z",
+    id: "fallback-grant-us-embassy",
+    title: "U.S. Embassy Tashkent Small Grants Program",
+    title_ru: "Программа малых грантов Посольства США",
+    description: "Гражданское общество, СМИ, образование и общественные инициативы.",
+    description_ru:
+      "Грантовые программы Посольства США в Узбекистане: гражданское общество, СМИ, образование и общественные инициативы. Конкурсы публикуются на странице грантов посольства.",
+    sectors: ["civil_society", "media", "education"],
+    country_scope: ["Uzbekistan"],
+    amount_min: 5000,
+    amount_max: 100000,
+    deadline: "2026-12-31T23:59:59.000Z",
     donor: {
-      id: "fallback-donor-giz",
-      name: "GIZ",
-      name_ru: "GIZ",
+      id: "fallback-donor-us-embassy",
+      name: "U.S. Embassy Tashkent",
+      name_ru: "Посольство США в Ташкенте",
     },
   },
   {
-    id: "fallback-grant-education",
-    title: "World Bank Education Modernization",
-    title_ru: "Модернизация образования — Всемирный банк",
-    description: "Цифровая трансформация школ и университетов.",
-    sectors: ["education", "technology"],
+    id: "fallback-grant-itpark-ventures",
+    title: "IT Park Ventures — Seed to Series A Investment",
+    title_ru: "IT Park Ventures — инвестиции от идеи до Series A",
+    description: "Инвестиции от $10 000 до $1 000 000 в технологические стартапы.",
+    description_ru:
+      "Венчурный фонд на $30 млн: инвестиции от $10 000 до $1 000 000 в технологические стартапы Узбекистана и Центральной Азии, менторская поддержка и государственное софинансирование.",
+    sectors: ["technology", "business", "innovation"],
     country_scope: ["Uzbekistan"],
-    amount_min: 100000,
-    amount_max: 500000,
-    deadline: "2026-11-30T23:59:59.000Z",
+    amount_min: 10000,
+    amount_max: 1000000,
+    deadline: "2027-12-31T23:59:59.000Z",
     donor: {
-      id: "fallback-donor-wb",
-      name: "World Bank",
-      name_ru: "Всемирный банк",
+      id: "fallback-donor-itpark",
+      name: "IT Park Uzbekistan",
+      name_ru: "IT Park Узбекистан",
     },
   },
 ];
@@ -254,14 +276,14 @@ export function getFallbackGrants(): GrantListItem[] {
   return FALLBACK_GRANTS;
 }
 
-/** Full seed catalog size — shown on landing when API returns empty totals. */
-export const FALLBACK_LANDING_GRANT_TOTAL = 30;
+/** Verified seed catalog size (convex/seedData.ts SEED_GRANTS) — shown on landing when API returns empty totals. */
+export const FALLBACK_LANDING_GRANT_TOTAL = 11;
 
 export function getLandingGrantStats(apiTotal: number): { value: string; label: string; fromFallback: boolean } {
   if (apiTotal > 0) {
     return { value: `${apiTotal}+`, label: "грантов в каталоге", fromFallback: false };
   }
-  return { value: `${FALLBACK_LANDING_GRANT_TOTAL}+`, label: "грантов", fromFallback: true };
+  return { value: String(FALLBACK_LANDING_GRANT_TOTAL), label: "программ", fromFallback: true };
 }
 
 export function getLandingDonorStats(apiTotal: number): { value: string; label: string; fromFallback: boolean } {
@@ -284,14 +306,7 @@ export function getFallbackGrantDetail(id: string): GrantDetail | null {
   const donor = FALLBACK_DONORS.find((item) => item.id === grant.donor.id);
   return {
     ...grant,
-    description_ru:
-      grant.id === "fallback-grant-climate"
-        ? "Поддержка проектов адаптации к изменению климата в регионе ЦА."
-        : grant.id === "fallback-grant-green-economy"
-          ? "Устойчивое сельское хозяйство и развитие зелёного бизнеса."
-          : grant.id === "fallback-grant-education"
-            ? "Цифровая трансформация школ и университетов."
-            : null,
+    description_ru: grant.description_ru,
     grant_requirements: [],
     donor: {
       ...grant.donor,

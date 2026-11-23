@@ -5,11 +5,14 @@
 :root {
   --background: #ffffff;
   --foreground: #050505;
-  --funding-green: #008A2E;
-  --funding-accent: #12B94F;
+  /* FundingPro brand green (dashboard, web) — matches fundingpro.uz reference */
+  --funding-green: #428238;
+  --funding-accent: #4f9a45;
   --funding-dark: #020703;
   --funding-muted: #A7B8AA;
-  --funding-light-green: #D9F7DD;
+  --funding-light-green: #e8f0e6;
+  /* ZOOMRAD partner channel accent (mini app badge only) */
+  --zoomrad-green: #008A2E;
 }
 
 * {
@@ -41,6 +44,6 @@ body {
   background: #020703;
 }
 ::-webkit-scrollbar-thumb {
-  background: #008A2E;
+  background: var(--funding-green);
   border-radius: 3px;
 }

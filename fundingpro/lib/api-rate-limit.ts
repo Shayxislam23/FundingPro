@@ -63,6 +63,8 @@ const LEAD_MAGNET_MAX_REQUESTS = Number(process.env.LEAD_MAGNET_RATE_LIMIT_MAX ?
 const LAB_MAX_REQUESTS = Number(process.env.LAB_RATE_LIMIT_MAX ?? 120);
 const PUBLIC_PAYMENTS_STATUS_MAX = Number(process.env.PAYMENTS_STATUS_RATE_LIMIT_MAX ?? 60);
 const WEBHOOK_MAX_REQUESTS = Number(process.env.WEBHOOK_RATE_LIMIT_MAX ?? 30);
+/** Public catalog: generous for real users, blocks bulk scraping of the grant base. */
+const CATALOG_MAX_REQUESTS = Number(process.env.CATALOG_RATE_LIMIT_MAX ?? 120);
 
 /** Edge/middleware rate limit for selected /api/v1/* routes (IP-based, Convex-backed). */
 export async function applyApiRateLimit(req: NextRequest): Promise<NextResponse | null> {
@@ -106,6 +108,20 @@ async function applyApiRateLimitInner(req: NextRequest): Promise<NextResponse | 
     return null;
   }
 
+  if (pathname === "/api/v1/service-requests") {
+    const max = Number(process.env.SERVICE_REQUEST_RATE_LIMIT_MAX ?? 5);
+    const bucketKey = `service-request:${ip}`;
+    const allowed = await checkRateLimitAsync(bucketKey, max);
+    const headers = await rateLimitHeaders(bucketKey, max);
+    if (!allowed) {
+      return withRateLimitHeaders(
+        apiError("Слишком много заявок. Попробуйте через минуту.", 429, "RATE_LIMITED"),
+        headers
+      );
+    }
+    return null;
+  }
+
   if (pathname === "/api/v1/lead-magnet") {
     const bucketKey = `lead-magnet:${ip}`;
     const allowed = await checkRateLimitAsync(bucketKey, LEAD_MAGNET_MAX_REQUESTS);
@@ -140,6 +156,24 @@ async function applyApiRateLimitInner(req: NextRequest): Promise<NextResponse | 
     const bucketKey = `payments-status:${ip}`;
     const allowed = await checkRateLimitAsync(bucketKey, PUBLIC_PAYMENTS_STATUS_MAX);
     const headers = await rateLimitHeaders(bucketKey, PUBLIC_PAYMENTS_STATUS_MAX);
+    if (!allowed) {
+      return withRateLimitHeaders(
+        apiError("Too many requests. Try again later.", 429, "RATE_LIMITED"),
+        headers
+      );
+    }
+    return null;
+  }
+
+  if (
+    pathname === "/api/v1/grants" ||
+    pathname.startsWith("/api/v1/grants/") ||
+    pathname === "/api/v1/donors"
+  ) {
+    if (req.method !== "GET") return null;
+    const bucketKey = `catalog:${ip}`;
+    const allowed = await checkRateLimitAsync(bucketKey, CATALOG_MAX_REQUESTS);
+    const headers = await rateLimitHeaders(bucketKey, CATALOG_MAX_REQUESTS);
     if (!allowed) {
       return withRateLimitHeaders(
         apiError("Too many requests. Try again later.", 429, "RATE_LIMITED"),

@@ -31,4 +31,18 @@ crons.interval(
   {}
 );
 
+crons.interval(
+  "purge partner API request logs and idempotency keys",
+  { hours: 6 },
+  internal.partnerApi.purgeExpired,
+  {}
+);
+
+crons.interval(
+  "anonymize stale service requests",
+  { hours: 24 },
+  internal.serviceRequests.purgeExpired,
+  {}
+);
+
 export default crons;

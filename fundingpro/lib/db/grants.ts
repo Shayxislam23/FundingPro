@@ -1,4 +1,35 @@
-import { api, convexPublicQuery } from "@/lib/convex-server";
+import { api, convexInternalQuery, convexPublicQuery, internal } from "@/lib/convex-server";
+
+/**
+ * With CONVEX_DEPLOY_KEY on the server, the catalog is read through internal queries,
+ * so direct public Convex access can be disabled (PUBLIC_CATALOG_QUERIES_DISABLED=true).
+ */
+function hasServerCatalogAccess(): boolean {
+  return Boolean(process.env.CONVEX_DEPLOY_KEY?.trim());
+}
+
+type ListArgs = Parameters<typeof convexPublicQuery<typeof api.grants.list>>[1];
+
+/**
+ * Prefer the server-only query; fall back to the public one if the Convex deployment
+ * is older than this web build (e.g. web deployed before `npx convex deploy`).
+ */
+async function withServerFallback<T>(serverCall: () => Promise<T>, publicCall: () => Promise<T>): Promise<T> {
+  if (!hasServerCatalogAccess()) return publicCall();
+  try {
+    return await serverCall();
+  } catch (err) {
+    console.warn("[catalog] server query failed, falling back to public query", String(err).slice(0, 200));
+    return publicCall();
+  }
+}
+
+function queryList(args: ListArgs) {
+  return withServerFallback(
+    () => convexInternalQuery(internal.grants.listForServer, args),
+    () => convexPublicQuery(api.grants.list, args)
+  );
+}
 import type {
   GrantDetail,
   GrantListItem,
@@ -13,7 +44,8 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
   try {
     if (params.cursor) {
       const limit = params.limit ?? 20;
-      const result = await convexPublicQuery(api.grants.list, {
+      const result = await queryList({
+        applicantType: params.applicantType,
         search: params.search,
         sector: params.sector,
         country: params.country,
@@ -28,7 +60,8 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
       return result;
     }
 
-    return await convexPublicQuery(api.grants.list, {
+    return await queryList({
+      applicantType: params.applicantType,
       search: params.search,
       sector: params.sector,
       country: params.country,
@@ -50,7 +83,10 @@ export async function listGrants(params: ListGrantsParams): Promise<ListGrantsRe
 
 export async function getGrantById(id: string): Promise<GrantDetail | null> {
   try {
-    return await convexPublicQuery(api.grants.getById, { id });
+    return await withServerFallback(
+      () => convexInternalQuery(internal.grants.getByIdForServer, { id }),
+      () => convexPublicQuery(api.grants.getById, { id })
+    );
   } catch (err) {
     const { isSeedFallbackEnabled, seedFallbackGrantDetail } = await import("./catalog-fallback");
     if (isSeedFallbackEnabled()) return seedFallbackGrantDetail(id);

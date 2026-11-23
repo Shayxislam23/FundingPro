@@ -286,6 +286,8 @@ export default defineSchema({
     website: v.optional(v.string()),
     description: v.optional(v.string()),
     logoUrl: v.optional(v.string()),
+    /** foundation | government | multilateral | corporate | other (public). */
+    type: v.optional(v.string()),
     isActive: v.boolean(),
     ...timestamps,
   }).index("by_active", ["isActive"]),
@@ -309,6 +311,29 @@ export default defineSchema({
     isActive: v.boolean(),
     isFeatured: v.boolean(),
     lastUpdatedAt: v.number(),
+    // --- Partner API / public data fields (all optional, additive) ---
+    slug: v.optional(v.string()),
+    titleUz: v.optional(v.string()),
+    descriptionUz: v.optional(v.string()),
+    summary: v.optional(v.string()),
+    summaryRu: v.optional(v.string()),
+    summaryUz: v.optional(v.string()),
+    eligibleRegions: v.optional(v.array(v.string())),
+    tags: v.optional(v.array(v.string())),
+    fundingType: v.optional(v.string()),
+    cofinancingRequired: v.optional(v.boolean()),
+    cofinancingPercentage: v.optional(v.number()),
+    applicationLanguages: v.optional(v.array(v.string())),
+    publishedAt: v.optional(v.number()),
+    lastVerifiedAt: v.optional(v.number()),
+    verificationStatus: v.optional(
+      v.union(v.literal("verified"), v.literal("unverified"), v.literal("invalid"))
+    ),
+    /** Only grants explicitly published for partners appear in the Partner API. */
+    partnerVisible: v.optional(v.boolean()),
+    consultationAvailable: v.optional(v.boolean()),
+    /** Denormalized text for the full-text search index (see convex/lib/partnerApi.ts). */
+    searchText: v.optional(v.string()),
     ...timestamps,
   })
     .index("by_donor", ["donorId"])
@@ -316,7 +341,13 @@ export default defineSchema({
     .index("by_deadline", ["deadline"])
     .index("by_featured", ["isFeatured"])
     .index("by_sourceUrl", ["sourceUrl"])
-    .index("by_active_status_deadline", ["isActive", "status", "deadline"]),
+    .index("by_active_status_deadline", ["isActive", "status", "deadline"])
+    .index("by_slug", ["slug"])
+    .index("by_partnerVisible_and_isActive_and_deadline", ["partnerVisible", "isActive", "deadline"])
+    .searchIndex("search_partner_text", {
+      searchField: "searchText",
+      filterFields: ["partnerVisible", "isActive"],
+    }),
 
   grantRequirements: defineTable({
     grantId: v.id("grants"),
@@ -656,4 +687,280 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_status", ["status"]),
 
+  /** Bank / super-app partner SSO sessions (ZOOMRAD first). */
+  partnerSessions: defineTable({
+    channelSlug: v.string(),
+    externalUserId: v.string(),
+    /** Bank server bearer from auth/init (never overwritten by WebView exchange). */
+    sessionTokenHash: v.string(),
+    /** WebView bearer after launch-code exchange. */
+    clientSessionTokenHash: v.optional(v.string()),
+    /** One-time WebView launch code (hashed); cleared after exchange. */
+    launchCodeHash: v.optional(v.string()),
+    launchCodeExpiresAt: v.optional(v.number()),
+    status: v.union(v.literal("pending"), v.literal("active"), v.literal("expired")),
+    userId: v.optional(v.id("users")),
+    locale: v.optional(v.union(v.literal("ru"), v.literal("uz"))),
+    displayName: v.optional(v.string()),
+    expiresAt: v.number(),
+    ...timestamps,
+  })
+    .index("by_token_hash", ["sessionTokenHash"])
+    .index("by_client_token_hash", ["clientSessionTokenHash"])
+    .index("by_launch_code_hash", ["launchCodeHash"])
+    .index("by_channel_external", ["channelSlug", "externalUserId"]),
+
+  /** Replay protection for signed partner requests (auth init / webhooks). */
+  partnerRequestNonces: defineTable({
+    channelSlug: v.string(),
+    nonceHash: v.string(),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  }).index("by_channel_nonce", ["channelSlug", "nonceHash"]),
+
+  /** Serializes nonce consumption per channel (OCC conflict point). */
+  partnerNonceLocks: defineTable({
+    channelSlug: v.string(),
+    updatedAt: v.number(),
+  }).index("by_channel", ["channelSlug"]),
+
+  /** Monthly completed partner-channel transactions for revenue-share tiers. */
+  partnerMonthlyStats: defineTable({
+    channelSlug: v.string(),
+    yearMonth: v.string(),
+    completedTransactions: v.number(),
+    ...timestamps,
+  }).index("by_channel_month", ["channelSlug", "yearMonth"]),
+
+
+  // -------------------------------------------------------------------------
+  // Partner API (data-provider integrations, e.g. jizzakh_business_platform)
+  // Commercial terms live here, never in code. See docs/partner-api-implementation-plan.md
+  // -------------------------------------------------------------------------
+
+  /** "Заявка под ключ" requests from the public /business form (sales pipeline). */
+  serviceRequests: defineTable({
+    fullName: v.string(),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    organizationName: v.optional(v.string()),
+    applicantType: v.string(),
+    region: v.optional(v.string()),
+    grantInterest: v.optional(v.string()),
+    message: v.optional(v.string()),
+    preferredLanguage: v.optional(v.string()),
+    consentTextVersion: v.string(),
+    consentAt: v.number(),
+    utmSource: v.optional(v.string()),
+    utmMedium: v.optional(v.string()),
+    utmCampaign: v.optional(v.string()),
+    status: v.union(
+      v.literal("new"),
+      v.literal("contacted"),
+      v.literal("qualified"),
+      v.literal("won"),
+      v.literal("lost")
+    ),
+    notes: v.optional(v.string()),
+    contactCount: v.number(),
+    anonymizedAt: v.optional(v.number()),
+    ...timestamps,
+  })
+    .index("by_phone", ["phone"])
+    .index("by_email", ["email"])
+    .index("by_status_and_createdAt", ["status", "createdAt"])
+    .index("by_createdAt", ["createdAt"]),
+
+  /** Telegram bot chats: remembered language and the in-progress "заявка под ключ" step. */
+  telegramChats: defineTable({
+    chatId: v.string(),
+    locale: v.union(v.literal("ru"), v.literal("uz")),
+    pendingApplicantType: v.optional(v.string()),
+    lastRequestAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index("by_chatId", ["chatId"]),
+
+  apiPartners: defineTable({
+    partnerCode: v.string(),
+    name: v.string(),
+    status: v.union(v.literal("active"), v.literal("suspended"), v.literal("terminated")),
+    environment: v.union(v.literal("production"), v.literal("sandbox")),
+    allowedDomains: v.array(v.string()),
+    allowedIps: v.array(v.string()),
+    allowedAppIds: v.array(v.string()),
+    monthlyRequestLimit: v.number(),
+    requestsPerMinute: v.number(),
+    pilotStartedAt: v.optional(v.number()),
+    pilotEndsAt: v.optional(v.number()),
+    plan: v.string(),
+    brandingRequired: v.boolean(),
+    commissionPercentage: v.number(),
+    commissionRule: v.union(v.literal("first_paid_order"), v.literal("every_paid_order"), v.literal("none")),
+    referralBaseUrl: v.optional(v.string()),
+    contactEmail: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    ...timestamps,
+  })
+    .index("by_partnerCode", ["partnerCode"])
+    .index("by_status", ["status"]),
+
+  apiPartnerKeys: defineTable({
+    partnerId: v.id("apiPartners"),
+    /** SHA-256 hex of the full key. The plaintext key is never stored. */
+    keyHash: v.string(),
+    keyPrefix: v.string(),
+    environment: v.union(v.literal("production"), v.literal("sandbox")),
+    status: v.union(v.literal("active"), v.literal("revoked")),
+    expiresAt: v.optional(v.number()),
+    lastUsedAt: v.optional(v.number()),
+    createdByUserId: v.optional(v.id("users")),
+    revokedAt: v.optional(v.number()),
+    revokedReason: v.optional(v.string()),
+    ...timestamps,
+  })
+    .index("by_keyHash", ["keyHash"])
+    .index("by_partnerId", ["partnerId"]),
+
+  /** Request journal — metadata only: no key, no query string, no body, no personal data. */
+  partnerApiRequests: defineTable({
+    partnerId: v.id("apiPartners"),
+    endpoint: v.string(),
+    method: v.string(),
+    statusCode: v.number(),
+    requestId: v.string(),
+    ipHash: v.optional(v.string()),
+    responseTimeMs: v.number(),
+    errorCode: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_partnerId_and_createdAt", ["partnerId", "createdAt"])
+    .index("by_createdAt", ["createdAt"]),
+
+  partnerMonthlyUsage: defineTable({
+    partnerId: v.id("apiPartners"),
+    yearMonth: v.string(),
+    requestCount: v.number(),
+    updatedAt: v.number(),
+  }).index("by_partnerId_and_yearMonth", ["partnerId", "yearMonth"]),
+
+  partnerEvents: defineTable({
+    partnerId: v.id("apiPartners"),
+    grantId: v.optional(v.id("grants")),
+    externalUserId: v.optional(v.string()),
+    eventType: v.union(
+      v.literal("grant_view"),
+      v.literal("grant_click"),
+      v.literal("consultation_click"),
+      v.literal("lead_started"),
+      v.literal("lead_submitted"),
+      v.literal("official_source_click")
+    ),
+    sessionId: v.optional(v.string()),
+    utmSource: v.optional(v.string()),
+    utmMedium: v.optional(v.string()),
+    utmCampaign: v.optional(v.string()),
+    isTest: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_partnerId_and_createdAt", ["partnerId", "createdAt"])
+    .index("by_createdAt", ["createdAt"]),
+
+  partnerLeads: defineTable({
+    partnerId: v.id("apiPartners"),
+    grantId: v.id("grants"),
+    referralId: v.string(),
+    source: v.string(),
+    externalUserId: v.optional(v.string()),
+    fullName: v.string(),
+    phone: v.optional(v.string()),
+    email: v.optional(v.string()),
+    organizationName: v.optional(v.string()),
+    applicantType: v.optional(v.string()),
+    region: v.optional(v.string()),
+    preferredLanguage: v.optional(v.string()),
+    message: v.optional(v.string()),
+    consentToContact: v.boolean(),
+    consentTextVersion: v.string(),
+    consentAt: v.number(),
+    utmSource: v.optional(v.string()),
+    utmMedium: v.optional(v.string()),
+    utmCampaign: v.optional(v.string()),
+    status: v.union(
+      v.literal("new"),
+      v.literal("contacted"),
+      v.literal("qualified"),
+      v.literal("proposal_sent"),
+      v.literal("paid"),
+      v.literal("rejected"),
+      v.literal("closed"),
+      v.literal("duplicate")
+    ),
+    firstContactAt: v.number(),
+    lastContactAt: v.number(),
+    contactCount: v.number(),
+    paymentReceived: v.boolean(),
+    paymentAmount: v.optional(v.number()),
+    paymentCurrency: v.optional(v.string()),
+    paidAt: v.optional(v.number()),
+    isTest: v.boolean(),
+    anonymizedAt: v.optional(v.number()),
+    ...timestamps,
+  })
+    .index("by_partnerId_and_grantId_and_phone", ["partnerId", "grantId", "phone"])
+    .index("by_partnerId_and_grantId_and_email", ["partnerId", "grantId", "email"])
+    .index("by_partnerId_and_createdAt", ["partnerId", "createdAt"])
+    .index("by_referralId", ["referralId"])
+    .index("by_phone", ["phone"])
+    .index("by_email", ["email"])
+    .index("by_createdAt", ["createdAt"]),
+
+  /** Lead history: repeat contacts, status changes, internal notes (never exposed to partners). */
+  partnerLeadEvents: defineTable({
+    leadId: v.id("partnerLeads"),
+    type: v.union(
+      v.literal("created"),
+      v.literal("repeat_contact"),
+      v.literal("status_change"),
+      v.literal("payment_recorded"),
+      v.literal("note"),
+      v.literal("anonymized")
+    ),
+    fromStatus: v.optional(v.string()),
+    toStatus: v.optional(v.string()),
+    note: v.optional(v.string()),
+    actorUserId: v.optional(v.id("users")),
+    createdAt: v.number(),
+  }).index("by_leadId", ["leadId"]),
+
+  partnerIdempotencyKeys: defineTable({
+    partnerId: v.id("apiPartners"),
+    key: v.string(),
+    requestHash: v.string(),
+    leadId: v.id("partnerLeads"),
+    duplicate: v.boolean(),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_partnerId_and_key", ["partnerId", "key"])
+    .index("by_expiresAt", ["expiresAt"]),
+
+  partnerCommissions: defineTable({
+    partnerId: v.id("apiPartners"),
+    leadId: v.id("partnerLeads"),
+    clientPaymentAmount: v.number(),
+    currency: v.string(),
+    commissionPercentage: v.number(),
+    commissionAmount: v.number(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("paid"),
+      v.literal("cancelled")
+    ),
+    paidAt: v.optional(v.number()),
+    ...timestamps,
+  })
+    .index("by_partnerId", ["partnerId"])
+    .index("by_leadId", ["leadId"])
+    .index("by_status", ["status"]),
 });

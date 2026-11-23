@@ -1,30 +1,26 @@
 # ACCESS_NEEDED — что нужно от тебя для полного запуска
 
-Обновлено: **2026-07-13** | Failure-modes plan execution: seed align + North Star funnel; live catalog still empty until deploy key.
+Обновлено: **2026-09-03** | PR #29 ZOOMRAD + custom sign-in; CI still billing-locked.
+
+**Локальный CI** (пока GitHub Actions billing lock): из корня `npm run ci:local` — typecheck/lint/tests + `npm audit --audit-level=high`.
 
 См. также: [`fundingpro/docs/FAILURE_MODES_100.md`](fundingpro/docs/FAILURE_MODES_100.md), [`fundingpro/docs/TECH_DEBT_P3.md`](fundingpro/docs/TECH_DEBT_P3.md).
 
 ---
 
-## Текущий live-статус (2026-07-13)
+## Текущий live-статус (2026-09-03)
 
 | Компонент | Статус | Детали |
 |---|---|---|
-| **www.fundingpro.uz** | ✅ LIVE | Health `ok`, DB ok, AI ok, **payments.enabled: false** |
-| Landing / product | ✅ OK | Individuals-first copy на проде |
-| `/api/v1/plans` | ❌ Пусто | `total: 0` — Convex production **не засеян** |
-| `/api/v1/grants` | ❌ Пусто | `total: 0` |
-| `/.well-known/apple-app-site-association` | ⚠️ Неполный | 200 OK · `X-App-Links-Config: incomplete` · нужны `APPLE_TEAM_ID`, `ANDROID_RELEASE_SHA256` |
-| `/.well-known/assetlinks.json` | ⚠️ Неполный | То же |
-| `fundingpro.uz` → `www.fundingpro.uz` | ✅ OK | 307 redirect — штатное поведение Vercel |
-| GitHub Actions CI (`main-ci.yml`) | ❌ BILLING LOCK | Проверено **2026-07-13** — runs `29224989839`, `29224847321` (~4–5s): *account locked due to a billing issue* |
-| GitHub Release Gate (`release-gate.yml`) | ❌ BILLING LOCK | `29224761180` (push main), `29218435343` (schedule) — то же |
-| Ghost workflow `BuildFailed` | 🗑️ Удалён | id 306385397 — отключи уведомления (см. §3) |
+| **www.fundingpro.uz** | ✅ LIVE | Health `ok` (prod) |
+| Local Next `:3000` / Convex `:3210` / Metro `:8081` | ✅ OK | Cloud agent workspace |
+| Local Clerk keys | ❌ PLACEHOLDERS | Need real Dashboard keys for `/sign-in` + `npm run clerk:seed-demo` |
+| GitHub Actions CI (`main-ci.yml`) | ❌ BILLING LOCK | Проверено **2026-09-03** — PR #29 runs fail in ~5s; локально: `npm run ci:local` (typecheck/lint/tests + audit high) |
+| npm audit high (local) | ✅ PASS | Next **15.5.25** + overrides (`postcss`/`nanoid`/`js-yaml`/…); remain 3× moderate via expo-router |
+| GitHub Release Gate (`release-gate.yml`) | ❌ BILLING LOCK | Без снятия billing CI не стартует |
 | GitHub repo visibility | ✅ Public | Public не снимает billing lock на аккаунте |
 | Vercel GitHub auto-deploy | ⚠️ Отключён | Reconnect в Vercel Dashboard — Root Directory **`.`** (рекомендуется) или `fundingpro` (см. §3b). CLI deploy работает. |
-| Convex prod seed | ❌ BLOCKED | Нет `CONVEX_DEPLOY_KEY`. Seed **код** обновлён (физлица в grants + Consulting=INDIVIDUAL) — применить после ключа |
-| Admin North Star | ✅ Code | `/admin/funnel` показывает `northStarRate` (lab proof submitted/completed) |
-| `ignoreBuildErrors` | ✅ Removed | typecheck green; см. TECH_DEBT_P3.md |
+| Convex prod seed | ❌ BLOCKED | Нет `CONVEX_DEPLOY_KEY` |
 | EAS CLI | ❌ Не установлен | `eas` не найден на машине |
 
 **Критичный gap:** сайт живой, но каталог тарифов/грантов пустой. После успешного seed ожидается ~6 plans и grants > 0 (см. `fundingpro/docs/PROD-SEED.md`).
@@ -68,7 +64,7 @@ curl -s "https://www.fundingpro.uz/api/v1/grants?limit=1" | head -c 300
 
 Полная инструкция: [`fundingpro/docs/PROD-SEED.md`](fundingpro/docs/PROD-SEED.md).
 
-**Статус 2026-07-13:** ключ в локальных env **отсутствует** — агент seed не смог выполнить.
+**Статус:** ключ в локальных env **отсутствует** — агент seed не смог выполнить. Проверьте Convex Dashboard → production → Deploy Key.
 
 ---
 

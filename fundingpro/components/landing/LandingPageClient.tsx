@@ -5,8 +5,6 @@ import { captureUtmParams } from "@/lib/analytics";
 import { LandingHeroSection } from "./LandingHeroSection";
 import { LandingHowItWorksSection } from "./LandingHowItWorksSection";
 import { LandingTrustStripSection } from "./LandingTrustStripSection";
-import { LandingAboutSection } from "./LandingAboutSection";
-import { LandingFeaturesSection } from "./LandingFeaturesSection";
 import { LandingPricingSection } from "./LandingPricingSection";
 import { LandingCtaSection } from "./LandingCtaSection";
 import {
@@ -15,7 +13,9 @@ import {
   type LandingPlan,
 } from "./landingConstants";
 
-export function LandingPageClient() {
+import type { Locale } from "@/lib/i18n/locale";
+
+export function LandingPageClient({ locale }: { locale: Locale }) {
   const [grantTotal, setGrantTotal] = useState<number | null>(null);
   const [plans, setPlans] = useState<LandingPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
@@ -59,14 +59,12 @@ export function LandingPageClient() {
   const grantCountLabel = formatGrantCountLabel(grantTotal);
 
   return (
-    <div className="min-h-screen bg-funding-dark text-white overflow-hidden">
-      <LandingHeroSection grantCountLabel={grantCountLabel} />
-      <LandingHowItWorksSection />
-      <LandingTrustStripSection grantCountLabel={grantCountLabel} />
-      <LandingAboutSection grantCountLabel={grantCountLabel} />
-      <LandingFeaturesSection />
-      <LandingPricingSection plans={plans} plansLoading={plansLoading} usdUzsRate={usdUzsRate} />
-      <LandingCtaSection />
+    <div lang={locale} className="min-h-screen bg-funding-dark text-white overflow-hidden">
+      <LandingHeroSection grantCountLabel={grantCountLabel} locale={locale} />
+      <LandingHowItWorksSection locale={locale} />
+      <LandingTrustStripSection grantCountLabel={grantCountLabel} locale={locale} />
+      <LandingPricingSection plans={locale === "uz" ? [] : plans} plansLoading={plansLoading} usdUzsRate={usdUzsRate} locale={locale} />
+      <LandingCtaSection locale={locale} />
     </div>
   );
 }

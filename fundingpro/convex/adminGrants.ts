@@ -287,9 +287,11 @@ export const closeExpiredGrants = internalMutation({
   handler: async (ctx) => {
     const now = Date.now();
     // Filter before take so already-closed grants never crowd the batch out.
+    // The by_deadline range already bounds the scan; isActive is a cheap residual check.
     const dueForClosure = await ctx.db
       .query("grants")
       .withIndex("by_deadline", (q) => q.gt("deadline", 0).lt("deadline", now))
+      // eslint-disable-next-line @convex-dev/no-filter-in-query
       .filter((q) => q.eq(q.field("isActive"), true))
       .take(CLOSE_EXPIRED_BATCH);
 

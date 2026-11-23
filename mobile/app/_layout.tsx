@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "../lib/auth/context";
 import { useAuthDeepLink } from "../lib/auth/deep-link";
 import { AppQueryProvider } from "../lib/query-client";
 import { setupPushNotificationRouting } from "../lib/notifications";
+import { CLAY_COLORS } from "../lib/clay-styles";
 import {
   GuestCarousel,
   hasSeenGuestCarousel,
@@ -37,8 +38,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const inAuth = segments[0] === "(auth)";
     const inPublic = segments[0] === "(public)";
     const inLegal = segments[0] === "(legal)";
+    const inPartner = segments[0] === "partner";
 
-    if (!session && !inAuth && !inPublic && !inLegal) {
+    if (!session && !inAuth && !inPublic && !inLegal && !inPartner) {
       router.replace("/(auth)/login");
     } else if (session && inAuth) {
       router.replace("/(app)/(tabs)/home");
@@ -48,7 +50,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   if (isLoading || !carouselChecked) {
     return (
       <View className="flex-1 items-center justify-center bg-clay-canvas">
-        <ActivityIndicator color="#008A2E" size="large" />
+        <ActivityIndicator color={CLAY_COLORS.green} size="large" />
       </View>
     );
   }
@@ -76,6 +78,7 @@ export default function RootLayout() {
             <Stack.Screen name="(public)" />
             <Stack.Screen name="(legal)" />
             <Stack.Screen name="(app)" />
+            <Stack.Screen name="partner" />
             <Stack.Screen name="subscription/return" />
             <Stack.Screen name="mobile" />
           </Stack>

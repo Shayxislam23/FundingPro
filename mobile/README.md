@@ -141,6 +141,8 @@ Scheme: `fundingpro://` · App Links: `https://www.fundingpro.uz/mobile/*`
 | `https://www.fundingpro.uz/mobile/auth/callback` | Clerk auth callback (Universal / App Links) |
 | `fundingpro://subscription/return?paymentId=` | Uzum payment return |
 | `https://www.fundingpro.uz/mobile/subscription/return?paymentId=` | Payment return (App Links) |
+| `/partner/zoomrad` | ZOOMRAD Mini App WebView (bank channel) |
+| `fundingpro://partner/zoomrad` | Deep link to partner WebView shell |
 
 ## App structure
 

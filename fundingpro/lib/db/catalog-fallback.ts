@@ -17,6 +17,7 @@ import {
   SEED_PLANS,
   parseDeadline,
 } from "../../convex/seedData";
+import { normalizeApplicantType, publicApplicantTypes } from "@/convex/lib/partnerApi";
 import type { GrantDetail, GrantListItem, ListGrantsParams, ListGrantsResult } from "./grants.types";
 import type { PlanRow } from "./plans";
 
@@ -69,7 +70,15 @@ function toListItem(grant: (typeof SEED_GRANTS)[number]): GrantListItem {
 
 export function seedFallbackGrantsList(params: ListGrantsParams = {}): ListGrantsResult {
   const search = params.search?.trim().toLowerCase();
-  let grants = SEED_GRANTS.map(toListItem);
+  const wantedType = params.applicantType ? normalizeApplicantType(params.applicantType) : null;
+  const today = params.today ?? new Date().setUTCHours(0, 0, 0, 0);
+  let grants = SEED_GRANTS.filter((g) => {
+    if (params.applicantType && (!wantedType || !publicApplicantTypes(g.applicantTypes ?? []).includes(wantedType))) {
+      return false;
+    }
+    if (params.activeOnly && g.deadline && Date.parse(g.deadline) < today) return false;
+    return true;
+  }).map(toListItem);
 
   if (search) {
     grants = grants.filter(
@@ -89,7 +98,7 @@ export function seedFallbackGrantsList(params: ListGrantsParams = {}): ListGrant
   }
 
   const page = Math.max(1, params.page ?? 1);
-  const limit = Math.min(params.limit ?? 20, 100);
+  const limit = Math.min(params.limit ?? 20, 50);
   const total = grants.length;
   const offset = (page - 1) * limit;
 

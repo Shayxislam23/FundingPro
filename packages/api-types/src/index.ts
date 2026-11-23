@@ -109,6 +109,8 @@ export type ListGrantsResult = z.infer<typeof listGrantsResultSchema>;
 
 /** Query params for grants catalog (web lib/db + mobile API). */
 export const listGrantsParamsSchema = z.object({
+  /** business | ngo | startup | individual | government | academic */
+  applicantType: z.string().optional(),
   search: z.string().optional(),
   sector: z.string().optional(),
   country: z.string().optional(),
@@ -467,3 +469,5 @@ export const paginatedUsersSchema = z.object({
   page: z.number(),
   limit: z.number(),
 }).passthrough();
+
+export * from "./partners";

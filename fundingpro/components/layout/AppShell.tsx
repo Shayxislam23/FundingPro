@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
+import { useSafeSignOut } from "@/lib/auth/use-safe-sign-out";
 
 export type AppNavItem = {
   label: string;
@@ -66,11 +66,11 @@ export function ShellLogoutButton({
   className?: string;
 }) {
   const router = useRouter();
-  const { signOut } = useClerk();
+  const signOut = useSafeSignOut();
 
   async function handleLogout() {
     await signOut();
-    router.push("/auth");
+    router.push("/sign-in");
   }
 
   return (

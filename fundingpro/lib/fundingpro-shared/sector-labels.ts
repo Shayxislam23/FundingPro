@@ -178,6 +178,22 @@ const SECTOR_MAP: Record<string, string> = {
   "дети": "Дети",
   "миграция": "Миграция",
   "литература": "Литература",
+  // ── English slugs (seed / imported data) ──
+  "water": "Водные ресурсы",
+  "culture": "Культура",
+  "economy": "Экономика",
+  "energy": "Энергетика",
+  "infrastructure": "Инфраструктура",
+  "heritage": "Культурное наследие",
+  "biodiversity": "Биоразнообразие",
+  "innovation": "Инновации",
+  "health": "Здравоохранение",
+  "tourism": "Туризм",
+  "sme": "Малый и средний бизнес",
+  "entrepreneurship": "Предпринимательство",
+  "women": "Женщины",
+  "arts": "Искусство",
+  "sport": "Спорт",
 };
 
 /**

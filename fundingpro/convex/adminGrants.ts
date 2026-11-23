@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { adminMutation, adminQuery } from "./lib/customFunctions";
 import { internalMutation } from "./_generated/server";
 import { paginateAll } from "./lib/pagination";
+import { refreshGrantSearchText } from "./partnerApi";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
@@ -110,7 +111,7 @@ export const create = adminMutation({
   returns: v.string(),
   handler: async (ctx, args) => {
     const now = Date.now();
-    return await ctx.db.insert("grants", {
+    const grantId = await ctx.db.insert("grants", {
       title: args.title,
       titleRu: args.titleRu,
       donorId: args.donorId as Id<"donors">,
@@ -131,6 +132,8 @@ export const create = adminMutation({
       createdAt: now,
       updatedAt: now,
     });
+    await refreshGrantSearchText(ctx, grantId);
+    return grantId;
   },
 });
 
@@ -284,9 +287,11 @@ export const closeExpiredGrants = internalMutation({
   handler: async (ctx) => {
     const now = Date.now();
     // Filter before take so already-closed grants never crowd the batch out.
+    // The by_deadline range already bounds the scan; isActive is a cheap residual check.
     const dueForClosure = await ctx.db
       .query("grants")
       .withIndex("by_deadline", (q) => q.gt("deadline", 0).lt("deadline", now))
+      // eslint-disable-next-line @convex-dev/no-filter-in-query
       .filter((q) => q.eq(q.field("isActive"), true))
       .take(CLOSE_EXPIRED_BATCH);
 
@@ -321,6 +326,7 @@ export const update = adminMutation({
       lastUpdatedAt: Date.now(),
       updatedAt: Date.now(),
     });
+    await refreshGrantSearchText(ctx, id as Id<"grants">);
     return null;
   },
 });
